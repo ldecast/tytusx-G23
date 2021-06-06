@@ -64,9 +64,6 @@ ROOTp: XML ROOTp
 XML: tk_open tk_id ATTR tk_close CHILD tk_open tk_bar tk_id tk_close { console.log($2); $$=$2; }
 	| tk_open tk_id ATTR tk_close CONTENT tk_open tk_bar tk_id tk_close { console.log($5); $$=$2; }
 	| tk_open tk_id ATTR tk_bar tk_close { console.log($2); $$=$2; }
-	| tk_open tk_id ATTR tk_close tk_open tk_bar tk_id tk_close {
-				$$ = $2;
-		}
 ;
 
 ATTR: ATTR_P { $$=$1; }
@@ -84,6 +81,7 @@ CHILD: XML CHILDp
 ;
 
 CHILDp: XML CHILDp
+	| 
 ;
 
 CONTENT: PROP CONTENTp
