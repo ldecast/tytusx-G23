@@ -1,7 +1,6 @@
 "use strict";
 function compile(req) {
     try {
-        console.log('Petición:', req);
         // Datos de la petición desde Angular
         var xml = req.xml;
         var xPath = req.query;
@@ -11,16 +10,16 @@ function compile(req) {
         switch (grammar_selected) {
             case 1:
                 parser_xml = require('../analyzers/xml_up');
-                parser_xPath = "require('analyzers/xpath_up');"; //falta hacerlas
+                parser_xPath = "require('../analyzers/xpath_up');";
                 break;
             case 2:
-                parser_xml = "require('analyzers/xml_down');";
-                parser_xPath = "require('analyzers/xpath_down');";
+                parser_xml = require('../analyzers/xml_down');
+                parser_xPath = "require('../analyzers/xpath_down);";
                 break;
         }
         // Análisis de XML
         var xml_ast = parser_xml.parse(xml);
-        if (xml_ast.parse === null) {
+        if (xml_ast.ast === null) {
             var output_1 = {
                 arreglo_simbolos: [],
                 arreglo_errores: xml_ast.errors,
@@ -28,7 +27,7 @@ function compile(req) {
             };
             return output_1;
         }
-        var xml_parse = xml_ast.parse;
+        var xml_parse = xml_ast.ast;
         var xml_errors = xml_ast.errors;
         // Ignorar comentarios, falta toda la lógica
         // const global = new Ambito(null, "global");
@@ -51,11 +50,11 @@ function compile(req) {
         // }
         // let xPath_parse = xPath_ast.parse;
         // let xPath_errors = xPath_ast.errors;
-        console.log(xml_parse);
+        console.log("Salida:", xml_ast);
         var output = {
             arreglo_simbolos: [],
-            arreglo_errores_xml: xml_errors,
-            output: xml_parse[0] //de prueba
+            arreglo_errores: xml_errors,
+            output: String(xml_parse[0].id_open)
         };
         return output;
     }

@@ -71,8 +71,10 @@
         <thead>
           <tr>
             <th scope="col">#</th>
-            <th scope="col">Nombre</th>
+            <th scope="col">Id</th>
             <th scope="col">Tipo</th>
+            <th scope="col">Atributos</th>
+            <th scope="col">Contenido</th>
             <th scope="col">Ámbito</th>
             <th scope="col">Fila</th>
             <th scope="col">Columna</th>
@@ -83,6 +85,8 @@
             <th scope="row">{{i+1}}</th>
             <td>{{item.id}}</td>
             <td>{{item.tipo}}</td>
+            <td>{{item.atributos}}</td>
+            <td>{{item.value}}</td>
             <td>{{item.entorno}}</td>
             <td>{{item.linea}}</td>
             <td>{{item.columna}}</td>
@@ -103,6 +107,7 @@
             <th scope="col">#</th>
             <th scope="col">Tipo</th>
             <th scope="col">Error</th>
+            <th scope="col">Origen</th>
             <th class="text-center" scope="col">Fila</th>
             <th class="text-center" scope="col">Columna</th>
           </tr>
@@ -111,7 +116,8 @@
           <tr *ngFor="let item of errores; let i = index">
             <th scope="row">{{i+1}}</th>
             <td>{{item.tipo}}</td>
-            <td class="fc">{{item.error}}</td>
+            <td>{{item.error}}</td>
+            <td>{{item.origen}}</td>
             <td class="text-center">{{item.linea}}</td>
             <td class="text-center">{{item.columna}}</td>
           </tr>

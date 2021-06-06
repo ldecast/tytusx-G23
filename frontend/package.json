@@ -47,9 +47,9 @@
     "tslint": "~6.1.0",
     "typescript": "~4.1.5"
   },
-  "browser":{
+  "browser": {
     "fs": false,
-  "path": false,
-  "os": false
- }
+    "path": false,
+    "os": false
+  }
 }

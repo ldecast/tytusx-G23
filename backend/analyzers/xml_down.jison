@@ -47,5 +47,52 @@
 
 %% //GRAMATICA DE DOCUMENTO XML ANALISIS DESCENDENTE
 
-ini: ROOT EOF { ast = { parse: $1, errors: errors }; errors = []; return ast; }
+ini: ROOT EOF {
+		ast = { ast: $1, errors: errors };
+		errors = [];
+		return ast;
+	}
+;
+
+ROOT: XML ROOTp
+;
+
+ROOTp: XML ROOTp
+	| 
+;
+
+XML: tk_open tk_id ATTR tk_close CHILD tk_open tk_bar tk_id tk_close { console.log($2); $$=$2; }
+	| tk_open tk_id ATTR tk_close CONTENT tk_open tk_bar tk_id tk_close { console.log($5); $$=$2; }
+	| tk_open tk_id ATTR tk_bar tk_close { console.log($2); $$=$2; }
+	| tk_open tk_id ATTR tk_close tk_open tk_bar tk_id tk_close {
+				$$ = $2;
+		}
+;
+
+ATTR: ATTR_P { $$=$1; }
+	| { $$=null; }
+;
+
+ATTR_P: tk_id tk_equal attribute ATTR_Pp { console.log($3); $$=$3; }
+;
+
+ATTR_Pp: tk_id tk_equal attribute ATTR_Pp { console.log($3); $$=$3; }
+	| 
+;
+
+CHILD: XML CHILDp
+;
+
+CHILDp: XML CHILDp
+;
+
+CONTENT: PROP CONTENTp
+;
+
+CONTENTp: PROP CONTENTp
+	| 
+;
+
+PROP: tk_id { $$=$1; }
+	| anything { $$ = $1; }
 ;

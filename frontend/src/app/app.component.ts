@@ -60,6 +60,8 @@ export class AppComponent {
       // llamo a la función compile que devuelve un objeto de retorno
       let data = require('../js/routes/compile').compile(x);
       this.salida = data.output;
+      this.errores = data.arreglo_errores;
+      this.simbolos = data.arreglo_simbolos;
       console.log('Data received!');
     } else
       alert("Alguna entrada se encuentra vacía. Intente de nuevo.");
