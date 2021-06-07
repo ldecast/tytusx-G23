@@ -45,13 +45,14 @@
 
 %start ini
 
-%% //GRAMATICA DE DOCUMENTO XML ANALISIS ASCENDENTE
+%% // GRAMATICA DE DOCUMENTO XML ANALISIS ASCENDENTE
 
 ini: ROOT EOF {
 		ast = { ast: $1, errors: errors };
 		errors = [];
 		return ast;
 	}
+	| error EOF { errors.push({ tipo: "Sintáctico", error: "Sintaxis errónea del documento XML.", origen: "XML", linea: this._$.first_line, columna: this._$.first_column+1 }); $$ = null; }
 ;
 
 ROOT: ROOT XML { $1.push($2); $$=$1; }
@@ -82,7 +83,7 @@ XML: tk_open tk_id ATTR tk_close CHILD tk_open tk_bar tk_id tk_close {
 			}
 		}
 	| tk_open tk_id ATTR tk_bar tk_close {
-			$$ = new Element($2, $3, null, null, this._$.first_line, this._$.first_column+1, $2);
+			$$ = new Element($2, $3, null, null, this._$.first_line, this._$.first_column+1, null);
 		}
 	| tk_open tk_id ATTR tk_close tk_open tk_bar tk_id tk_close {
 			tag = new Element($2, $3, null, null, this._$.first_line, this._$.first_column+1, $7);
@@ -94,6 +95,7 @@ XML: tk_open tk_id ATTR tk_close CHILD tk_open tk_bar tk_id tk_close {
 				$$ = null;
 			}
 		}
+	| error tk_close { errors.push({ tipo: "Sintáctico", error: "La etiqueta no fue declarada correctamente.", origen: "XML", linea: this._$.first_line, columna: this._$.first_column+1 }); $$ = null; }
 ;
 
 ATTR: ATTR_P { $$=$1; }

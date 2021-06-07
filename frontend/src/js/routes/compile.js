@@ -1,4 +1,6 @@
 "use strict";
+var Ambito_1 = require("../model/xml/Ambito/Ambito");
+var Global_1 = require("../model/xml/Ambito/Global");
 function compile(req) {
     try {
         // Datos de la petición desde Angular
@@ -19,24 +21,18 @@ function compile(req) {
         }
         // Análisis de XML
         var xml_ast = parser_xml.parse(xml);
-        if (xml_ast.ast === null) {
+        if (xml_ast === true || xml_ast.errors.length > 1 || xml_ast.ast === null) {
             var output_1 = {
                 arreglo_simbolos: [],
-                arreglo_errores: xml_ast.errors,
-                output: "No se ha podido recuperar del error en el documento XML.\nIntente de nuevo."
+                arreglo_errores: (xml_ast === true ? [{ tipo: "Sintáctico", error: "Sintaxis errónea del documento XML.", origen: "XML", linea: 1, columna: 1 }] : xml_ast.errors),
+                output: "El documento XML contiene errores para analizar.\nIntente de nuevo."
             };
             return output_1;
         }
         var xml_parse = xml_ast.ast;
-        var xml_errors = xml_ast.errors;
-        // Ignorar comentarios, falta toda la lógica
-        // const global = new Ambito(null, "global");
-        // let cadena = Global(parse, global);
-        // let simbolos = global.getArraySimbols();
-        // for (let i = 0; i < cadena.errores.length; i++) {
-        //     const err = cadena.errores[i];
-        //     errores.push(err);
-        // }
+        var global = new Ambito_1.Ambito(null, "global");
+        var cadena = new Global_1.Global(xml_parse, global);
+        var simbolos = cadena.ambito.getArraySymbols();
         // Análisis de XPath
         // let xPath_ast = parser_xPath.parse(xPath);
         // if (xPath_ast.parse === null) {
@@ -52,9 +48,9 @@ function compile(req) {
         // let xPath_errors = xPath_ast.errors;
         console.log("Salida:", xml_ast);
         var output = {
-            arreglo_simbolos: [],
-            arreglo_errores: xml_errors,
-            output: String(xml_parse[0].id_open)
+            arreglo_simbolos: simbolos,
+            arreglo_errores: [],
+            output: String(xml_parse[0].id_open) //mientras
         };
         return output;
     }
@@ -62,8 +58,8 @@ function compile(req) {
         console.log(error);
         var output = {
             arreglo_simbolos: [],
-            arreglo_errores: [],
-            output: "Ha ocurrido algún error.\nIntente de nuevo."
+            arreglo_errores: [{ tipo: "Desconocido", error: "Error en tiempo de ejecución.", origen: "", linea: "", columna: "" }],
+            output: String(error)
         };
         return output;
     }
