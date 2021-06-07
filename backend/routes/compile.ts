@@ -1,3 +1,5 @@
+import { Ambito } from '../model/xml/Ambito/Ambito';
+import { Global } from '../model/xml/Ambito/Global';
 
 function compile(req: any) {
     try {
@@ -21,24 +23,20 @@ function compile(req: any) {
 
         // Análisis de XML
         let xml_ast = parser_xml.parse(xml);
-        if (xml_ast.ast === null) {
+        if (xml_ast === true || xml_ast.errors.length > 1 || xml_ast.ast === null) {
+
             let output = {
                 arreglo_simbolos: [],
-                arreglo_errores: xml_ast.errors,
-                output: "No se ha podido recuperar del error en el documento XML.\nIntente de nuevo."
+                arreglo_errores: (xml_ast === true ? [{ tipo: "Sintáctico", error: "Sintaxis errónea del documento XML.", origen: "XML", linea: 1, columna: 1 }] : xml_ast.errors),
+                output: "El documento XML contiene errores para analizar.\nIntente de nuevo."
             }
             return output;
         }
+
         let xml_parse = xml_ast.ast;
-        let xml_errors = xml_ast.errors;
-        // Ignorar comentarios, falta toda la lógica
-        // const global = new Ambito(null, "global");
-        // let cadena = Global(parse, global);
-        // let simbolos = global.getArraySimbols();
-        // for (let i = 0; i < cadena.errores.length; i++) {
-        //     const err = cadena.errores[i];
-        //     errores.push(err);
-        // }
+        var global = new Ambito(null, "global");
+        let cadena = new Global(xml_parse, global);
+        let simbolos = cadena.ambito.getArraySymbols();
 
         // Análisis de XPath
         // let xPath_ast = parser_xPath.parse(xPath);
@@ -56,17 +54,19 @@ function compile(req: any) {
 
         console.log("Salida:", xml_ast);
         let output = {
-            arreglo_simbolos: [],
-            arreglo_errores: xml_errors,
-            output: String(xml_parse[0].id_open)
+            arreglo_simbolos: simbolos,
+            arreglo_errores: [],
+            output: String(xml_parse[0].id_open) //mientras
         }
+
         return output;
+
     } catch (error) {
         console.log(error);
         let output = {
             arreglo_simbolos: [],
-            arreglo_errores: [],
-            output: "Ha ocurrido algún error.\nIntente de nuevo."
+            arreglo_errores: [{ tipo: "Desconocido", error: "Error en tiempo de ejecución.", origen: "", linea: "", columna: "" }],
+            output: String(error)
         }
         return output;
     }

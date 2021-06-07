@@ -7,10 +7,14 @@ export class Ambito {
     tipo: string;
     tablaSimbolos: Array<Element>;
 
-    constructor(_anterior: Ambito, _tipo: string) {
+    constructor(_anterior: any, _tipo: string) {
         this.anterior = _anterior
         this.tipo = _tipo
         this.tablaSimbolos = [];
+    }
+
+    isGlobal(): boolean {
+        return this.tipo === "global";
     }
 
     addSimbolo(_simbolo: Element) {
@@ -56,39 +60,65 @@ export class Ambito {
         return null
     }
 
-    concatenarAtributos(attributes: Array<Atributo>) {
+    concatAttributes(attributes: Array<Atributo>) {
         let concat = "";
         attributes.forEach(attr => {
-            concat = concat + attr.value + "\n";
+            concat = concat + attr.id + ": " + attr.value + ", ";
         });
         return concat.substring(0, concat.length - 2);
     }
 
-    getArraySimbols() { 
+    getArraySymbols() {
         let simbolos: any = [];
+        console.log("tabla", this.tablaSimbolos);
         try {
             this.tablaSimbolos.forEach(element => {
-                let type = (element.id_close === null ? 'Etiqueta simple' : 'Etiqueta doble');
-                let attr = (element.attributes === null ? this.concatenarAtributos(element.attributes) : '');
-                var simb = {
-                    id: element.id_open,
-                    value: element.value,
-                    tipo: type,
-                    entorno: element.father,
-                    atributos: attr,
-                    linea: element.line,
-                    columna: element.column
+                if (element.childs) {
+                    let dad = this.createSymbol(element, (element.father === null ? "global" : element.father));
+                    simbolos.push(dad);
+                    simbolos.concat(this.toRunTree(simbolos, element.childs, dad.id));
                 }
-                if (!simbolos.some((e: any) => e === simb)) {
-                    simbolos.push(simb);
+                else {
+                    let symb = this.createSymbol(element, (element.father === null ? "global" : element.father));
+                    simbolos.push(symb);
                 }
             });
             return simbolos;
         } catch (error) {
+            console.log(error);
             return simbolos;
         }
     }
 
-}
+    toRunTree(_symbols: Array<any>, _array: Array<Element>, _father: string) {
+        _array.forEach(element => {
+            if (element.childs) {
+                let dad = this.createSymbol(element, _father);
+                _symbols.push(dad);
+                let concat = _father + ("->" + dad.id);
+                _symbols.concat(this.toRunTree(_symbols, element.childs, concat));
+            }
+            else {
+                let symb = this.createSymbol(element, _father);
+                _symbols.push(symb);
+            }
+        });
+        return _symbols;
+    }
 
-module.exports = Ambito
+    createSymbol(_element: Element, _entorno: string) {
+        let type = (_element.id_close === null ? 'Simple' : 'Doble');
+        let attr = (_element.attributes === null ? '' : this.concatAttributes(_element.attributes));
+        var symb = {
+            id: _element.id_open,
+            value: _element.value,
+            tipo: type,
+            entorno: _entorno,
+            atributos: attr,
+            linea: _element.line,
+            columna: _element.column
+        }
+        return symb;
+    }
+
+}
