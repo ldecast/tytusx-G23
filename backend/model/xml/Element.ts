@@ -22,8 +22,12 @@ export class Element {
         this.father = null;
     }
 
-    verificateNames(): boolean {
-        return this.id_open === this.id_close;
+    verificateNames(): string {
+        if ((this.id_close !== null) && (this.id_open !== this.id_close))
+            return "La etiqueta de apertura no coincide con la de cierre.";
+        if (this.id_open.replace(/\s/g, '').toLowerCase() === "xml")
+            return "No se puede nombrar una etiqueta con las letras XML";
+        return "";
     }
 
 }
