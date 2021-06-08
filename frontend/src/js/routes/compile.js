@@ -21,7 +21,7 @@ function compile(req) {
         }
         // Análisis de XML
         var xml_ast = parser_xml.parse(xml);
-        if (xml_ast === true || xml_ast.errors.length > 1 || xml_ast.ast === null) {
+        if (xml_ast === true || xml_ast.errors.length > 0 || xml_ast.ast === null) {
             var output_1 = {
                 arreglo_simbolos: [],
                 arreglo_errores: (xml_ast === true ? [{ tipo: "Sintáctico", error: "Sintaxis errónea del documento XML.", origen: "XML", linea: 1, columna: 1 }] : xml_ast.errors),
