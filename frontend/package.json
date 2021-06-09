@@ -20,6 +20,7 @@
     "@angular/platform-browser-dynamic": "~11.2.13",
     "@angular/router": "~11.2.13",
     "@materia-ui/ngx-monaco-editor": "^5.0.0",
+    "buffer": "^6.0.3",
     "file-saver": "^2.0.5",
     "file-server": "^2.1.0",
     "monaco-editor-webpack-plugin": "^3.0.1",

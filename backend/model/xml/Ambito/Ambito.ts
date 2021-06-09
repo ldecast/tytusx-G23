@@ -70,16 +70,22 @@ export class Ambito {
 
     getArraySymbols() {
         let simbolos: any = [];
-        console.log("tabla", this.tablaSimbolos);
         try {
             this.tablaSimbolos.forEach(element => {
-                if (element.childs) {
-                    let dad = this.createSymbol(element, (element.father === null ? "global" : element.father));
+                if (element.attributes || element.childs) {
+                    let dad = this.createSymbolElement(element, (element.father === null ? "global" : element.father));
                     simbolos.push(dad);
-                    simbolos.concat(this.toRunTree(simbolos, element.childs, dad.id));
+                    if (element.attributes) {
+                        element.attributes.forEach(attribute => {
+                            simbolos.push(this.createSymbolAttribute(attribute, element.id_open));
+                        });
+                    }
+                    if (element.childs) {
+                        simbolos.concat(this.toRunTree(simbolos, element.childs, dad.id));
+                    }
                 }
                 else {
-                    let symb = this.createSymbol(element, (element.father === null ? "global" : element.father));
+                    let symb = this.createSymbolElement(element, (element.father === null ? "global" : element.father));
                     simbolos.push(symb);
                 }
             });
@@ -92,31 +98,48 @@ export class Ambito {
 
     toRunTree(_symbols: Array<any>, _array: Array<Element>, _father: string) {
         _array.forEach(element => {
-            if (element.childs) {
-                let dad = this.createSymbol(element, _father);
+            if (element.attributes || element.childs) {
+                let dad = this.createSymbolElement(element, _father);
                 _symbols.push(dad);
-                let concat = _father + ("->" + dad.id);
-                _symbols.concat(this.toRunTree(_symbols, element.childs, concat));
+                if (element.attributes) {
+                    element.attributes.forEach(attribute => {
+                        _symbols.push(this.createSymbolAttribute(attribute, _father + "->" + element.id_open));
+                    });
+                }
+                if (element.childs) {
+                    let concat = _father + ("->" + dad.id);
+                    _symbols.concat(this.toRunTree(_symbols, element.childs, concat));
+                }
             }
             else {
-                let symb = this.createSymbol(element, _father);
+                let symb = this.createSymbolElement(element, _father);
                 _symbols.push(symb);
             }
         });
         return _symbols;
     }
 
-    createSymbol(_element: Element, _entorno: string) {
-        let type = (_element.id_close === null ? 'Simple' : 'Doble');
-        let attr = (_element.attributes === null ? '' : this.concatAttributes(_element.attributes));
+    createSymbolElement(_element: Element, _entorno: string) {
+        let type = (_element.id_close === null ? 'Tag simple' : 'Tag doble');
         var symb = {
             id: _element.id_open,
             value: _element.value,
             tipo: type,
             entorno: _entorno,
-            atributos: attr,
             linea: _element.line,
             columna: _element.column
+        }
+        return symb;
+    }
+
+    createSymbolAttribute(_attribute: Atributo, _entorno: string) {
+        var symb = {
+            id: _attribute.id,
+            value: _attribute.value,
+            tipo: "Atributo",
+            entorno: _entorno,
+            linea: _attribute.line,
+            columna: _attribute.column
         }
         return symb;
     }

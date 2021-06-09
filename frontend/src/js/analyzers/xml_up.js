@@ -121,7 +121,7 @@ case 5:
 break;
 case 6:
 
-			tag = new Element($$[$0-7], $$[$0-6], $$[$0-4], null, this._$.first_line, this._$.first_column+1, $$[$0-1]);
+			tag = new Element($$[$0-7], $$[$0-6], $$[$0-4].val, null, this._$.first_line, this._$.first_column+1, $$[$0-1]);
             hasConflict = tag.verificateNames();
 			if (hasConflict === "") {
 				this.$ = tag;
@@ -161,7 +161,7 @@ break;
 case 9: case 10:
  errors.push({ tipo: "Sintáctico", error: "La etiqueta no fue declarada correctamente.", origen: "XML", linea: this._$.first_line, columna: this._$.first_column+1 }); this.$ = null; 
 break;
-case 11: case 15: case 16: case 21: case 22: case 23: case 24: case 25:
+case 11: case 15: case 16:
  this.$=$$[$0]; 
 break;
 case 12:
@@ -185,14 +185,34 @@ case 17:
 break;
 case 19:
 
-		$$[$0-1]+=' '+$$[$0];
-		this.$=$$[$0-1];
+		if ($$[$0].tipo !== $$[$0-1].tipo) {
+			$$[$0-1].val+=$$[$0].val;
+		}
+		else {
+			$$[$0-1].val+=' '+$$[$0].val;
+		}
+		this.$={tipo:$$[$0].tipo, val:$$[$0-1].val};
 	
 break;
 case 20:
 
-		this.$=$$[$0];
+		this.$={tipo:$$[$0].tipo, val:$$[$0].val};
 	
+break;
+case 21:
+ this.$={tipo:1, val:$$[$0]}; 
+break;
+case 22:
+ this.$={tipo:2, val:$$[$0]}; 
+break;
+case 23:
+ this.$={tipo:3, val:$$[$0]}; 
+break;
+case 24:
+ this.$={tipo:4, val:$$[$0]}; 
+break;
+case 25:
+ this.$={tipo:5, val:$$[$0]}; 
 break;
 }
 },
@@ -838,7 +858,7 @@ case 25: attribute += "\'";
 break;
 case 26: attribute += "\r"; 
 break;
-case 27: yy_.yytext = attribute; this.popState(); console.log("AAAAAAa"); return 19; 
+case 27: yy_.yytext = attribute; this.popState(); return 19; 
 break;
 case 28:return 6
 break;
