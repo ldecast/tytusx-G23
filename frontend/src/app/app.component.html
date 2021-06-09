@@ -3,13 +3,41 @@
 </div>
 <div class="btn-toolbar" role="toolbar">
   <div class="mb-2 btn-group">
-    <button type="button" class="btn btn-dark rounded-0" (click)="openDialog()">Abrir
-      <input id="fileInput" type="file" style="display:none" accept=".xml" (change)="readFile($event)"
-        [(ngModel)]="fname">
-    </button>
-    <button (click)="saveFile()" type="button" class="btn btn-dark rounded-0">Guardar</button>
+    <div class="dropdown">
+      <button class="btn btn-dark rounded-0 " type="button" id="dropdownMenu" data-toggle="dropdown"
+        aria-haspopup="flase" aria-expanded="false">
+        Abrir
+      </button>
+      <div class="dropdown-menu rounded-0 bg-dark">
+        <button (click)="openDialog(1)" class="dropdown-item text-white item" type="button">XML</button>
+        <input id="fileInput1" type="file" style="display:none" accept=".xml" (change)="readFile($event,1)"
+          [(ngModel)]="fname">
+        <button (click)="openDialog(2)" class="dropdown-item text-white item" type="button">XPath</button>
+        <input id="fileInput2" type="file" style="display:none" (change)="readFile($event,2)" [(ngModel)]="fname">
+      </div>
+    </div>
+    <div class="dropdown">
+      <button class="btn btn-dark rounded-0 " type="button" id="dropdownMenu" data-toggle="dropdown"
+        aria-haspopup="flase" aria-expanded="false">
+        Guardar
+      </button>
+      <div class="dropdown-menu rounded-0 bg-dark">
+        <button (click)="saveFile(1)" class="dropdown-item text-white item" type="button">XML</button>
+        <button (click)="saveFile(2)" class="dropdown-item text-white item" type="button">XPath</button>
+      </div>
+    </div>
     <button (click)="newTab()" type="button" class="btn btn-dark rounded-0">Nueva pestaña</button>
     <button (click)="closeTab()" type="button" class="btn btn-dark rounded-0">Cerrar pestaña</button>
+    <div class="dropdown">
+      <button class="btn btn-dark rounded-0 " type="button" id="dropdownMenu" data-toggle="dropdown"
+        aria-haspopup="flase" aria-expanded="false">
+        Limpiar
+      </button>
+      <div class="dropdown-menu rounded-0 bg-dark">
+        <button (click)="cleanEditor(1)" class="dropdown-item text-white item" type="button">XML</button>
+        <button (click)="cleanEditor(2)" class="dropdown-item text-white item" type="button">XPath</button>
+      </div>
+    </div>
     <div class="dropdown">
       <button class="btn btn-dark rounded-0 dropdown-toggle" type="button" id="dropdownMenu" data-toggle="dropdown"
         aria-haspopup="true" aria-expanded="false">
@@ -70,12 +98,11 @@
       <table class="table table-striped table-dark">
         <thead>
           <tr>
-            <th class="text-center" scope="col">#</th>
-            <th class="text-center" scope="col">Id</th>
-            <th class="text-center" scope="col">Tipo etiqueta</th>
-            <th class="text-center" scope="col">Atributos</th>
-            <th class="text-center" scope="col">Contenido</th>
-            <th class="text-center" scope="col">Ámbito</th>
+            <th scope="col">#</th>
+            <th scope="col">Id</th>
+            <th scope="col">Tipo</th>
+            <th scope="col">Contenido</th>
+            <th scope="col">Ámbito</th>
             <th class="text-center" scope="col">Fila</th>
             <th class="text-center" scope="col">Columna</th>
           </tr>
@@ -84,8 +111,7 @@
           <tr *ngFor="let item of simbolos; let i = index">
             <th scope="row">{{i+1}}</th>
             <td>{{item.id}}</td>
-            <td class="text-center">{{item.tipo}}</td>
-            <td>{{item.atributos}}</td>
+            <td>{{item.tipo}}</td>
             <td>{{item.value}}</td>
             <td>{{item.entorno}}</td>
             <td class="text-center">{{item.linea}}</td>

@@ -91,7 +91,7 @@ XML: tk_open tk_id ATTR tk_close CHILD tk_open tk_bar tk_id tk_close {
 			}
 		}
 	| tk_open tk_id ATTR tk_close CONTENT tk_open tk_bar tk_id tk_close {
-			tag = new Element($2, $3, $5, null, this._$.first_line, this._$.first_column+1, $8);
+			tag = new Element($2, $3, $5.val, null, this._$.first_line, this._$.first_column+1, $8);
             hasConflict = tag.verificateNames();
 			if (hasConflict === "") {
 				$$ = tag;
@@ -151,14 +151,22 @@ CHILD: CHILD XML { if ($2!==null) { $1.push($2); } $$=$1; }
 ;
 
 CONTENT: PROP CONTENT {
-		$2=$1+' '+$2;
-		$$=$2;
+		if ($1.tipo !== $2.tipo) {
+			$2.val=$1.val+$2.val;
+		}
+		else {
+			$2.val=$1.val+' '+$2.val;
+		}
+		$$={tipo:$1.tipo, val:$2.val};
 	}
 	| PROP {
-		$$=$1;
+		$$={tipo:$1.tipo, val:$1.val};
 	}
 ;
 
-PROP: tk_id { $$=$1; }
-	| anything { $$=$1; }
+PROP: tk_id { $$={tipo:1, val:$1}; }
+	| anything { $$={tipo:2, val:$1}; }
+	| tk_bar { $$={tipo:3, val:$1}; }
+	| tk_attribute_d { $$={tipo:4, val:$1}; }
+	| tk_attribute_s { $$={tipo:5, val:$1}; }
 ;
