@@ -1,16 +1,13 @@
 
 export class Atributo {
-
-    id: string;
-    value: string;
-    line: string;
-    column: string;
-
-    constructor(id: string, value: string, line: string, column: string) {
-        this.id = id;
-        this.value = value;
-        this.line = line;
-        this.column = column;
+    private cst?: string;
+    constructor(public id: string, public  value: string, public  line: string,  public column: string) {
     }
 
+    set Cst(value){
+        this.cst = value;
+    }
+    get Cst(){
+        return this.cst;
+    }
 }
