@@ -23,8 +23,7 @@ function compile(req: any) {
 
         // Análisis de XML
         let xml_ast = parser_xml.parse(xml);
-        if (xml_ast === true || xml_ast.errors.length > 1 || xml_ast.ast === null) {
-
+        if (xml_ast === true || xml_ast.errors.length > 0 || xml_ast.ast === null) {
             let output = {
                 arreglo_simbolos: [],
                 arreglo_errores: (xml_ast === true ? [{ tipo: "Sintáctico", error: "Sintaxis errónea del documento XML.", origen: "XML", linea: 1, columna: 1 }] : xml_ast.errors),

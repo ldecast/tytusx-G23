@@ -128,10 +128,15 @@ export class AppComponent {
   }
 
 
-  saveFile() {
+  saveFile(id: number) {
     var f = document.createElement('a');
-    f.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(this.entrada));
-    f.setAttribute('download', this.fname ? this.fname.replace("C:\\fakepath\\", "") : 'newFile.ty');
+    let data = "";
+    if (id === 1)
+      data = this.entrada;
+    else
+      data = this.consulta;
+    f.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(data));
+    f.setAttribute('download', this.fname ? this.fname.replace("C:\\fakepath\\", "") : 'file.xml');
     if (document.createEvent) {
       var event = document.createEvent('MouseEvents');
       event.initEvent('click', true, true);
@@ -143,22 +148,44 @@ export class AppComponent {
     console.log('File saved!');
   }
 
-  openDialog() {
-    document.getElementById("fileInput")!.click();
+  openDialog(id: number) {
+    if (id === 1)
+      document.getElementById("fileInput1")!.click();
+    else
+      document.getElementById("fileInput2")!.click();
   }
 
-  readFile(event: any) {
+  readFile(event: any, id: number) {
     let input = event.target;
     let reader = new FileReader();
     reader.onload = () => {
       var text = reader.result;
       if (text) {
-        this.entrada = text.toString();
+        switch (id) {
+          case 1:
+            this.entrada = String(text);
+            break;
+          case 2:
+            this.consulta = String(text);
+            break;
+        }
       }
     }
     reader.readAsText(input.files[0]);
     this.salida = '';
     console.log('File opened!')
+  }
+
+  cleanEditor(id: number) {
+    switch (id) {
+      case 1:
+        this.entrada = "";
+        break;
+      case 2:
+        this.consulta = "";
+        break;
+    }
+    this.salida = "";
   }
 
 }
