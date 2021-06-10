@@ -72,12 +72,12 @@
   }
 */
 var xml_up = (function(){
-var o=function(k,v,o,l){for(o=o||{},l=k.length;l--;o[k[l]]=v);return o},$V0=[1,5],$V1=[1,8],$V2=[1,10],$V3=[2,5,7],$V4=[1,11],$V5=[10,12],$V6=[1,24],$V7=[1,25],$V8=[2,7],$V9=[7,8,18],$Va=[8,10,12];
+var o=function(k,v,o,l){for(o=o||{},l=k.length;l--;o[k[l]]=v);return o},$V0=[1,7],$V1=[1,6],$V2=[2,6,8],$V3=[1,11],$V4=[11,13],$V5=[1,26],$V6=[1,28],$V7=[1,29],$V8=[1,30],$V9=[1,27],$Va=[1,34],$Vb=[1,35],$Vc=[2,8],$Vd=[8,9,13,18,19,21],$Ve=[9,11,13];
 var parser = {trace: function trace () { },
 yy: {},
-symbols_: {"error":2,"ini":3,"ROOT":4,"EOF":5,"XML":6,"tk_open":7,"tk_id":8,"ATTR":9,"tk_close":10,"CHILD":11,"tk_bar":12,"CONTENT":13,"ATTR_P":14,"tk_equal":15,"tk_attribute":16,"PROP":17,"anything":18,"$accept":0,"$end":1},
-terminals_: {2:"error",5:"EOF",7:"tk_open",8:"tk_id",10:"tk_close",12:"tk_bar",15:"tk_equal",16:"tk_attribute",18:"anything"},
-productions_: [0,[3,2],[3,2],[4,2],[4,1],[6,9],[6,9],[6,5],[6,8],[6,2],[9,1],[9,0],[14,4],[14,3],[11,2],[11,1],[13,2],[13,1],[17,1],[17,1]],
+symbols_: {"error":2,"ini":3,"tk_declaration_xml":4,"ROOT":5,"EOF":6,"XML":7,"tk_open":8,"tk_id":9,"ATTR":10,"tk_close":11,"CHILD":12,"tk_bar":13,"CONTENT":14,"ATTR_P":15,"tk_equal":16,"TK_ATTR":17,"tk_attribute_d":18,"tk_attribute_s":19,"PROP":20,"anything":21,"$accept":0,"$end":1},
+terminals_: {2:"error",4:"tk_declaration_xml",6:"EOF",8:"tk_open",9:"tk_id",11:"tk_close",13:"tk_bar",16:"tk_equal",18:"tk_attribute_d",19:"tk_attribute_s",21:"anything"},
+productions_: [0,[3,3],[3,2],[5,2],[5,1],[7,9],[7,9],[7,5],[7,8],[7,2],[7,2],[10,1],[10,0],[15,4],[15,3],[17,1],[17,1],[12,2],[12,1],[14,2],[14,1],[20,1],[20,1],[20,1],[20,1],[20,1]],
 performAction: function anonymous(yytext, yyleng, yylineno, yy, yystate /* action[1] */, $$ /* vstack */, _$ /* lstack */) {
 /* this == yyval */
 
@@ -85,101 +85,139 @@ var $0 = $$.length - 1;
 switch (yystate) {
 case 1:
 
-		ast = { ast: $$[$0-1], errors: errors };
+		encoding = new Encoding($$[$0-2]);
+		if (encoding.encoding === encoding.codes.INVALID ) {
+			errors.push({ tipo: "Léxico", error: "La codificación del XML no es válida.", origen: "XML", linea: this._$.first_line, columna: this._$.first_column+1 }); return { ast: null, errors: errors };
+		}
+		ast = { ast: $$[$0-1], encoding: encoding,  errors: errors };
 		errors = [];
 		return ast;
 	
 break;
 case 2:
- errors.push({ tipo: "Sintáctico", error: "Sintaxis errónea del documento XML.", origen: "XML", linea: this._$.first_line, columna: this._$.first_column+1 }); this.$ = null; 
+ errors.push({ tipo: "Sintáctico", error: "Sintaxis errónea del documento XML.", origen: "XML", linea: this._$.first_line, columna: this._$.first_column+1 }); return { ast: null, errors: errors }; 
 break;
-case 3: case 14:
- $$[$0-1].push($$[$0]); this.$=$$[$0-1]; 
+case 3:
+ if ($$[$0]!==null) { $$[$0-1].push($$[$0]); this.$=$$[$0-1]; } else { this.$=null; } 
 break;
-case 4: case 15:
- this.$=[$$[$0]]; 
+case 4: case 18:
+ if ($$[$0]!==null) { this.$=[$$[$0]]; } else { this.$=[]; } 
 break;
 case 5:
 
 			tag = new Element($$[$0-7], $$[$0-6], null, $$[$0-4], this._$.first_line, this._$.first_column+1, $$[$0-1]);
-			if (tag.verificateNames()) {
+            hasConflict = tag.verificateNames();
+			if (hasConflict === "") {
 				tag.childs.forEach(child => {
 					child.father = $$[$0-7];
             	});
 				this.$ = tag;
 			}
 			else {
-				errors.push({ tipo: "Semántico", error: "La etiqueta de apertura no coincide con la de cierre.", origen: "XML", linea: _$[$0-1].first_line, columna: _$[$0-1].first_column+1 });
+				errors.push({ tipo: "Semántico", error: hasConflict, origen: "XML", linea: _$[$0-1].first_line, columna: _$[$0-1].first_column+1 });
 				this.$ = null;
 			}
 		
 break;
 case 6:
 
-			tag = new Element($$[$0-7], $$[$0-6], $$[$0-4], null, this._$.first_line, this._$.first_column+1, $$[$0-1]);
-			if (tag.verificateNames()) {
+			tag = new Element($$[$0-7], $$[$0-6], $$[$0-4].val, null, this._$.first_line, this._$.first_column+1, $$[$0-1]);
+            hasConflict = tag.verificateNames();
+			if (hasConflict === "") {
 				this.$ = tag;
 			}
 			else {
-				errors.push({ tipo: "Semántico", error: "La etiqueta de apertura no coincide con la de cierre.", origen: "XML", linea: _$[$0-1].first_line, columna: _$[$0-1].first_column+1 });
+				errors.push({ tipo: "Semántico", error: hasConflict, origen: "XML", linea: _$[$0-1].first_line, columna: _$[$0-1].first_column+1 });
 				this.$ = null;
 			}
 		
 break;
 case 7:
 
-			this.$ = new Element($$[$0-3], $$[$0-2], null, null, this._$.first_line, this._$.first_column+1, null);
+			tag = new Element($$[$0-3], $$[$0-2], null, null, this._$.first_line, this._$.first_column+1, null);
+            hasConflict = tag.verificateNames();
+			if (hasConflict === "") {
+				this.$ = tag;
+			}
+			else {
+				errors.push({ tipo: "Semántico", error: hasConflict, origen: "XML", linea: _$[$0-3].first_line, columna: _$[$0-3].first_column+1 });
+				this.$ = null;
+			}
 		
 break;
 case 8:
 
 			tag = new Element($$[$0-6], $$[$0-5], null, null, this._$.first_line, this._$.first_column+1, $$[$0-1]);
-			if (tag.verificateNames()) {
+            hasConflict = tag.verificateNames();
+			if (hasConflict === "") {
 				this.$ = tag;
 			}
 			else {
-				errors.push({ tipo: "Semántico", error: "La etiqueta de apertura no coincide con la de cierre.", origen: "XML", linea: _$[$0-1].first_line, columna: _$[$0-1].first_column+1 });
+				errors.push({ tipo: "Semántico", error: hasConflict, origen: "XML", linea: _$[$0-1].first_line, columna: _$[$0-1].first_column+1 });
 				this.$ = null;
 			}
 		
 break;
-case 9:
+case 9: case 10:
  errors.push({ tipo: "Sintáctico", error: "La etiqueta no fue declarada correctamente.", origen: "XML", linea: this._$.first_line, columna: this._$.first_column+1 }); this.$ = null; 
 break;
-case 10: case 18: case 19:
+case 11: case 15: case 16:
  this.$=$$[$0]; 
 break;
-case 11:
+case 12:
  this.$=null; 
 break;
-case 12:
+case 13:
 
 		attr = new Atributo($$[$0-2], $$[$0], this._$.first_line, this._$.first_column+1);
 		$$[$0-3].push(attr);
 		this.$=$$[$0-3];
 	
 break;
-case 13:
+case 14:
 
 		attr = new Atributo($$[$0-2], $$[$0], this._$.first_line, this._$.first_column+1);
 		this.$=[attr];
 	
 break;
-case 16:
+case 17:
+ if ($$[$0]!==null) { $$[$0-1].push($$[$0]); } this.$=$$[$0-1]; 
+break;
+case 19:
 
-		$$[$0-1]+=' '+$$[$0];
-		this.$=$$[$0-1];
+		if ($$[$0].tipo !== $$[$0-1].tipo) {
+			$$[$0-1].val+=$$[$0].val;
+		}
+		else {
+			$$[$0-1].val+=' '+$$[$0].val;
+		}
+		this.$={tipo:$$[$0].tipo, val:$$[$0-1].val};
 	
 break;
-case 17:
+case 20:
 
-		this.$=$$[$0];
+		this.$={tipo:$$[$0].tipo, val:$$[$0].val};
 	
+break;
+case 21:
+ this.$={tipo:1, val:$$[$0]}; 
+break;
+case 22:
+ this.$={tipo:2, val:$$[$0]}; 
+break;
+case 23:
+ this.$={tipo:3, val:$$[$0]}; 
+break;
+case 24:
+ this.$={tipo:4, val:$$[$0]}; 
+break;
+case 25:
+ this.$={tipo:5, val:$$[$0]}; 
 break;
 }
 },
-table: [{2:[1,3],3:1,4:2,6:4,7:$V0},{1:[3]},{2:$V1,5:[1,6],6:7,7:$V0},{5:[1,9],10:$V2},o($V3,[2,4]),{8:$V4},{1:[2,1]},o($V3,[2,3]),{10:$V2},{1:[2,2]},o($V3,[2,9]),o($V5,[2,11],{9:12,14:13,8:[1,14]}),{10:[1,15],12:[1,16]},o($V5,[2,10],{8:[1,17]}),{15:[1,18]},{2:$V1,6:22,7:[1,21],8:$V6,11:19,13:20,17:23,18:$V7},{10:[1,26]},{15:[1,27]},{16:[1,28]},{2:$V1,6:30,7:[1,29]},{7:[1,31],8:$V6,17:32,18:$V7},{8:$V4,12:[1,33]},o($V8,[2,15]),o($V9,[2,17]),o($V9,[2,18]),o($V9,[2,19]),o($V3,$V8),{16:[1,34]},o($Va,[2,13]),{8:$V4,12:[1,35]},o($V8,[2,14]),{12:[1,36]},o($V9,[2,16]),{8:[1,37]},o($Va,[2,12]),{8:[1,38]},{8:[1,39]},{10:[1,40]},{10:[1,41]},{10:[1,42]},o($V3,[2,8]),o($V3,[2,5]),o($V3,[2,6])],
-defaultActions: {6:[2,1],9:[2,2]},
+table: [{2:[1,3],3:1,4:[1,2]},{1:[3]},{2:$V0,5:4,7:5,8:$V1},{6:[1,8]},{2:$V0,6:[1,9],7:10,8:$V1},o($V2,[2,4]),{9:$V3},{8:[1,13],11:[1,12]},{1:[2,2]},{1:[2,1]},o($V2,[2,3]),o($V4,[2,12],{10:14,15:15,9:[1,16]}),o($V2,[2,9]),o($V2,[2,10]),{11:[1,17],13:[1,18]},o($V4,[2,11],{9:[1,19]}),{16:[1,20]},{2:$V0,7:24,8:[1,23],9:$V5,12:21,13:$V6,14:22,18:$V7,19:$V8,20:25,21:$V9},{11:[1,31]},{16:[1,32]},{17:33,18:$Va,19:$Vb},{2:$V0,7:37,8:[1,36]},{8:[1,38],9:$V5,13:$V6,18:$V7,19:$V8,20:39,21:$V9},{9:$V3,13:[1,40]},o($Vc,[2,18]),o($Vd,[2,20]),o($Vd,[2,21]),o($Vd,[2,22]),o($Vd,[2,23]),o($Vd,[2,24]),o($Vd,[2,25]),o($V2,[2,7]),{17:41,18:$Va,19:$Vb},o($Ve,[2,14]),o($Ve,[2,15]),o($Ve,[2,16]),{9:$V3,13:[1,42]},o($Vc,[2,17]),{13:[1,43]},o($Vd,[2,19]),{9:[1,44]},o($Ve,[2,13]),{9:[1,45]},{9:[1,46]},{11:[1,47]},{11:[1,48]},{11:[1,49]},o($V2,$Vc),o($V2,[2,5]),o($V2,[2,6])],
+defaultActions: {8:[2,2],9:[2,1]},
 parseError: function parseError (str, hash) {
     if (hash.recoverable) {
         this.trace(str);
@@ -437,6 +475,7 @@ _handle_error:
 
 	const { Atributo } = require('../model/xml/Atributo');
 	const { Element } = require('../model/xml/Element');
+	const { Encoding } = require('../model/xml/Encoding/Encoding');
 /* generated by jison-lex 0.3.4 */
 var lexer = (function(){
 var lexer = ({
@@ -769,19 +808,19 @@ case 0:// Whitespace
 break;
 case 1:// MultiLineComment
 break;
-case 2:// Declaration XML
+case 2:return 4
 break;
-case 3:return 7
+case 3:return 8
 break;
-case 4:return 10
+case 4:return 11
 break;
-case 5:return 12
+case 5:return 13
 break;
-case 6:return 15
+case 6:return 16
 break;
-case 7:return 8
+case 7:return 9
 break;
-case 8: attribute = ''; this.begin("string"); 
+case 8: attribute = ''; this.begin("string_doubleq"); 
 break;
 case 9: attribute += yy_.yytext; 
 break;
@@ -799,18 +838,38 @@ case 15: attribute += "\'";
 break;
 case 16: attribute += "\r"; 
 break;
-case 17: yy_.yytext = attribute; this.popState(); return 16; 
+case 17: yy_.yytext = attribute; this.popState(); return 18; 
 break;
-case 18:return 5
+case 18: attribute = ''; this.begin("string_singleq"); 
 break;
-case 19:return 18
+case 19: attribute += yy_.yytext; 
 break;
-case 20: errors.push({ tipo: "Léxico", error: yy_.yytext, origen: "XML", linea: yy_.yylloc.first_line, columna: yy_.yylloc.first_column+1 }); return 'INVALID'; 
+case 20: attribute += "\""; 
+break;
+case 21: attribute += "\n"; 
+break;
+case 22: attribute += " ";  
+break;
+case 23: attribute += "\t"; 
+break;
+case 24: attribute += "\\"; 
+break;
+case 25: attribute += "\'"; 
+break;
+case 26: attribute += "\r"; 
+break;
+case 27: yy_.yytext = attribute; this.popState(); return 19; 
+break;
+case 28:return 6
+break;
+case 29:return 21
+break;
+case 30: errors.push({ tipo: "Léxico", error: yy_.yytext, origen: "XML", linea: yy_.yylloc.first_line, columna: yy_.yylloc.first_column+1 }); return 'INVALID'; 
 break;
 }
 },
-rules: [/^(?:\s+)/i,/^(?:<!--[\s\S\n]*?-->)/i,/^(?:<\?xml[\s\S\n]*?\?>)/i,/^(?:<)/i,/^(?:>)/i,/^(?:\/)/i,/^(?:=)/i,/^(?:[\w\u00e1\u00e9\u00ed\u00f3\u00fa\u00c1\u00c9\u00cd\u00d3\u00da\u00f1\u00d1]+)/i,/^(?:["])/i,/^(?:[^"\\]+)/i,/^(?:\\")/i,/^(?:\\n)/i,/^(?:\s)/i,/^(?:\\t)/i,/^(?:\\\\)/i,/^(?:\\\\')/i,/^(?:\\r)/i,/^(?:["])/i,/^(?:$)/i,/^(?:[^><\/]+)/i,/^(?:.)/i],
-conditions: {"string":{"rules":[9,10,11,12,13,14,15,16,17],"inclusive":false},"INITIAL":{"rules":[0,1,2,3,4,5,6,7,8,18,19,20],"inclusive":true}}
+rules: [/^(?:\s+)/i,/^(?:<!--[\s\S\n]*?-->)/i,/^(?:<\?xml[\s\S\n]*?\?>)/i,/^(?:<)/i,/^(?:>)/i,/^(?:\/)/i,/^(?:=)/i,/^(?:[\w\u00e1\u00e9\u00ed\u00f3\u00fa\u00c1\u00c9\u00cd\u00d3\u00da\u00f1\u00d1]+)/i,/^(?:["])/i,/^(?:[^"\\]+)/i,/^(?:\\")/i,/^(?:\\n)/i,/^(?:\s)/i,/^(?:\\t)/i,/^(?:\\\\)/i,/^(?:\\\\')/i,/^(?:\\r)/i,/^(?:["])/i,/^(?:['])/i,/^(?:[^'\\]+)/i,/^(?:\\")/i,/^(?:\\n)/i,/^(?:\s)/i,/^(?:\\t)/i,/^(?:\\\\)/i,/^(?:\\\\')/i,/^(?:\\r)/i,/^(?:['])/i,/^(?:$)/i,/^(?:[^><]+)/i,/^(?:.)/i],
+conditions: {"string_singleq":{"rules":[19,20,21,22,23,24,25,26,27],"inclusive":false},"string_doubleq":{"rules":[9,10,11,12,13,14,15,16,17],"inclusive":false},"INITIAL":{"rules":[0,1,2,3,4,5,6,7,8,18,28,29,30],"inclusive":true}}
 });
 return lexer;
 })();

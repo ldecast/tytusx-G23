@@ -7,7 +7,7 @@
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(/*! C:\Users\luisd\Desktop\TytusX\frontend\src\polyfills.ts */"hN/g");
+module.exports = __webpack_require__(/*! /home/ldecast/JUNIO 2021/Compiladores 2/tytusx-G23/frontend/src/polyfills.ts */"hN/g");
 
 
 /***/ }),
