@@ -18,11 +18,11 @@
 [0-9]+("."[0-9]+)?\b    return 'num'
 "<"		        		return 'tk_menor'
 ">"						return 'tk_mayor'
-"/"						return 'tk_bar'
 "//"                    return 'tk_2bar'
+"/"						return 'tk_bar'
 "="						return 'tk_equal'
-"."                     return 'tk_punto'
 ".."                    return 'tk_2puntos'
+"."                     return 'tk_punto'
 "::"                    return 'tk_4puntos'
 "@"                     return 'tk_arroba'
 "["                     return 'tk_corA'
@@ -134,6 +134,8 @@ E: E tk_menorigual T
 	| E tk_or T
 	| E tk_and T
 	| E tk_4puntos T
+	| E tk_bar T
+	| E tk_2bar T
 	| T
 ;
 
@@ -150,13 +152,17 @@ T:  T tk_mas F
 F: tk_arroba O
 	| num
 	| tk_punto
-	| PAL
+	| PAL Q
 	| CORCHET
 	|
 ;
 
 O: tk_id
 	| tk_por
+;
+
+Q: CORCHET
+	|
 ;
 
 PAL: tk_id
