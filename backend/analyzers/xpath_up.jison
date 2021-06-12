@@ -16,6 +16,8 @@
 "<?xml"[\s\S\n]*?"?>"	// Declaration XML
 
 [0-9]+("."[0-9]+)?\b    return 'num'
+"<="					return 'tk_menorigual'
+">="					return 'tk_mayorigual'
 "<"		        		return 'tk_menor'
 ">"						return 'tk_mayor'
 "//"                    return 'tk_2bar'
@@ -30,18 +32,18 @@
 "("                     return 'tk_ParA'
 ")"                     return 'tk_ParC'
 "*"                     return 'tk_por'
-"ancestor"              return 'tk_ancestor'
 "ancestor-or-self"      return 'tk_ancestor2'
+"ancestor"              return 'tk_ancestor'
 "attribute"             return 'tk_attribute'
 "child"                 return 'tk_child'
-"descendant"            return 'tk_descendant'
 "descendant-or-self"    return 'tk_descendant2'
-"following"             return 'tk_following'
+"descendant"            return 'tk_descendant'
 "following-sibling"     return 'tk_following2'
+"following"             return 'tk_following'
 "namespace"             return 'tk_namespace' //no se si namespace se refiere al propio nombre de un nodo o si es una palabra reservada. asi que lo agrego por si acaso
 "parent"                return 'tk_parent'
-"preceding"             return 'tk_preceding'
 "preceding-sibling"     return 'tk_preceding2'
+"preceding"             return 'tk_preceding'
 "self"                  return 'tk_self'
 "node"                  return 'tk_node'
 "last"                  return 'tk_last'
@@ -52,8 +54,6 @@
 "-"                     return 'tk_menos'
 "div"                   return 'tk_div'
 "!="                    return 'tk_diferent'
-"<="					return 'tk_menorigual'
-">="					return 'tk_mayorigual'
 "or"					return 'tk_or'
 "and"					return 'tk_and'
 "mod"					return 'tk_mod'
@@ -85,103 +85,104 @@
 
 <<EOF>>               	return 'EOF'
 [^></]+					return 'anything'
-.                     	{ errors.push({ tipo: "Léxico", error: yytext, origen: "XML", linea: yylloc.first_line, columna: yylloc.first_column+1 }); return 'INVALID'; }
+.                     	{ errors.push({ tipo: "Léxico", error: yytext, origen: "XPath", linea: yylloc.first_line, columna: yylloc.first_column+1 }); return 'INVALID'; }
 
+/lex
+
+%{
+	const { Objeto } = require('../model/xpath/Objeto');
+	const { Tipos } = require('../model/xpath/Enum');
+	var builder = new Objeto();
+%}
 
 /* operator associations and precedence */
-/lex
+%left 'tk_arroba'
+%left 'tk_por'
+%left 'tk_or' 'tk_line'
+%left 'tk_and'
+%left 'tk_equal' 'tk_diferent' 'tk_menor' 'tk_menorigual' 'tk_mayor' 'tk_mayorigual'
+%left 'tk_mas' 'tk_menos'
+%left 'tk_por' 'tk_div' 'tk_mod'
+%left umenos
+%left 'tk_ParA'
+
 %start ini
 
 %% // GRAMATICA DE DOCUMENTO XPath ANALISIS ASCENDENTE
 
-ini: CONTI EOF {console.log("fin del archivo ascendente");}
+ini: XPATH EOF 	{ console.log($1); ast = { ast: $1, errors: errors };
+					errors = [];
+					return ast;
+				}
 ;
 
-CONTI: CONTI tk_punto AXES
-    | CONTI tk_bar AXES
-    | CONTI tk_2bar AXES
-	| CONTI PAL AXES
-	| CONTI tk_4puntos AXES
-    | tk_punto AXES
-    | tk_bar AXES
-    | tk_2bar AXES
-	| PAL AXES
-	| tk_4puntos AXES
+XPATH_U: XPATH_U tk_line XPATH_U { $$=[$1, $3]; }
+		| XPATH { $$=$1; }
 ;
 
-AXES: tk_por SUBAX
-	| tk_arroba SUBAX
-	| tk_line
-	| tk_2puntos
-	| CORCHET 
-	| 
+XPATH: XPATH QUERY { $1.push($2); $$=$1; }
+	| QUERY { $$=[$1]; }
 ;
 
-SUBAX: tk_por
-	| tk_arroba
-	| CORCHET
-	| 
+QUERY: tk_2bar QUERY { $$=builder.newDoubleAxis($2, this._$.first_line, this._$.first_column+1); }
+	| tk_bar QUERY { $$=builder.newAxis($2, this._$.first_line, this._$.first_column+1); }
+	//| tk_2puntos QUERY {  }
+	//| tk_punto QUERY { $$=builder.newCurrent($2, this._$.first_line, this._$.first_column+1); }
+	//| tk_por QUERY {  }
+	//| tk_arroba QUERY {  }
+	//| QUERY tk_line QUERY {  }
+	//| tk_id tk_4puntos QUERY {  }
+	| EXP_PR { $$=$1; }
+	| AXIS {  }
 ;
 
-CORCHET: CORCHET tk_corA E tk_corC
-	| tk_corA E tk_corC
+PREDICATE: tk_corA PREDICATE tk_corC {  }
+		| tk_corA EXP tk_corC {  }
+		| 
 ;
 
-E: E tk_menorigual T
-	| E tk_menor T
-	| E tk_mayor T
-	| E tk_mayorigual T
-	| E tk_or T
-	| E tk_and T
-	| E tk_4puntos T
-	| E tk_bar T
-	| E tk_2bar T
-	| T
+EXP: EXP tk_equal EXP {  }
+	| EXP tk_diferent EXP {  }
+	| EXP tk_menorigual EXP {  }
+	| EXP tk_menor EXP {  }
+	| EXP tk_mayorigual EXP {  }
+	| EXP tk_mayor EXP {  }
+	| EXP tk_or EXP {  }
+	| EXP tk_and EXP {  }
+	| EXP tk_mas EXP {  }
+	| EXP tk_menos EXP {  }
+	| EXP tk_por EXP {  }
+	| EXP tk_div EXP {  }
+	| EXP tk_mod EXP {  }
+	| tk_ParA EXP tk_ParC {  }
+	| EXP_PR { $$=$1; }
 ;
 
-T:  T tk_mas F
-	| T tk_menos F
-	| T tk_por F
-	| T tk_div F
-	| T tk_mod F
-	| T tk_diferent F
-	| T tk_equal F
-	| F
+EXP_PR: FUNCIONES_RESERVADAS {  }
+		| PRIMITIVO { $$=$1; }
 ;
 
-F: tk_arroba O
-	| num
-	| tk_punto
-	| PAL Q
-	| CORCHET
-	|
+PRIMITIVO: tk_id { $$=builder.newNodename($1, this._$.first_line, this._$.first_column+1); }
+		| string_doubleq { $$=builder.newValue($1, Tipos.STRING, this._$.first_line, this._$.first_column+1); }
+		| string_singleq { $$=builder.newValue($1, Tipos.STRING, this._$.first_line, this._$.first_column+1); }
+		| num { $$=builder.newValue($1, Tipos.NUMBER, this._$.first_line, this._$.first_column+1); }
+		| tk_por { $$=builder.newValue($1, Tipos.ASTERISCO, this._$.first_line, this._$.first_column+1); }
+		| tk_punto { $$=builder.newCurrent($1, this._$.first_line, this._$.first_column+1); }
+		| tk_2puntos { $$=builder.newParent($1, this._$.first_line, this._$.first_column+1); }
+		| tk_arroba tk_id { $$=builder.newAttribute($2, this._$.first_line, this._$.first_column+1); }
+		| tk_arroba tk_por { $$=builder.newAttribute($2, this._$.first_line, this._$.first_column+1); }
+		| tk_node tk_ParA tk_ParC { $$=builder.newValue($1, Tipos.FUNCION_NODE, this._$.first_line, this._$.first_column+1); }
 ;
 
-O: tk_id
-	| tk_por
+FUNCIONES_RESERVADAS: tk_last tk_ParA tk_ParC {  }
+					| tk_position tk_ParA tk_ParC {  }
+					| tk_text tk_ParA tk_ParC {  }
+					//| tk_node tk_ParA tk_ParC {  }
 ;
 
-Q: CORCHET
-	|
+AXIS: AXISNAME tk_4puntos PRIMITIVO PREDICATE {  }
 ;
 
-PAL: tk_id
-	| tk_ancestor
-	| tk_ancestor2
-	| tk_attribute_d
-	| tk_attribute_s
-	| tk_child
-	| tk_descendant
-	| tk_descendant2
-	| tk_following
-	| tk_following2
-	| tk_namespace
-	| tk_parent
-	| tk_preceding
-	| tk_preceding2
-	| tk_self
-	| tk_node tk_ParA tk_ParC
-	| tk_last tk_ParA tk_ParC
-	| tk_text tk_ParA tk_ParC
-	| tk_position tk_ParA tk_ParC
+AXISNAME: tk_ancestor {  }
+		| tk_child {  }
 ;

@@ -2,11 +2,23 @@ import { Atributo } from "./Atributo";
 
 export class Element {
 
+    id_open: string;
+    id_close: string;
+    value: string; // Si tiene hijos no debería tener valor
+    attributes: Array<Atributo>; // Lista de posibles atributos
     father: any;
-    constructor(public id_open?: string, public attributes?: Array<Atributo>, public value?: string,
-                public childs?: Array<Element>, public line?: string, public column?: string, public id_close?: string) {
-        this.father = null;
+    childs: Array<Element>; // Lista de otros posibles hijos
+    line: string;
+    column: string;
 
+    constructor(id_open: string, attributes: Array<Atributo>, value: string, childs: Array<Element>, line: string, column: string, id_close: string) {
+        this.id_open = id_open;
+        this.id_close = id_close;
+        this.attributes = attributes;
+        this.value = value;
+        this.childs = childs;
+        this.line = line;
+        this.column = column;
     }
 
     verificateNames(): string {
@@ -20,20 +32,20 @@ export class Element {
     /*
     * Devuelve el HTML para el AST del XML
     * */
-    public getXMLTree(): string{
+    public getXMLTree(): string {
         let str: string = "";
         str = "<li><a href=''>" + this.id_open + "</a>";
-        if (this.attributes == null && this.childs == null && this.value == null){
+        if (this.attributes == null && this.childs == null && this.value == null) {
             str = str + "</li>";
             return str;
         }
         str = str + "<ul>";
 
-        if (this.attributes != null){
+        if (this.attributes != null) {
             str = str + "<li><a href=''>Atributos</a><ul>";
-            this.attributes.forEach((value)=>{
+            this.attributes.forEach((value) => {
                 str = str + "<li><a href=''>Atributo</a><ul>";
-                str = str + "<li><a href=''>" + value.id.slice(0,-1) + "</a></li>"
+                str = str + "<li><a href=''>" + value.id.slice(0, -1) + "</a></li>"
                 str = str + "<li><a href=''>" + value.value + "</a></li>"
                 str = str + "</ul></li>\n";
             })
@@ -41,16 +53,16 @@ export class Element {
         }
 
 
-        if(this.value != null){
-            str = str + "<li><a href=''>Value</a><ul><li><a href=''>"+ this.value+"</a></li></ul></li></ul></li>\n"
+        if (this.value != null) {
+            str = str + "<li><a href=''>Value</a><ul><li><a href=''>" + this.value + "</a></li></ul></li></ul></li>\n"
             return str;
         }
-        if(this.id_close == null){
+        if (this.id_close == null) {
             str = str + "</ul></li>\n";
             return str;
         }
 
-        if(this.childs != null) {
+        if (this.childs != null) {
             str = str + "<li><a href=''>Children</a><ul>"
             this.childs.forEach((value) => {
                 str = str + value.getXMLTree();
@@ -66,11 +78,11 @@ export class Element {
     /*
     * Devuelve el HTML para el CST Ascendente del XML
     * */
-    public buildAscendingCst(): string{
+    public buildAscendingCst(): string {
         let cst: string;
-        if(this.value != null){
+        if (this.value != null) {
             cst = `<li><a href="">XML</a><ul>`
-            cst = cst +  this.getXmlOpenForCST();
+            cst = cst + this.getXmlOpenForCST();
 
             cst = cst + `
             <li><a href="">tk_content</a><ul>
@@ -90,9 +102,9 @@ export class Element {
             </ul></li>
             </ul></li>`;
             return cst;
-        }else if(this.childs !=null){
-            let str:string ="";
-            this.childs.forEach((value)=>{
+        } else if (this.childs != null) {
+            let str: string = "";
+            this.childs.forEach((value) => {
                 str = `<li><a href="">CHILDREN</a><ul>
                     ${str}
                     ${value.buildAscendingCst()}
@@ -100,7 +112,7 @@ export class Element {
                 `;
 
             });
-            cst = `<li><a href="">XML</a><ul>` +  this.getXmlOpenForCST() + str + `
+            cst = `<li><a href="">XML</a><ul>` + this.getXmlOpenForCST() + str + `
             <li><a href="">tk_open_end_tag</a><ul>
             <li><a href="">&lt/</a></li>
             </ul></li>      
@@ -117,9 +129,9 @@ export class Element {
 
             return cst;
 
-        }else if(this.id_close != null){//Empty tag
+        } else if (this.id_close != null) {//Empty tag
             cst = `<li><a href="">XML</a><ul>`
-            cst = cst +  this.getXmlOpenForCST();
+            cst = cst + this.getXmlOpenForCST();
             cst = cst + `
 
             <li><a href="">tk_open_end_tag</a><ul>
@@ -163,7 +175,7 @@ export class Element {
         return cst;
     }
 
-    private getXmlOpenForCST():string{
+    private getXmlOpenForCST(): string {
         let temp: string = "";
         temp = `<li><a href="">XML_OPEN</a>
         <ul>
@@ -192,8 +204,8 @@ export class Element {
         return temp;
 
     }
-    private getAttributesCST(): string{
-        if(this.attributes != null){
+    private getAttributesCST(): string {
+        if (this.attributes != null) {
             let str: string = "";
             str = `<li>
             <a href="">ATTRIBUTE_LIST</a>
@@ -205,7 +217,7 @@ export class Element {
             </li>
             `;
 
-            this.attributes.forEach((value)=>{
+            this.attributes.forEach((value) => {
                 str = `<li>
                 <a href="">ATTRIBUTE_LIST</a>
                 <ul>
@@ -221,24 +233,24 @@ export class Element {
     }
 
     /*PROPERTIES*/
-    set Att_Arr(value: Array<Atributo>){
+    set Att_Arr(value: Array<Atributo>) {
         this.attributes = value;
     }
-    set Children(value){
-        if (value== null){return;}
+    set Children(value: any) {
+        if (value == null) { return; }
         this.childs = value;
-        this.childs.forEach((value)=>{
-            if(value == null){return;}
+        this.childs.forEach((value) => {
+            if (value == null) { return; }
             value.Father = this;
         });
     }
-    set Close(value: string){
+    set Close(value: string) {
         this.id_close = value;
     }
-    set Value(value: string){
+    set Value(value: string) {
         this.value = value;
     }
-    set Father(value: Element){
+    set Father(value: Element) {
         this.father = value;
     }
 
@@ -248,27 +260,27 @@ export class Element {
 
 
     /*DO NOT INCLUDE*/
-    printTest(tab_num){
+    printTest(tab_num: any) {
         let str: string = "";
         str = this.getDashes(tab_num) + "Nodo: " + this.id_open + "\t";
 
 
-        if (this.attributes != null){
+        if (this.attributes != null) {
             str = str + "\tAtributos:\t";
-            this.attributes.forEach((value)=>{
+            this.attributes.forEach((value) => {
                 str = str + value.id + ": " + value.value + "   ";
             })
         }
-        if(this.value != null){
+        if (this.value != null) {
             str = str + "*** Valor *** " + this.value;
             console.log(str);
             return;
         }
-        if(this.id_close == null){
+        if (this.id_close == null) {
             console.log(str);
             return;
         }
-        if(this.childs != null) {
+        if (this.childs != null) {
             str = str + "*** Children **** ";
             console.log(str);
             this.childs.forEach((value) => {
@@ -276,12 +288,12 @@ export class Element {
             });
         }
     }
-    getDashes(num): string{
+    getDashes(num: any): string {
         let a = "";
-        for (let i = 0; i < num * 2; i++){
-            a +="-";
+        for (let i = 0; i < num * 2; i++) {
+            a += "-";
         }
-        return a ;
+        return a;
     }
 
 }

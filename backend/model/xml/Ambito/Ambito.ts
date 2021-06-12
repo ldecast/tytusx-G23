@@ -21,34 +21,101 @@ export class Ambito {
         this.tablaSimbolos.push(_simbolo);
     }
 
-    getSimbolo(_s: Element) {
-        let e: Ambito;
-        for (e = this; e != null; e = e.anterior) {
-            var encontrado = e.tablaSimbolos.find(element => element === _s);
-            if (encontrado)
-                return encontrado
+    nodesFunction(_element: Element, _nodes: Array<any>): Array<any> { // Todos los descendientes
+        _nodes.push({ elementos: _element });
+        if (_element.childs) {
+            _element.childs.forEach(child => {
+                _nodes = this.nodesFunction(child, _nodes);
+            });
         }
-        return null
+        if (_element.value) {
+            _nodes.push({ textos: _element.value });
+        }
+        return _nodes;
     }
 
-    existeSimbolo(_s: Element): boolean {
-        if (this.getSimbolo(_s) !== null)
-            return true
-        else
-            return false
+    searchDad(_element: Element, _nodename: string, _line: string, _column: string, _elements: Array<Element>): Array<Element> {
+        if (_element.childs) {
+            _element.childs.forEach(child => {
+                _elements = this.searchDad(child, _nodename, _line, _column, _elements);
+            });
+        }
+        if (_nodename === _element.id_open && _element.line == _line && _element.column == _column) {
+            _elements.push(_element);
+        }
+        return _elements;
     }
 
-    actualizar(_s: Element, _simbolo: Element) {
-        let e: Ambito;
-        let i = 0;
-        for (e = this; e != null; e = e.anterior) {
-            var encontrado = e.tablaSimbolos.find(element => element === _s);
-            if (encontrado) {
-                this.tablaSimbolos[i] = _s;
-                break;
+    searchDadFromAttribute(_element: Element, _attribute: Atributo, _elements: Array<Element>): Array<Element> {
+        if (_element.childs) {
+            _element.childs.forEach(child => {
+                _elements = this.searchDadFromAttribute(child, _attribute, _elements);
+            });
+        }
+        if (_element.attributes) {
+            _element.attributes.forEach(attr => {
+                if (attr.id === _attribute.id && attr.line == _attribute.line && attr.column == _attribute.column) {
+                    _elements.push(_element);
+                }
+            });
+        }
+        return _elements;
+    }
+
+    searchAnyAttributes(_element: Element, _array: Array<Atributo>, _elements: Array<Element>) {
+        if (_element.attributes) {
+            _element.attributes.forEach(attribute => {
+                _array.push(attribute);
+            });
+            _elements.push(_element);
+        }
+        if (_element.childs) {
+            _element.childs.forEach(child => {
+                _array = this.searchAnyAttributes(child, _array, _elements).atributos;
+            });
+        }
+        return { atributos: _array, elementos: _elements };
+    }
+
+    searchAttributesFromCurrent(_element: Element, _id: string, _array: Array<Atributo>, _elements: Array<Element>) {
+        let flag: boolean = false;
+        if (_element.attributes) {
+            _element.attributes.forEach(attribute => {
+                if (attribute.id === _id) {
+                    _array.push(attribute);
+                    flag = true;
+                }
+            });
+            if (flag) {
+                _elements.push(_element);
+                flag = false;
             }
-            i++;
         }
+        if (_element.childs) {
+            _element.childs.forEach(child => {
+                _array = this.searchAttributesFromCurrent(child, _id, _array, _elements).atributos;
+            });
+        }
+        return { atributos: _array, elementos: _elements };
+    }
+
+    searchSingleNode(_nodename: string, _element: Element, _array: Array<Element>): Array<Element> {
+        if (_nodename === _element.id_open) {
+            _array.push(_element);
+        }
+        return _array;
+    }
+
+    searchNodes(_nodename: string, _element: Element, _array: Array<Element>): Array<Element> {
+        if ((_nodename === _element.id_open) || (_nodename === "*")) {
+            _array.push(_element);
+        }
+        if (_element.childs) {
+            _element.childs.forEach(child => {
+                _array = this.searchNodes(_nodename, child, _array);
+            });
+        }
+        return _array;
     }
 
     getGlobal() {
@@ -60,14 +127,8 @@ export class Ambito {
         return null
     }
 
-    concatAttributes(attributes: Array<Atributo>) {
-        let concat = "";
-        attributes.forEach(attr => {
-            concat = concat + attr.id + ": " + attr.value + ", ";
-        });
-        return concat.substring(0, concat.length - 2);
-    }
 
+    // Métodos para obtener la tabla de símbolos
     getArraySymbols() {
         let simbolos: any = [];
         try {

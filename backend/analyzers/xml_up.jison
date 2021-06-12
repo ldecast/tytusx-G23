@@ -81,7 +81,7 @@ XML: tk_open tk_id ATTR tk_close CHILD tk_open tk_bar tk_id tk_close {
             hasConflict = tag.verificateNames();
 			if (hasConflict === "") {
 				tag.childs.forEach(child => {
-					child.father = $2;
+					child.father = {id: $2, line: tag.line, column: tag.column};
             	});
 				$$ = tag;
 			}
