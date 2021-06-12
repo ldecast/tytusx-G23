@@ -136,7 +136,7 @@ export class AppComponent {
     else
       data = this.consulta;
     f.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(data));
-    f.setAttribute('download', this.fname ? this.fname.replace("C:\\fakepath\\", "") : 'file.xml');
+    f.setAttribute('download', this.fname ? this.fname.replace("C:\\fakepath\\", "") : (id === 1 ? 'file.xml' : 'file.xpath'));
     if (document.createEvent) {
       var event = document.createEvent('MouseEvents');
       event.initEvent('click', true, true);

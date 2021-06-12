@@ -1,3 +1,4 @@
+import Bloque from '../controller/xpath/Instruccion/Bloque';
 import { Ambito } from '../model/xml/Ambito/Ambito';
 import { Global } from '../model/xml/Ambito/Global';
 
@@ -13,7 +14,7 @@ function compile(req: any) {
         switch (grammar_selected) {
             case 1:
                 parser_xml = require('../analyzers/xml_up');
-                parser_xPath = "require('../analyzers/xpath_up');"
+                parser_xPath = require('../analyzers/xpath_up');
                 break;
             case 2:
                 parser_xml = require('../analyzers/xml_down');
@@ -33,29 +34,32 @@ function compile(req: any) {
         }
 
         let xml_parse = xml_ast.ast;
-        var global = new Ambito(null, "global");
+        let global = new Ambito(null, "global");
         let cadena = new Global(xml_parse, global);
         let simbolos = cadena.ambito.getArraySymbols();
 
         // Análisis de XPath
-        // let xPath_ast = parser_xPath.parse(xPath);
-        // if (xPath_ast.parse === null) {
-        //     let output = {
-        //         arreglo_simbolos: [],
-        //         arreglo_errores: xPath_ast.errors,
-        //         output: "No se ha podido recuperar del error en las consultas.\nIntente de nuevo."
-        //     }
-        //     res.status(500).send(output);
-        //     return;
-        // }
-        // let xPath_parse = xPath_ast.parse;
-        // let xPath_errors = xPath_ast.errors;
+        let xPath_ast = parser_xPath.parse(xPath);
+        console.log(xPath_ast, 99);
+        if (xPath_ast === true || xPath_ast.errors.length > 0 || xPath_ast.ast === null) {
+            let output = {
+                arreglo_simbolos: [],
+                arreglo_errores: (xPath_ast === true ? [{ tipo: "Sintáctico", error: "Sintaxis errónea de la consulta.", origen: "XPath", linea: 1, columna: 1 }] : xml_ast.errors),
+                output: "La consulta contiene errores para analizar.\nIntente de nuevo."
+            }
+            return output;
+        }
 
-        console.log("Salida:", xml_ast);
+        let xPath_parse = xPath_ast.ast;
+        // console.log(xPath_parse, 88)
+        let bloque = Bloque(xPath_parse, cadena.ambito);
+        console.log(bloque, 88)
+
+        console.log("Salida:", xPath_parse);
         let output = {
             arreglo_simbolos: simbolos,
-            arreglo_errores: [],
-            output: String(xml_parse[0].id_open) //mientras
+            arreglo_errores: bloque.err ? [bloque.err] : [],
+            output: bloque.cadena ? bloque.cadena : bloque.err
         }
 
         return output;
