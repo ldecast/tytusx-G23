@@ -13,86 +13,11 @@ var Objeto = /** @class */ (function () {
             columna: _columna
         };
     };
-    Objeto.prototype.newArithmetic = function (_opIzq, _opDer, _tipo, _linea, _columna) {
-        var tipo;
-        switch (_tipo) {
-            case "+":
-                tipo = Enum_1.Tipos.OPERACION_SUMA;
-                break;
-            case "-":
-                tipo = Enum_1.Tipos.OPERACION_RESTA;
-                break;
-            case "*":
-                tipo = Enum_1.Tipos.OPERACION_MULTIPLICACION;
-                break;
-            case "/":
-                tipo = Enum_1.Tipos.OPERACION_DIVISION;
-                break;
-            case "%":
-                tipo = Enum_1.Tipos.OPERACION_MODULO;
-                break;
-            default:
-                tipo = Enum_1.Tipos.NONE;
-                break;
-        }
+    Objeto.prototype.newOperation = function (_opIzq, _opDer, _tipo, _linea, _columna) {
         return {
             opIzq: _opIzq,
             opDer: _opDer,
-            tipo: tipo,
-            linea: _linea,
-            columna: _columna
-        };
-    };
-    Objeto.prototype.newRelation = function (_opIzq, _opDer, _tipo, _linea, _columna) {
-        var tipo;
-        switch (_tipo) {
-            case "==":
-                tipo = Enum_1.Tipos.RELACIONAL_IGUAL;
-                break;
-            case "!=":
-                tipo = Enum_1.Tipos.RELACIONAL_DIFERENTE;
-                break;
-            case "<":
-                tipo = Enum_1.Tipos.RELACIONAL_MENOR;
-                break;
-            case "<=":
-                tipo = Enum_1.Tipos.RELACIONAL_MENORIGUAL;
-                break;
-            case ">":
-                tipo = Enum_1.Tipos.RELACIONAL_MAYOR;
-                break;
-            case ">=":
-                tipo = Enum_1.Tipos.RELACIONAL_MAYORIGUAL;
-                break;
-            default:
-                tipo = Enum_1.Tipos.NONE;
-                break;
-        }
-        return {
-            opIzq: _opIzq,
-            opDer: _opDer,
-            tipo: tipo,
-            linea: _linea,
-            columna: _columna
-        };
-    };
-    Objeto.prototype.newLogic = function (_opIzq, _opDer, _tipo, _linea, _columna) {
-        var tipo;
-        switch (_tipo) {
-            case "||":
-                tipo = Enum_1.Tipos.LOGICA_OR;
-                break;
-            case "&&":
-                tipo = Enum_1.Tipos.LOGICA_AND;
-                break;
-            default:
-                tipo = Enum_1.Tipos.NONE;
-                break;
-        }
-        return {
-            opIzq: _opIzq,
-            opDer: _opDer,
-            tipo: tipo,
+            tipo: _tipo,
             linea: _linea,
             columna: _columna
         };
@@ -141,6 +66,32 @@ var Objeto = /** @class */ (function () {
         return {
             expresion: _expresion,
             tipo: Enum_1.Tipos.SELECT_ATTRIBUTES,
+            linea: _linea,
+            columna: _columna
+        };
+    };
+    Objeto.prototype.newAxisObject = function (_axisname, _nodetest, _linea, _columna) {
+        return {
+            axisname: _axisname,
+            nodetest: _nodetest,
+            tipo: Enum_1.Tipos.SELECT_AXIS,
+            linea: _linea,
+            columna: _columna
+        };
+    };
+    Objeto.prototype.newPredicate = function (_condicion, _linea, _columna) {
+        return {
+            condicion: _condicion,
+            tipo: Enum_1.Tipos.PREDICATE,
+            linea: _linea,
+            columna: _columna
+        };
+    };
+    Objeto.prototype.newExpression = function (_expresion, _predicate, _linea, _columna) {
+        return {
+            expresion: _expresion,
+            predicate: _predicate,
+            tipo: Enum_1.Tipos.EXPRESION,
             linea: _linea,
             columna: _columna
         };

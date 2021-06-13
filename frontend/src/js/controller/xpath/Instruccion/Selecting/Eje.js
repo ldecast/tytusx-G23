@@ -4,52 +4,56 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 var Enum_1 = require("../../../../model/xpath/Enum");
 var Expresion_1 = __importDefault(require("../../Expresion/Expresion"));
+var Predicate_1 = require("./Predicate");
 function Eje(_instruccion, _ambito, _contexto) {
     var retorno = { cadena: Enum_1.Tipos.NONE, retorno: null };
-    var contexto;
-    if (_contexto.retorno)
-        contexto = _contexto.retorno;
-    else
-        contexto = null;
-    var expresion = Expresion_1.default(_instruccion.expresion, _ambito, contexto);
+    var err = { err: "No se encontraron elementos.\n", linea: _instruccion.linea, columna: _instruccion.columna };
+    var contexto = (_contexto.retorno) ? (_contexto.retorno) : null;
+    var expresion = Expresion_1.default(_instruccion.expresion.expresion, _ambito, contexto);
+    if (expresion.err)
+        return expresion;
+    var predicate = _instruccion.expresion.predicate;
     var root;
     if (expresion.tipo === Enum_1.Tipos.ELEMENTOS) {
-        root = getSymbolFromRoot(expresion.valor, contexto, _ambito);
+        root = getSymbolFromRoot(expresion.valor, contexto, _ambito, predicate);
         retorno.cadena = Enum_1.Tipos.ELEMENTOS;
     }
     else if (expresion.tipo === Enum_1.Tipos.ATRIBUTOS) {
-        root = getSymbolFromRoot(expresion.valor, contexto, _ambito);
-        if (root.atributos.length === 0) {
-            return { err: "No se encontraron elementos.\n", linea: _instruccion.linea, columna: _instruccion.columna };
-        }
+        root = getSymbolFromRoot(expresion.valor, contexto, _ambito, predicate);
+        if (root.atributos.length === 0)
+            return err;
         retorno.cadena = Enum_1.Tipos.ATRIBUTOS;
     }
     else if (expresion.tipo === Enum_1.Tipos.ASTERISCO) {
-        root = getSymbolFromRoot(expresion.valor, contexto, _ambito);
+        root = getSymbolFromRoot(expresion.valor, contexto, _ambito, predicate);
         retorno.cadena = Enum_1.Tipos.ELEMENTOS;
     }
     else if (expresion.tipo === Enum_1.Tipos.FUNCION_NODE) {
-        root = getSymbolFromRoot(expresion.valor, contexto, _ambito);
+        root = getSymbolFromRoot(expresion.valor, contexto, _ambito, predicate);
+        if (root.nodos.length === 0)
+            return err;
         retorno.cadena = root.tipo;
     }
     else {
         return { err: "Expresión no válida.\n", linea: _instruccion.linea, columna: _instruccion.columna };
     }
+    if (root.err)
+        return root;
     if (root.length === 0 || root === null)
-        return { err: "No se encontraron elementos.\n", linea: _instruccion.linea, columna: _instruccion.columna };
-    retorno.retorno = root; //arreglo de elementos -> el contexto
+        return err;
+    retorno.retorno = root;
     return retorno;
 }
-function getSymbolFromRoot(_nodename, _contexto, _ambito) {
+function getSymbolFromRoot(_nodename, _contexto, _ambito, _condicion) {
     if (_contexto)
-        return getFromCurrent(_nodename, _contexto, _ambito);
+        return getFromCurrent(_nodename, _contexto, _ambito, _condicion);
     else
-        return getFromRoot(_nodename, _ambito);
+        return getFromRoot(_nodename, _ambito, _condicion);
 }
-function getFromCurrent(_id, _contexto, _ambito) {
+// Desde el ámbito actual
+function getFromCurrent(_id, _contexto, _ambito, _condicion) {
     var elements = Array();
     var attributes = Array();
-    var text = Array();
     // Selecciona todos los hijos (elementos o texto)
     if (_id === "node()") {
         var nodes_1 = Array();
@@ -62,6 +66,10 @@ function getFromCurrent(_id, _contexto, _ambito) {
             else if (element.value)
                 nodes_1.push({ textos: element.value });
         }
+        if (_condicion) {
+            var filter = new Predicate_1.Predicate(_condicion, _ambito, elements);
+            nodes_1 = filter.filterNodes(nodes_1);
+        }
         return { tipo: Enum_1.Tipos.COMBINADO, nodos: nodes_1 };
     }
     // Selecciona todos los hijos (elementos)
@@ -73,6 +81,10 @@ function getFromCurrent(_id, _contexto, _ambito) {
                     elements.push(child);
                 });
             }
+        }
+        if (_condicion) {
+            var filter = new Predicate_1.Predicate(_condicion, _ambito, elements);
+            elements = filter.filterElements();
         }
         return elements;
     }
@@ -92,6 +104,11 @@ function getFromCurrent(_id, _contexto, _ambito) {
                 elements.push(element);
                 flag_1 = false;
             }
+        }
+        if (_condicion) {
+            var filter = new Predicate_1.Predicate(_condicion, _ambito, elements);
+            elements = filter.filterElements();
+            attributes = filter.filterAttributes(attributes);
         }
         return { atributos: attributes, elementos: elements };
     }
@@ -126,6 +143,10 @@ function getFromCurrent(_id, _contexto, _ambito) {
         for (var i = 0; i < _contexto.length; i++) {
             _loop_2(i);
         }
+        if (_condicion) {
+            var filter = new Predicate_1.Predicate(_condicion, _ambito, elements);
+            elements = filter.filterElements();
+        }
         return elements;
     }
     // Selecciona el nodo actual
@@ -133,6 +154,10 @@ function getFromCurrent(_id, _contexto, _ambito) {
         for (var i = 0; i < _contexto.length; i++) {
             var element = _contexto[i];
             elements.push(element);
+        }
+        if (_condicion) {
+            var filter = new Predicate_1.Predicate(_condicion, _ambito, elements);
+            elements = filter.filterElements();
         }
         return elements;
     }
@@ -146,10 +171,15 @@ function getFromCurrent(_id, _contexto, _ambito) {
                 });
             }
         }
+        if (_condicion) {
+            var filter = new Predicate_1.Predicate(_condicion, _ambito, elements);
+            elements = filter.filterElements();
+        }
         return elements;
     }
 }
-function getFromRoot(_id, _ambito) {
+// Desde la raíz
+function getFromRoot(_id, _ambito, _condicion) {
     var elements = Array();
     var attributes = Array();
     var text = Array();
@@ -164,6 +194,10 @@ function getFromRoot(_id, _ambito) {
             else if (element.value)
                 nodes_2.push({ textos: element.value });
         });
+        if (_condicion) {
+            var filter = new Predicate_1.Predicate(_condicion, _ambito, elements);
+            nodes_2 = filter.filterNodes(nodes_2);
+        }
         return { tipo: Enum_1.Tipos.COMBINADO, nodos: nodes_2 };
     }
     // Selecciona todos los hijos (elementos)
@@ -171,6 +205,10 @@ function getFromRoot(_id, _ambito) {
         _ambito.tablaSimbolos.forEach(function (element) {
             elements.push(element);
         });
+        if (_condicion) {
+            var filter = new Predicate_1.Predicate(_condicion, _ambito, elements);
+            elements = filter.filterElements();
+        }
         return elements;
     }
     // Selecciona los atributos
@@ -189,6 +227,11 @@ function getFromRoot(_id, _ambito) {
                 flag_2 = false;
             }
         });
+        if (_condicion) {
+            var filter = new Predicate_1.Predicate(_condicion, _ambito, elements);
+            elements = filter.filterElements();
+            attributes = filter.filterAttributes(attributes);
+        }
         return { atributos: attributes, elementos: elements };
     }
     // Selecciona el nodo actual
@@ -196,6 +239,10 @@ function getFromRoot(_id, _ambito) {
         _ambito.tablaSimbolos.forEach(function (element) {
             elements.push(element);
         });
+        if (_condicion) {
+            var filter = new Predicate_1.Predicate(_condicion, _ambito, elements);
+            elements = filter.filterElements();
+        }
         return elements;
     }
     // Búsqueda por id
@@ -204,6 +251,10 @@ function getFromRoot(_id, _ambito) {
             if (element.id_open === _id)
                 elements.push(element);
         });
+        if (_condicion) {
+            var filter = new Predicate_1.Predicate(_condicion, _ambito, elements);
+            elements = filter.filterElements();
+        }
         return elements;
     }
 }

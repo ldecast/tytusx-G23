@@ -19,6 +19,7 @@ export class Element {
         this.childs = childs;
         this.line = line;
         this.column = column;
+        this.father = null;
     }
 
     verificateNames(): string {
@@ -236,22 +237,11 @@ export class Element {
     set Att_Arr(value: Array<Atributo>) {
         this.attributes = value;
     }
-    set Children(value: any) {
-        if (value == null) { return; }
-        this.childs = value;
-        this.childs.forEach((value) => {
-            if (value == null) { return; }
-            value.Father = this;
-        });
-    }
     set Close(value: string) {
         this.id_close = value;
     }
     set Value(value: string) {
         this.value = value;
-    }
-    set Father(value: Element) {
-        this.father = value;
     }
 
 

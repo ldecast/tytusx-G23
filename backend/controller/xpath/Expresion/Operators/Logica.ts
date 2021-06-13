@@ -13,11 +13,17 @@ function Logica(_expresion: any, _ambito: Ambito) {
 }
 
 function and(_opIzq: any, _opDer: any, _ambito: Ambito) {
-
+    const Expresion = require("../Expresion");
+    let op1 = Expresion(_opIzq, _ambito);
+    let op2 = Expresion(_opDer, _ambito);
+    let tipo;
 }
 
 function or(_opIzq: any, _opDer: any, _ambito: Ambito) {
-
+    const Expresion = require("../Expresion");
+    let op1 = Expresion(_opIzq, _ambito);
+    let op2 = Expresion(_opDer, _ambito);
+    let tipo;
 }
 
 export = Logica;

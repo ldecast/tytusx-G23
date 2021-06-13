@@ -11,88 +11,11 @@ export class Objeto {
         }
     }
 
-    newArithmetic(_opIzq: string, _opDer: string, _tipo: string, _linea: string, _columna: string) {
-        let tipo: Tipos;
-        switch (_tipo) {
-            case "+":
-                tipo = Tipos.OPERACION_SUMA;
-                break;
-            case "-":
-                tipo = Tipos.OPERACION_RESTA;
-                break;
-            case "*":
-                tipo = Tipos.OPERACION_MULTIPLICACION;
-                break;
-            case "/":
-                tipo = Tipos.OPERACION_DIVISION;
-                break;
-            case "%":
-                tipo = Tipos.OPERACION_MODULO;
-                break;
-            default:
-                tipo = Tipos.NONE;
-                break;
-        }
+    newOperation(_opIzq: any, _opDer: any, _tipo: Tipos, _linea: string, _columna: string) {
         return {
             opIzq: _opIzq,
             opDer: _opDer,
-            tipo: tipo,
-            linea: _linea,
-            columna: _columna
-        }
-    }
-
-    newRelation(_opIzq: string, _opDer: string, _tipo: string, _linea: string, _columna: string) {
-        let tipo: Tipos;
-        switch (_tipo) {
-            case "==":
-                tipo = Tipos.RELACIONAL_IGUAL;
-                break;
-            case "!=":
-                tipo = Tipos.RELACIONAL_DIFERENTE;
-                break;
-            case "<":
-                tipo = Tipos.RELACIONAL_MENOR;
-                break;
-            case "<=":
-                tipo = Tipos.RELACIONAL_MENORIGUAL;
-                break;
-            case ">":
-                tipo = Tipos.RELACIONAL_MAYOR;
-                break;
-            case ">=":
-                tipo = Tipos.RELACIONAL_MAYORIGUAL;
-                break;
-            default:
-                tipo = Tipos.NONE;
-                break;
-        }
-        return {
-            opIzq: _opIzq,
-            opDer: _opDer,
-            tipo: tipo,
-            linea: _linea,
-            columna: _columna
-        }
-    }
-
-    newLogic(_opIzq: string, _opDer: string, _tipo: string, _linea: string, _columna: string) {
-        let tipo: Tipos;
-        switch (_tipo) {
-            case "||":
-                tipo = Tipos.LOGICA_OR;
-                break;
-            case "&&":
-                tipo = Tipos.LOGICA_AND;
-                break;
-            default:
-                tipo = Tipos.NONE;
-                break;
-        }
-        return {
-            opIzq: _opIzq,
-            opDer: _opDer,
-            tipo: tipo,
+            tipo: _tipo,
             linea: _linea,
             columna: _columna
         }
@@ -147,6 +70,35 @@ export class Objeto {
         return {
             expresion: _expresion,
             tipo: Tipos.SELECT_ATTRIBUTES,
+            linea: _linea,
+            columna: _columna
+        }
+    }
+
+    newAxisObject(_axisname: Tipos, _nodetest: any, _linea: string, _columna: string) {
+        return {
+            axisname: _axisname,
+            nodetest: _nodetest,
+            tipo: Tipos.SELECT_AXIS,
+            linea: _linea,
+            columna: _columna
+        }
+    }
+
+    newPredicate(_condicion: any, _linea: string, _columna: string) {
+        return {
+            condicion: _condicion,
+            tipo: Tipos.PREDICATE,
+            linea: _linea,
+            columna: _columna
+        }
+    }
+
+    newExpression(_expresion: any, _predicate: any, _linea: string, _columna: string) {
+        return {
+            expresion: _expresion,
+            predicate: _predicate,
+            tipo: Tipos.EXPRESION,
             linea: _linea,
             columna: _columna
         }

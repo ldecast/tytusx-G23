@@ -7,41 +7,29 @@ var DobleEje_1 = __importDefault(require("./Selecting/DobleEje"));
 var Eje_1 = __importDefault(require("./Selecting/Eje"));
 function Bloque(_instruccion, _ambito) {
     var retorno = { cadena: "", retorno: null };
-    var attr = Array();
     var tmp;
+    console.log(_instruccion, 888888);
     for (var i = 0; i < _instruccion.length; i++) {
-        var instr = _instruccion[i];
-        console.log(instr, 7777777);
-        switch (instr.tipo) {
-            case Enum_1.Tipos.SELECT_FROM_ROOT:
-                tmp = Eje_1.default(instr, _ambito, retorno);
-                if (tmp.err)
-                    return tmp;
-                // if (tmp.retorno.atributos) {
-                //     retorno.retorno = tmp.retorno.elementos;
-                //     retorno.cadena = tmp.cadena;
-                //     attr = tmp.retorno.atributos;
-                // }
-                // else {
-                retorno = tmp;
-                // }
-                break;
-            case Enum_1.Tipos.SELECT_FROM_CURRENT:
-                tmp = DobleEje_1.default(instr, _ambito, retorno);
-                console.log(tmp, 323223);
-                if (tmp.err)
-                    return tmp;
-                // if (tmp.retorno.atributos) {
-                //     retorno.retorno = tmp.retorno.elementos;
-                //     retorno.cadena = tmp.cadena;
-                //     attr = tmp.retorno.atributos;
-                // }
-                // else {
-                retorno = tmp;
-                // }
-                break;
-            default:
-                return { err: "Instrucción no procesada.\n", linea: instr.linea, columna: instr.columna };
+        var camino = _instruccion[i]; // En caso de tener varios caminos
+        for (var j = 0; j < camino.length; j++) {
+            var instr = camino[j];
+            console.log(instr, 7777777);
+            switch (instr.tipo) {
+                case Enum_1.Tipos.SELECT_FROM_ROOT:
+                    tmp = Eje_1.default(instr, _ambito, retorno);
+                    if (tmp.err)
+                        return tmp;
+                    retorno = tmp;
+                    break;
+                case Enum_1.Tipos.SELECT_FROM_CURRENT:
+                    tmp = DobleEje_1.default(instr, _ambito, retorno);
+                    if (tmp.err)
+                        return tmp;
+                    retorno = tmp;
+                    break;
+                default:
+                    return { err: "Instrucción no procesada.\n", linea: instr.linea, columna: instr.columna };
+            }
         }
     }
     console.log(retorno, 888888888);
