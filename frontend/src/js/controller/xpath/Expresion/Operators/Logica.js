@@ -11,7 +11,15 @@ function Logica(_expresion, _ambito) {
     }
 }
 function and(_opIzq, _opDer, _ambito) {
+    var Expresion = require("../Expresion");
+    var op1 = Expresion(_opIzq, _ambito);
+    var op2 = Expresion(_opDer, _ambito);
+    var tipo;
 }
 function or(_opIzq, _opDer, _ambito) {
+    var Expresion = require("../Expresion");
+    var op1 = Expresion(_opIzq, _ambito);
+    var op2 = Expresion(_opDer, _ambito);
+    var tipo;
 }
 module.exports = Logica;

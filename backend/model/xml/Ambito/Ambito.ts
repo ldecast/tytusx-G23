@@ -21,7 +21,7 @@ export class Ambito {
         this.tablaSimbolos.push(_simbolo);
     }
 
-    nodesFunction(_element: Element, _nodes: Array<any>): Array<any> { // Todos los descendientes
+    nodesFunction(_element: Element, _nodes: Array<any>): Array<any> { // Todos los descendientes (con textos)
         _nodes.push({ elementos: _element });
         if (_element.childs) {
             _element.childs.forEach(child => {

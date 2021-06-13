@@ -10,6 +10,7 @@ var Element = /** @class */ (function () {
         this.childs = childs;
         this.line = line;
         this.column = column;
+        this.father = null;
     }
     Element.prototype.verificateNames = function () {
         if ((this.id_close !== null) && (this.id_open !== this.id_close))
@@ -111,23 +112,6 @@ var Element = /** @class */ (function () {
         enumerable: false,
         configurable: true
     });
-    Object.defineProperty(Element.prototype, "Children", {
-        set: function (value) {
-            var _this = this;
-            if (value == null) {
-                return;
-            }
-            this.childs = value;
-            this.childs.forEach(function (value) {
-                if (value == null) {
-                    return;
-                }
-                value.Father = _this;
-            });
-        },
-        enumerable: false,
-        configurable: true
-    });
     Object.defineProperty(Element.prototype, "Close", {
         set: function (value) {
             this.id_close = value;
@@ -138,13 +122,6 @@ var Element = /** @class */ (function () {
     Object.defineProperty(Element.prototype, "Value", {
         set: function (value) {
             this.value = value;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Element.prototype, "Father", {
-        set: function (value) {
-            this.father = value;
         },
         enumerable: false,
         configurable: true

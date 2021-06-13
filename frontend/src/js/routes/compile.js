@@ -53,9 +53,13 @@ function compile(req) {
         var bloque = Bloque_1.default(xPath_parse, cadena.ambito);
         console.log(bloque, 88);
         console.log("Salida:", xPath_parse);
+        var error = [];
+        if (bloque.err) {
+            error.push({ error: bloque.err, tipo: "Semántico", origen: "XPath", linea: bloque.linea, columna: bloque.columna });
+        }
         var output = {
             arreglo_simbolos: simbolos,
-            arreglo_errores: bloque.err ? [bloque.err] : [],
+            arreglo_errores: error,
             output: bloque.cadena ? bloque.cadena : bloque.err
         };
         return output;
