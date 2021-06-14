@@ -6,6 +6,7 @@ var Bloque_1 = __importDefault(require("../controller/xpath/Instruccion/Bloque")
 var Ambito_1 = require("../model/xml/Ambito/Ambito");
 var Global_1 = require("../model/xml/Ambito/Global");
 function compile(req) {
+    var errors = [];
     try {
         // Datos de la petición desde Angular
         var xml = req.xml;
@@ -20,56 +21,51 @@ function compile(req) {
                 break;
             case 2:
                 parser_xml = require('../analyzers/xml_down');
-                parser_xPath = "require('../analyzers/xpath_down);";
+                parser_xPath = require('../analyzers/xpath_down');
                 break;
         }
         // Análisis de XML
         var xml_ast = parser_xml.parse(xml);
-        if (xml_ast === true || xml_ast.errors.length > 0 || xml_ast.ast === null) {
-            var output_1 = {
-                arreglo_simbolos: [],
-                arreglo_errores: (xml_ast === true ? [{ tipo: "Sintáctico", error: "Sintaxis errónea del documento XML.", origen: "XML", linea: 1, columna: 1 }] : xml_ast.errors),
-                output: "El documento XML contiene errores para analizar.\nIntente de nuevo."
-            };
-            return output_1;
+        if (xml_ast.errors.length > 0 || xml_ast.ast === null || xml_ast === true) {
+            if (xml_ast.errors.length > 0)
+                errors = xml_ast.errors;
+            if (xml_ast.ast === null || xml_ast === true) {
+                errors.push({ tipo: "Sintáctico", error: "Sintaxis errónea del documento XML.", origen: "XPath", linea: 1, columna: 1 });
+                return { output: "El documento XML contiene errores para analizar.\nIntente de nuevo.", arreglo_errores: errors };
+            }
         }
-        var xml_parse = xml_ast.ast;
-        var global_1 = new Ambito_1.Ambito(null, "global");
-        var cadena = new Global_1.Global(xml_parse, global_1);
-        var simbolos = cadena.ambito.getArraySymbols();
+        var xml_parse = xml_ast.ast; // AST que genera Jison
+        var global_1 = new Ambito_1.Ambito(null, "global"); // Ámbito global
+        var cadena = new Global_1.Global(xml_parse, global_1); // Llena la tabla de símbolos
+        var simbolos = cadena.ambito.getArraySymbols(); // Arreglo con los símbolos
         // Análisis de XPath
         var xPath_ast = parser_xPath.parse(xPath);
-        console.log(xPath_ast, 99);
-        if (xPath_ast === true || xPath_ast.errors.length > 0 || xPath_ast.ast === null) {
-            var output_2 = {
-                arreglo_simbolos: [],
-                arreglo_errores: (xPath_ast === true ? [{ tipo: "Sintáctico", error: "Sintaxis errónea de la consulta.", origen: "XPath", linea: 1, columna: 1 }] : xml_ast.errors),
-                output: "La consulta contiene errores para analizar.\nIntente de nuevo."
-            };
-            return output_2;
+        if (xPath_ast.errors.length > 0 || xPath_ast.ast === null || xPath_ast === true) {
+            if (xPath_ast.errors.length > 0)
+                errors = xPath_ast.errors;
+            else
+                errors.push({ tipo: "Sintáctico", error: "Sintaxis errónea de la consulta.", origen: "XPath", linea: 1, columna: 1 });
+            // output: "La consulta contiene errores para analizar.\nIntente de nuevo."
         }
-        var xPath_parse = xPath_ast.ast;
-        // console.log(xPath_parse, 88)
-        var bloque = Bloque_1.default(xPath_parse, cadena.ambito);
-        console.log(bloque, 88);
-        console.log("Salida:", xPath_parse);
-        var error = [];
+        var xPath_parse = xPath_ast.ast; // AST que genera Jison
+        var bloque = Bloque_1.default(xPath_parse, cadena.ambito); // Procesa la secuencia de accesos (instrucciones)
         if (bloque.err) {
-            error.push({ error: bloque.err, tipo: "Semántico", origen: "XPath", linea: bloque.linea, columna: bloque.columna });
+            errors.push({ error: bloque.err, tipo: "Semántico", origen: "XPath", linea: bloque.linea, columna: bloque.columna });
         }
         var output = {
             arreglo_simbolos: simbolos,
-            arreglo_errores: error,
+            arreglo_errores: errors,
             output: bloque.cadena ? bloque.cadena : bloque.err
         };
         return output;
     }
     catch (error) {
         console.log(error);
+        errors.push({ tipo: "Desconocido", error: "Error en tiempo de ejecución.", origen: "", linea: "", columna: "" });
         var output = {
             arreglo_simbolos: [],
-            arreglo_errores: [{ tipo: "Desconocido", error: "Error en tiempo de ejecución.", origen: "", linea: "", columna: "" }],
-            output: String(error)
+            arreglo_errores: errors,
+            output: (error.message) ? String(error.message) : String(error)
         };
         return output;
     }

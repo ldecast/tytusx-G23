@@ -1,8 +1,7 @@
 import { Ambito } from "../../../model/xml/Ambito/Ambito";
 import { Tipos } from "../../../model/xpath/Enum";
 
-function Expresion(_expresion: any, _ambito: Ambito, _contexto: any): any { // retorna un objeto con cadena, errores, y un retorno
-    console.log(_expresion, "EXPRESIOON")
+function Expresion(_expresion: any, _ambito: Ambito, _contexto: any): any {
     let tipo: Tipos = _expresion.tipo;
     if (tipo === Tipos.NODENAME) {
         return { valor: _expresion.nodename, tipo: Tipos.ELEMENTOS, linea: _expresion.linea, columna: _expresion.columna };
@@ -17,7 +16,7 @@ function Expresion(_expresion: any, _ambito: Ambito, _contexto: any): any { // r
         return { valor: "..", tipo: Tipos.ELEMENTOS, linea: _expresion.linea, columna: _expresion.columna };
     }
     else if (tipo === Tipos.SELECT_ATTRIBUTES) {
-        let valor = { id: _expresion.expresion, tipo: "@" }; // Se podría quitar
+        let valor = { id: _expresion.expresion, tipo: "@" };
         return { valor: valor, tipo: Tipos.ATRIBUTOS, linea: _expresion.linea, columna: _expresion.columna };
     }
     else if (tipo === Tipos.ASTERISCO) {
@@ -54,7 +53,6 @@ function Expresion(_expresion: any, _ambito: Ambito, _contexto: any): any { // r
         console.log(_expresion, "SSSSSSSS")
         return { err: `Error: Expresión no procesada.\n`, linea: _expresion.linea, columna: _expresion.columna };
     }
-
 }
 
 export = Expresion;

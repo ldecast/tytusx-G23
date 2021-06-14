@@ -8,7 +8,7 @@ import Eje from "./Selecting/Eje";
 function Bloque(_instruccion: Array<any>, _ambito: Ambito): any {
     let retorno: any = { cadena: "", retorno: null };
     let tmp: any;
-    console.log(_instruccion, 888888);
+    // console.log(_instruccion, 888888);
     for (let i = 0; i < _instruccion.length; i++) {
         const camino = _instruccion[i]; // En caso de tener varios caminos
         for (let j = 0; j < camino.length; j++) {
@@ -30,7 +30,7 @@ function Bloque(_instruccion: Array<any>, _ambito: Ambito): any {
             }
         }
     }
-    console.log(retorno, 888888888)
+    // console.log(retorno, 888888888)
     if (retorno.retorno) {
         let cadena = "";
         if (retorno.cadena === Tipos.TEXTOS) {
@@ -56,7 +56,6 @@ function Bloque(_instruccion: Array<any>, _ambito: Ambito): any {
             });
         }
         else if (retorno.cadena === Tipos.COMBINADO) {
-            console.log(retorno, 3523523);
             let root: Array<any> = retorno.retorno.nodos;
             root.forEach((elemento: any) => {
                 if (elemento.elementos) {

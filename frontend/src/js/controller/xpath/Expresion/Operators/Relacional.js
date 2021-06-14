@@ -119,19 +119,10 @@ function menorigual(_opIzq, _opDer) {
     };
 }
 function igual(_opIzq, _opDer) {
-    console.log(_opIzq, 3333333);
-    if (_opIzq.tipo === Enum_1.Tipos.FUNCION_POSITION || _opDer.tipo === Enum_1.Tipos.FUNCION_POSITION) {
-        return {
-            valor: ((_opIzq.tipo === Enum_1.Tipos.FUNCION_POSITION) ? (_opDer.valor) : (_opIzq.valor)),
-            tipo: Enum_1.Tipos.NUMBER
-        };
-    }
-    if (_opIzq.tipo === Enum_1.Tipos.FUNCION_LAST || _opDer.tipo === Enum_1.Tipos.FUNCION_LAST) {
-        return {
-            valor: ((_opIzq.valor == _opDer.valor) ? (_opDer.valor) : (-1)),
-            tipo: Enum_1.Tipos.NUMBER
-        };
-    }
+    if (_opIzq.tipo === Enum_1.Tipos.FUNCION_POSITION || _opDer.tipo === Enum_1.Tipos.FUNCION_POSITION)
+        return { valor: ((_opIzq.tipo === Enum_1.Tipos.FUNCION_POSITION) ? (_opDer.valor) : (_opIzq.valor)), tipo: Enum_1.Tipos.NUMBER };
+    if (_opIzq.tipo === Enum_1.Tipos.FUNCION_LAST || _opDer.tipo === Enum_1.Tipos.FUNCION_LAST)
+        return { valor: ((_opIzq.valor == _opDer.valor) ? (_opDer.valor) : (-1)), tipo: Enum_1.Tipos.NUMBER };
     return {
         valor: (_opIzq == _opDer),
         tipo: Enum_1.Tipos.RELACIONAL_IGUAL
