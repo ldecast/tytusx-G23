@@ -2,7 +2,10 @@
 var Enum_1 = require("../../../model/xpath/Enum");
 function Expresion(_expresion, _ambito, _contexto) {
     var tipo = _expresion.tipo;
-    if (tipo === Enum_1.Tipos.NODENAME) {
+    if (tipo === Enum_1.Tipos.EXPRESION) {
+        return Expresion(_expresion.expresion, _ambito, _contexto);
+    }
+    else if (tipo === Enum_1.Tipos.NODENAME) {
         return { valor: _expresion.nodename, tipo: Enum_1.Tipos.ELEMENTOS, linea: _expresion.linea, columna: _expresion.columna };
     }
     else if (tipo === Enum_1.Tipos.STRING || tipo === Enum_1.Tipos.NUMBER) {
@@ -15,8 +18,7 @@ function Expresion(_expresion, _ambito, _contexto) {
         return { valor: "..", tipo: Enum_1.Tipos.ELEMENTOS, linea: _expresion.linea, columna: _expresion.columna };
     }
     else if (tipo === Enum_1.Tipos.SELECT_ATTRIBUTES) {
-        var valor = { id: _expresion.expresion, tipo: "@" };
-        return { valor: valor, tipo: Enum_1.Tipos.ATRIBUTOS, linea: _expresion.linea, columna: _expresion.columna };
+        return { valor: _expresion.expresion, tipo: Enum_1.Tipos.ATRIBUTOS, linea: _expresion.linea, columna: _expresion.columna };
     }
     else if (tipo === Enum_1.Tipos.ASTERISCO) {
         return { valor: "*", tipo: Enum_1.Tipos.ASTERISCO, linea: _expresion.linea, columna: _expresion.columna };
@@ -29,9 +31,6 @@ function Expresion(_expresion, _ambito, _contexto) {
     }
     else if (tipo === Enum_1.Tipos.FUNCION_POSITION) {
         return { valor: "position()", tipo: Enum_1.Tipos.FUNCION_POSITION, linea: _expresion.linea, columna: _expresion.columna };
-    }
-    if (tipo === Enum_1.Tipos.EXPRESION) {
-        return Expresion(_expresion.expresion, _ambito, _contexto);
     }
     else if (tipo === Enum_1.Tipos.OPERACION_SUMA || tipo === Enum_1.Tipos.OPERACION_RESTA || tipo === Enum_1.Tipos.OPERACION_MULTIPLICACION
         || tipo === Enum_1.Tipos.OPERACION_DIVISION || tipo === Enum_1.Tipos.OPERACION_MODULO || tipo === Enum_1.Tipos.OPERACION_NEGACION_UNARIA) {

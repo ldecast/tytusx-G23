@@ -20,117 +20,124 @@ export class Predicate {
         this.contexto = v;
     }
 
-    filterElements() {
+    filterElements(_resultado: Array<any>) {
         let expresion: any;
         for (let i = 0; i < this.predicado.length; i++) {
-            const e = this.predicado[i];
-            console.log(e,8277237281)
+            const e = this.predicado[i]; // En caso de tener varios predicados seguidos
+            // console.log(e, "Predicado")
             expresion = Expresion(e.condicion, this.ambito, this.contexto);
+            console.log(expresion, "Expresion predicado")
             if (expresion.err) return expresion;
-            // En caso de ser una posición en los elementos
             if (expresion.tipo === Tipos.NUMBER) {
                 let index = parseInt(expresion.valor) - 1;
-                if (index < 0 || index >= this.contexto.length)
-                    this.contexto = [];
+                if (index < 0 || index >= _resultado.length)
+                    _resultado = [];
                 else
-                    this.contexto = [this.contexto[index]];
+                    _resultado = [_resultado[index]];
+            }
+            else if (expresion.tipo === Tipos.ATRIBUTOS) {
+                let tmp: Array<Element> = [];
+                this.contexto = [];
+                _resultado.forEach(element => {
+                    if (element.attributes)
+                        for (let i = 0; i < element.attributes.length; i++) {
+                            const attribute: Atributo = element.attributes[i];
+                            if (expresion.atributo) { // Es una comparación
+                                if (expresion.desigualdad) { // (<,<=,>,>=)
+                                    if (this.operarDesigualdad(expresion.desigualdad, expresion.condicion, attribute.value)) {
+                                        tmp.push(element);
+                                        this.contexto.push(element);
+                                        break;
+                                    }
+                                }
+                                else if (expresion.exclude) { // (!=)
+                                    if (expresion.atributo == attribute.id && expresion.condicion != attribute.value) {
+                                        tmp.push(element);
+                                        this.contexto.push(element);
+                                        break;
+                                    }
+                                }
+                                else if (expresion.atributo == attribute.id && expresion.condicion == attribute.value) { // (==)
+                                    tmp.push(element);
+                                    this.contexto.push(element);
+                                    break;
+                                }
+                            }
+                            else if (expresion.valor == attribute.id || expresion.valor == "*") { // No compara valor, sólo apila
+                                tmp.push(element);
+                                this.contexto.push(element);
+                                break;
+                            }
+                            else {
+                                console.log(expresion, 111111111);
+                            }
+                        }
+                });
+                _resultado = tmp;
+                return _resultado;
             }
             else if (expresion.tipo === Tipos.FUNCION_LAST) {
-                let index = this.contexto.length - 1;
-                this.contexto = [this.contexto[index]];
+                let index = _resultado.length - 1;
+                _resultado = [_resultado[index]];
             }
             else if (expresion.tipo === Tipos.FUNCION_POSITION) {
-                return this.contexto;
+                return _resultado;
             }
             else if (expresion.tipo === Tipos.RELACIONAL_MENORIGUAL || expresion.tipo === Tipos.RELACIONAL_MENOR) {
                 let index = parseInt(expresion.valor) - 1;
-                if (index >= this.contexto.length) index = this.contexto.length - 1;
+                if (index >= _resultado.length) index = _resultado.length - 1;
                 let tmp = [];
-                for (let i = index; i <= this.contexto.length && i >= 0; i--) {
-                    const element = this.contexto[i];
+                for (let i = index; i <= _resultado.length && i >= 0; i--) {
+                    const element = _resultado[i];
                     tmp.push(element);
                 }
-                this.contexto = tmp;
+                _resultado = tmp;
             }
             else if (expresion.tipo === Tipos.RELACIONAL_MAYORIGUAL || expresion.tipo === Tipos.RELACIONAL_MAYOR) {
                 let index = parseInt(expresion.valor) - 1;
-                if (index >= this.contexto.length) { this.contexto = []; return this.contexto; }
+                if (index >= _resultado.length) { _resultado = []; return _resultado; }
                 if (index <= 0) index = 0;
                 let tmp = [];
-                for (let i = index; i < this.contexto.length; i++) {
-                    const element = this.contexto[i];
+                for (let i = index; i < _resultado.length; i++) {
+                    const element = _resultado[i];
                     tmp.push(element);
                 }
-                this.contexto = tmp;
+                _resultado = tmp;
             }
             else if (expresion.tipo === Tipos.RELACIONAL_IGUAL || expresion.tipo === Tipos.RELACIONAL_DIFERENTE) {
                 let flag: boolean = expresion.valor;
                 if (!flag)
-                    this.contexto = [];
+                    _resultado = [];
             }
             else if (expresion.tipo === Tipos.EXCLUDE) {
                 let index = parseInt(expresion.valor) - 1;
-                if (index >= 0 && index < this.contexto.length) {
+                if (index >= 0 && index < _resultado.length) {
                     let tmp = [];
-                    for (let i = 0; i < this.contexto.length; i++) {
-                        const element = this.contexto[i];
+                    for (let i = 0; i < _resultado.length; i++) {
+                        const element = _resultado[i];
                         if (i != index) tmp.push(element);
                     }
-                    this.contexto = tmp;
+                    _resultado = tmp;
                 }
             }
         }
+        this.contexto = _resultado;
         return this.contexto;
     }
 
-    filterAttributes(_attributes: Array<Atributo>) {
-        let expresion: any;
-        for (let i = 0; i < this.predicado.length; i++) {
-            const e = this.predicado[i];
-            expresion = Expresion(e.condicion, this.ambito, this.contexto);
-            if (expresion.err) return expresion;
-            // En caso de ser una posición en los elementos
-            if (expresion.tipo === Tipos.NUMBER) {
-                let index = parseInt(expresion.valor) - 1;
-                if (index < 0 || index >= _attributes.length)
-                    _attributes = [];
-                else
-                    _attributes = [_attributes[index]];
-            }
-            else if (expresion.tipo === Tipos.FUNCION_LAST) {
-                let index = _attributes.length - 1;
-                _attributes = [_attributes[index]];
-            }
-            else if (expresion.tipo === Tipos.FUNCION_POSITION) {
-                return _attributes;
-            }
+    operarDesigualdad(_tipo: Tipos, _condicion: any, _valor: any): boolean {
+        switch (_tipo) {
+            case Tipos.RELACIONAL_MAYOR:
+                return _valor > _condicion;
+            case Tipos.RELACIONAL_MAYORIGUAL:
+                return _valor >= _condicion;
+            case Tipos.RELACIONAL_MENOR:
+                return _valor < _condicion;
+            case Tipos.RELACIONAL_MENORIGUAL:
+                return _valor <= _condicion;
+            default:
+                return false;
         }
-        return _attributes;
-    }
-
-    filterNodes(_nodes: Array<any>) {
-        let expresion: any;
-        for (let i = 0; i < this.predicado.length; i++) {
-            const e = this.predicado[i];
-            expresion = Expresion(e.condicion, this.ambito, this.contexto);
-            if (expresion.err) return expresion;
-            // En caso de ser una posición en los elementos
-            if (expresion.tipo === Tipos.NUMBER) {
-                let index = parseInt(expresion.valor) - 1;
-                if (index < 0 || index >= _nodes.length)
-                    _nodes = [];
-                else
-                    _nodes = [_nodes[index]];
-            }
-            else if (expresion.tipo === Tipos.FUNCION_LAST) {
-                let index = _nodes.length - 1;
-                _nodes = [_nodes[index]];
-            }
-            else if (expresion.tipo === Tipos.FUNCION_POSITION) {
-                return _nodes;
-            }
-        }
-        return _nodes;
     }
 
 }

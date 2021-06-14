@@ -7,7 +7,7 @@ var Expresion_1 = __importDefault(require("../../Expresion/Expresion"));
 var Predicate_1 = require("./Predicate");
 function Eje(_instruccion, _ambito, _contexto) {
     var retorno = { cadena: Enum_1.Tipos.NONE, retorno: null };
-    var err = { err: "No se encontraron elementos.\n", linea: _instruccion.linea, columna: _instruccion.columna };
+    var err = { err: "No se encontraron elementos.", linea: _instruccion.linea, columna: _instruccion.columna };
     var contexto = (_contexto.retorno) ? (_contexto.retorno) : null;
     var expresion = Expresion_1.default(_instruccion.expresion.expresion, _ambito, contexto);
     if (expresion.err)
@@ -19,7 +19,7 @@ function Eje(_instruccion, _ambito, _contexto) {
         retorno.cadena = Enum_1.Tipos.ELEMENTOS;
     }
     else if (expresion.tipo === Enum_1.Tipos.ATRIBUTOS) {
-        root = getSymbolFromRoot(expresion.valor, contexto, _ambito, predicate);
+        root = getSymbolFromRoot({ id: expresion.valor, tipo: "@" }, contexto, _ambito, predicate);
         if (root.atributos.length === 0)
             return err;
         retorno.cadena = Enum_1.Tipos.ATRIBUTOS;
@@ -68,7 +68,7 @@ function getFromCurrent(_id, _contexto, _ambito, _condicion) {
         }
         if (_condicion) {
             var filter = new Predicate_1.Predicate(_condicion, _ambito, elements);
-            nodes_1 = filter.filterNodes(nodes_1);
+            nodes_1 = filter.filterElements(nodes_1);
         }
         return { tipo: Enum_1.Tipos.COMBINADO, nodos: nodes_1 };
     }
@@ -84,7 +84,7 @@ function getFromCurrent(_id, _contexto, _ambito, _condicion) {
         }
         if (_condicion) {
             var filter = new Predicate_1.Predicate(_condicion, _ambito, elements);
-            elements = filter.filterElements();
+            elements = filter.filterElements(elements);
         }
         return elements;
     }
@@ -107,8 +107,8 @@ function getFromCurrent(_id, _contexto, _ambito, _condicion) {
         }
         if (_condicion) {
             var filter = new Predicate_1.Predicate(_condicion, _ambito, elements);
-            elements = filter.filterElements();
-            attributes = filter.filterAttributes(attributes);
+            attributes = filter.filterElements(attributes);
+            elements = filter.contexto;
         }
         return { atributos: attributes, elementos: elements };
     }
@@ -145,7 +145,7 @@ function getFromCurrent(_id, _contexto, _ambito, _condicion) {
         }
         if (_condicion) {
             var filter = new Predicate_1.Predicate(_condicion, _ambito, elements);
-            elements = filter.filterElements();
+            elements = filter.filterElements(elements);
         }
         return elements;
     }
@@ -157,7 +157,7 @@ function getFromCurrent(_id, _contexto, _ambito, _condicion) {
         }
         if (_condicion) {
             var filter = new Predicate_1.Predicate(_condicion, _ambito, elements);
-            elements = filter.filterElements();
+            elements = filter.filterElements(elements);
         }
         return elements;
     }
@@ -173,7 +173,7 @@ function getFromCurrent(_id, _contexto, _ambito, _condicion) {
         }
         if (_condicion) {
             var filter = new Predicate_1.Predicate(_condicion, _ambito, elements);
-            elements = filter.filterElements();
+            elements = filter.filterElements(elements);
         }
         return elements;
     }
@@ -196,7 +196,7 @@ function getFromRoot(_id, _ambito, _condicion) {
         });
         if (_condicion) {
             var filter = new Predicate_1.Predicate(_condicion, _ambito, elements);
-            nodes_2 = filter.filterNodes(nodes_2);
+            nodes_2 = filter.filterElements(nodes_2);
         }
         return { tipo: Enum_1.Tipos.COMBINADO, nodos: nodes_2 };
     }
@@ -207,7 +207,7 @@ function getFromRoot(_id, _ambito, _condicion) {
         });
         if (_condicion) {
             var filter = new Predicate_1.Predicate(_condicion, _ambito, elements);
-            elements = filter.filterElements();
+            elements = filter.filterElements(elements);
         }
         return elements;
     }
@@ -229,8 +229,8 @@ function getFromRoot(_id, _ambito, _condicion) {
         });
         if (_condicion) {
             var filter = new Predicate_1.Predicate(_condicion, _ambito, elements);
-            elements = filter.filterElements();
-            attributes = filter.filterAttributes(attributes);
+            attributes = filter.filterElements(attributes);
+            elements = filter.contexto;
         }
         return { atributos: attributes, elementos: elements };
     }
@@ -241,7 +241,7 @@ function getFromRoot(_id, _ambito, _condicion) {
         });
         if (_condicion) {
             var filter = new Predicate_1.Predicate(_condicion, _ambito, elements);
-            elements = filter.filterElements();
+            elements = filter.filterElements(elements);
         }
         return elements;
     }
@@ -253,7 +253,7 @@ function getFromRoot(_id, _ambito, _condicion) {
         });
         if (_condicion) {
             var filter = new Predicate_1.Predicate(_condicion, _ambito, elements);
-            elements = filter.filterElements();
+            elements = filter.filterElements(elements);
         }
         return elements;
     }

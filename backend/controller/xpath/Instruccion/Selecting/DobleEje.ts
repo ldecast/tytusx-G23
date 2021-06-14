@@ -7,7 +7,7 @@ import { Predicate } from "./Predicate";
 
 function DobleEje(_instruccion: any, _ambito: Ambito, _contexto: any): any {
     let retorno = { cadena: Tipos.NONE, retorno: Array<any>() }
-    let err = { err: "No se encontraron elementos.\n", linea: _instruccion.linea, columna: _instruccion.columna };
+    let err = { err: "No se encontraron elementos.", linea: _instruccion.linea, columna: _instruccion.columna };
     let contexto: any = (_contexto.retorno) ? (_contexto.retorno) : null;
     let expresion = Expresion(_instruccion.expresion.expresion, _ambito, contexto);
     if (expresion.err) return expresion;
@@ -18,7 +18,7 @@ function DobleEje(_instruccion: any, _ambito: Ambito, _contexto: any): any {
         retorno.cadena = Tipos.ELEMENTOS;
     }
     else if (expresion.tipo === Tipos.ATRIBUTOS) {
-        root = getAllSymbolFromCurrent(expresion.valor, contexto, _ambito, predicate);
+        root = getAllSymbolFromCurrent({ id: expresion.valor, tipo: "@" }, contexto, _ambito, predicate);
         if (root.atributos.length === 0) return err;
         retorno.cadena = Tipos.ATRIBUTOS;
     }
@@ -65,7 +65,7 @@ function getFromCurrent(_id: any, _contexto: any, _ambito: Ambito, _condicion: a
         }
         if (_condicion) {
             let filter = new Predicate(_condicion, _ambito, elements);
-            nodes = filter.filterNodes(nodes);
+            nodes = filter.filterElements(nodes);
         }
         return { tipo: Tipos.COMBINADO, nodos: nodes };
     }
@@ -86,8 +86,8 @@ function getFromCurrent(_id: any, _contexto: any, _ambito: Ambito, _condicion: a
         }
         if (_condicion) {
             let filter = new Predicate(_condicion, _ambito, a.elementos);
-            a.elementos = filter.filterElements();
-            a.atributos = filter.filterAttributes(a.atributos);
+            a.atributos = filter.filterElements(a.atributos);
+            a.elementos = filter.contexto;
         }
         return a;
     }
@@ -101,7 +101,7 @@ function getFromCurrent(_id: any, _contexto: any, _ambito: Ambito, _condicion: a
             }
             if (_condicion) {
                 let filter = new Predicate(_condicion, _ambito, elements);
-                elements = filter.filterElements();
+                elements = filter.filterElements(elements);
             }
             return elements;
         }
@@ -121,7 +121,7 @@ function getFromCurrent(_id: any, _contexto: any, _ambito: Ambito, _condicion: a
         }
         if (_condicion) {
             let filter = new Predicate(_condicion, _ambito, elements);
-            elements = filter.filterElements();
+            elements = filter.filterElements(elements);
         }
         return elements;
     }
@@ -136,7 +136,7 @@ function getFromCurrent(_id: any, _contexto: any, _ambito: Ambito, _condicion: a
         }
         if (_condicion) {
             let filter = new Predicate(_condicion, _ambito, elements);
-            elements = filter.filterElements();
+            elements = filter.filterElements(elements);
         }
         return elements;
     }
@@ -153,7 +153,7 @@ function getFromRoot(_id: any, _ambito: Ambito, _condicion: any): any {
         });
         if (_condicion) {
             let filter = new Predicate(_condicion, _ambito, elements);
-            nodes = filter.filterNodes(nodes);
+            nodes = filter.filterElements(nodes);
         }
         return { tipo: Tipos.COMBINADO, nodos: nodes };
     }
@@ -168,8 +168,8 @@ function getFromRoot(_id: any, _ambito: Ambito, _condicion: any): any {
         });
         if (_condicion) {
             let filter = new Predicate(_condicion, _ambito, a.elementos);
-            a.elementos = filter.filterElements();
-            a.atributos = filter.filterAttributes(a.atributos);
+            a.atributos = filter.filterElements(a.atributos);
+            a.elementos = filter.contexto;
         }
         return a;
     }
@@ -185,7 +185,7 @@ function getFromRoot(_id: any, _ambito: Ambito, _condicion: any): any {
         });
         if (_condicion) {
             let filter = new Predicate(_condicion, _ambito, elements);
-            elements = filter.filterElements();
+            elements = filter.filterElements(elements);
         }
         return elements;
     }

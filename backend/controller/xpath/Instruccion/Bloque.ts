@@ -5,58 +5,61 @@ import { Tipos } from "../../../model/xpath/Enum";
 import DobleEje from "./Selecting/DobleEje";
 import Eje from "./Selecting/Eje";
 
-function Bloque(_instruccion: Array<any>, _ambito: Ambito): any {
-    let retorno: any = { cadena: "", retorno: null };
+let reset: any = { cadena: "", retorno: null };
+let output: Array<any> = [];
+
+function Bloque(_instruccion: Array<any>, _ambito: Ambito, _retorno: any) {
     let tmp: any;
     // console.log(_instruccion, 888888);
     for (let i = 0; i < _instruccion.length; i++) {
         const camino = _instruccion[i]; // En caso de tener varios caminos
         for (let j = 0; j < camino.length; j++) {
             const instr = camino[j];
-            console.log(instr, 7777777);
-            switch (instr.tipo) {
-                case Tipos.SELECT_FROM_ROOT:
-                    tmp = Eje(instr, _ambito, retorno);
-                    if (tmp.err) return tmp;
-                    retorno = tmp;
-                    break;
-                case Tipos.SELECT_FROM_CURRENT:
-                    tmp = DobleEje(instr, _ambito, retorno);
-                    if (tmp.err) return tmp;
-                    retorno = tmp;
-                    break;
-                default:
-                    return { err: "Instrucción no procesada.\n", linea: instr.linea, columna: instr.columna };
+            if (instr.tipo === Tipos.SELECT_FROM_ROOT) {
+                tmp = Eje(instr, _ambito, _retorno);
+                if (tmp.err) break;
+                _retorno = tmp;
+            }
+            else if (instr.tipo === Tipos.SELECT_FROM_CURRENT) {
+                tmp = DobleEje(instr, _ambito, _retorno);
+                if (tmp.err) break;
+                _retorno = tmp;
             }
         }
+        output.push(_retorno);
+        _retorno = reset;
     }
-    // console.log(retorno, 888888888)
-    if (retorno.retorno) {
-        let cadena = "";
-        if (retorno.cadena === Tipos.TEXTOS) {
-            let root: Array<string> = retorno.retorno;
+    return writeOutput();
+}
+
+function writeOutput() {
+    let cadena = "";
+    for (let i = 0; i < output.length; i++) {
+        const path = output[i];
+        if (path.cadena === Tipos.TEXTOS) {
+            let root: Array<string> = path.retorno;
             root.forEach(txt => {
                 cadena += concatText(txt);
             });
         }
-        else if (retorno.cadena === Tipos.ELEMENTOS) {
-            let root: Array<Element> = retorno.retorno;
+        else if (path.cadena === Tipos.ELEMENTOS) {
+            let root: Array<Element> = path.retorno;
             root.forEach(element => {
                 cadena += concatChilds(element, "");
             });
         }
-        else if (retorno.cadena === Tipos.ATRIBUTOS) {
+        else if (path.cadena === Tipos.ATRIBUTOS) {
             // let root: Array<Atributo> = attr; // <-- muestra sólo el atributo
             // root.forEach(attribute => {
             //     cadena += concatAttributes(attribute);
             // });
-            let root: Array<Element> = retorno.retorno.elementos; // <-- muestra toda la etiqueta
+            let root: Array<Element> = path.retorno.elementos; // <-- muestra toda la etiqueta
             root.forEach(element => {
                 cadena += extractAttributes(element, "");
             });
         }
-        else if (retorno.cadena === Tipos.COMBINADO) {
-            let root: Array<any> = retorno.retorno.nodos;
+        else if (path.cadena === Tipos.COMBINADO) {
+            let root: Array<any> = path.retorno.nodos;
             root.forEach((elemento: any) => {
                 if (elemento.elementos) {
                     cadena += concatChilds(elemento.elementos, "");
@@ -66,10 +69,10 @@ function Bloque(_instruccion: Array<any>, _ambito: Ambito): any {
                 }
             });
         }
-        retorno.cadena = cadena.substring(1);
     }
-
-    return retorno;
+    output = [];
+    if (cadena) return cadena.substring(1);
+    return "No se encontraron elementos.";
 }
 
 function concatChilds(_element: Element, cadena: string): string {

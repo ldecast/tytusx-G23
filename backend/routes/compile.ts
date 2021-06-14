@@ -28,7 +28,7 @@ function compile(req: any) {
         if (xml_ast.errors.length > 0 || xml_ast.ast === null || xml_ast === true) {
             if (xml_ast.errors.length > 0) errors = xml_ast.errors;
             if (xml_ast.ast === null || xml_ast === true) {
-                errors.push({ tipo: "Sintáctico", error: "Sintaxis errónea del documento XML.", origen: "XPath", linea: 1, columna: 1 });
+                errors.push({ tipo: "Sintáctico", error: "Sintaxis errónea del documento XML.", origen: "XML", linea: 1, columna: 1 });
                 return { output: "El documento XML contiene errores para analizar.\nIntente de nuevo.", arreglo_errores: errors };
             }
         }
@@ -42,22 +42,23 @@ function compile(req: any) {
         let xPath_ast = parser_xPath.parse(xPath);
         if (xPath_ast.errors.length > 0 || xPath_ast.ast === null || xPath_ast === true) {
             if (xPath_ast.errors.length > 0) errors = xPath_ast.errors;
-            else errors.push({ tipo: "Sintáctico", error: "Sintaxis errónea de la consulta.", origen: "XPath", linea: 1, columna: 1 });
-            // output: "La consulta contiene errores para analizar.\nIntente de nuevo."
+            if (xPath_ast.ast === null || xPath_ast === true) {
+                errors.push({ tipo: "Sintáctico", error: "Sintaxis errónea de la consulta digitada.", origen: "XPath", linea: 1, columna: 1 });
+                return { output: "La consulta contiene errores para analizar.\nIntente de nuevo.", arreglo_errores: errors };
+            }
         }
 
+        let output: any = { cadena: "", retorno: null };
         let xPath_parse = xPath_ast.ast; // AST que genera Jison
-        let bloque = Bloque(xPath_parse, cadena.ambito); // Procesa la secuencia de accesos (instrucciones)
+        let bloque = Bloque(xPath_parse, cadena.ambito, output); // Procesa la secuencia de accesos (instrucciones)
 
-        if (bloque.err) {
-            errors.push({ error: bloque.err, tipo: "Semántico", origen: "XPath", linea: bloque.linea, columna: bloque.columna });
-        }
-
-        let output = {
+        output = {
             arreglo_simbolos: simbolos,
             arreglo_errores: errors,
-            output: bloque.cadena ? bloque.cadena : bloque.err
+            output: bloque
         }
+
+        errors = [];
         return output;
 
     } catch (error) {
@@ -68,6 +69,7 @@ function compile(req: any) {
             arreglo_errores: errors,
             output: (error.message) ? String(error.message) : String(error)
         }
+        errors = [];
         return output;
     }
 }
