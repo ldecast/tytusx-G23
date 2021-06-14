@@ -17,16 +17,23 @@ function Bloque(_instruccion: Array<any>, _ambito: Ambito, _retorno: any) {
             const instr = camino[j];
             if (instr.tipo === Tipos.SELECT_FROM_ROOT) {
                 tmp = Eje(instr, _ambito, _retorno);
-                if (tmp.err) break;
-                _retorno = tmp;
+                if (tmp.notFound) { _retorno = reset; break; }
+                if (tmp.error) return tmp;
+                if (tmp.retorno.elementos) _retorno.retorno = tmp.retorno.elementos
+                else _retorno = tmp;
             }
             else if (instr.tipo === Tipos.SELECT_FROM_CURRENT) {
                 tmp = DobleEje(instr, _ambito, _retorno);
-                if (tmp.err) break;
-                _retorno = tmp;
+                if (tmp.notFound) { _retorno = reset; break; }
+                if (tmp.error) return tmp;
+                if (tmp.retorno.elementos) _retorno.retorno = tmp.retorno.elementos;
+                else _retorno = tmp;
+            }
+            else {
+                return { error: `Error: Instrucción no procesada.`, tipo: "Semántico", linea: instr.linea, columna: instr.columna };
             }
         }
-        output.push(_retorno);
+        output.push(tmp);
         _retorno = reset;
     }
     return writeOutput();
@@ -37,7 +44,7 @@ function writeOutput() {
     for (let i = 0; i < output.length; i++) {
         const path = output[i];
         if (path.cadena === Tipos.TEXTOS) {
-            let root: Array<string> = path.retorno;
+            let root: Array<string> = (path.retorno.texto) ? (path.retorno.texto) : (path.retorno);
             root.forEach(txt => {
                 cadena += concatText(txt);
             });

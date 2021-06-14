@@ -77,6 +77,18 @@ export class Ambito {
         return { atributos: _array, elementos: _elements };
     }
 
+    searchAnyText(_element: Element, _array: Array<string>) {
+        if (_element.childs) {
+            _element.childs.forEach(child => {
+                _array = this.searchAnyText(child, _array);
+            });
+        }
+        if (_element.value) {
+            _array.push(_element.value);
+        }
+        return _array
+    }
+
     searchAttributesFromCurrent(_element: Element, _id: string, _array: Array<Atributo>, _elements: Array<Element>) {
         let flag: boolean = false;
         if (_element.attributes) {

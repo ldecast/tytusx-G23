@@ -33,6 +33,9 @@ function Expresion(_expresion: any, _ambito: Ambito, _contexto: any): any {
     else if (tipo === Tipos.FUNCION_POSITION) {
         return { valor: "position()", tipo: Tipos.FUNCION_POSITION, linea: _expresion.linea, columna: _expresion.columna };
     }
+    else if (tipo === Tipos.FUNCION_TEXT) {
+        return { valor: "text()", tipo: Tipos.FUNCION_TEXT, linea: _expresion.linea, columna: _expresion.columna };
+    }
     else if (tipo === Tipos.OPERACION_SUMA || tipo === Tipos.OPERACION_RESTA || tipo === Tipos.OPERACION_MULTIPLICACION
         || tipo === Tipos.OPERACION_DIVISION || tipo === Tipos.OPERACION_MODULO || tipo === Tipos.OPERACION_NEGACION_UNARIA) {
         const Aritmetica = require("./Operators/Aritmetica");
@@ -50,7 +53,7 @@ function Expresion(_expresion: any, _ambito: Ambito, _contexto: any): any {
     }
     else {
         console.log(_expresion, "SSSSSSSS")
-        return { err: `Error: Expresión no procesada.\n`, linea: _expresion.linea, columna: _expresion.columna };
+        return { error: "Error: Expresión no procesada.", tipo: "Semántico", origen: "Query", linea: _expresion.linea, columna: _expresion.columna };
     }
 }
 

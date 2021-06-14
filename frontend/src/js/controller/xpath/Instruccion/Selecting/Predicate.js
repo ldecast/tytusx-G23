@@ -24,10 +24,10 @@ var Predicate = /** @class */ (function () {
         var expresion;
         var _loop_1 = function (i) {
             var e = this_1.predicado[i]; // En caso de tener varios predicados seguidos
-            // console.log(e, "Predicado")
+            console.log(e, "Predicado");
             expresion = Expresion_1.default(e.condicion, this_1.ambito, this_1.contexto);
             console.log(expresion, "Expresion predicado");
-            if (expresion.err)
+            if (expresion.error)
                 return { value: expresion };
             if (expresion.tipo === Enum_1.Tipos.NUMBER) {
                 var index = parseInt(expresion.valor) - 1;
@@ -45,7 +45,7 @@ var Predicate = /** @class */ (function () {
                             var attribute = element.attributes[i_1];
                             if (expresion.atributo) { // Es una comparación
                                 if (expresion.desigualdad) { // (<,<=,>,>=)
-                                    if (_this.operarDesigualdad(expresion.desigualdad, expresion.condicion, attribute.value)) {
+                                    if (expresion.atributo == attribute.id && _this.operarDesigualdad(expresion.desigualdad, expresion.condicion, attribute.value)) {
                                         tmp_1.push(element);
                                         _this.contexto.push(element);
                                         break;
@@ -69,13 +69,26 @@ var Predicate = /** @class */ (function () {
                                 _this.contexto.push(element);
                                 break;
                             }
-                            else {
-                                console.log(expresion, 111111111);
-                            }
                         }
                 });
                 _resultado = tmp_1;
                 return { value: _resultado };
+            }
+            else if (expresion.tipo === Enum_1.Tipos.FUNCION_TEXT) {
+                this_1.contexto = [];
+                for (var i_2 = 0; i_2 < _resultado.length; i_2++) {
+                    var element = _resultado[i_2];
+                    var text = element.value;
+                    if (text) {
+                        if (expresion.exclude) {
+                            if (text != expresion.condicion) // text() != 'x'
+                                this_1.contexto.push(element);
+                        }
+                        else if (text == expresion.condicion) // text() == 'x'
+                            this_1.contexto.push(element);
+                    }
+                }
+                return { value: this_1.contexto };
             }
             else if (expresion.tipo === Enum_1.Tipos.FUNCION_LAST) {
                 var index = _resultado.length - 1;
@@ -89,8 +102,8 @@ var Predicate = /** @class */ (function () {
                 if (index >= _resultado.length)
                     index = _resultado.length - 1;
                 var tmp = [];
-                for (var i_2 = index; i_2 <= _resultado.length && i_2 >= 0; i_2--) {
-                    var element = _resultado[i_2];
+                for (var i_3 = index; i_3 <= _resultado.length && i_3 >= 0; i_3--) {
+                    var element = _resultado[i_3];
                     tmp.push(element);
                 }
                 _resultado = tmp;
@@ -104,8 +117,8 @@ var Predicate = /** @class */ (function () {
                 if (index <= 0)
                     index = 0;
                 var tmp = [];
-                for (var i_3 = index; i_3 < _resultado.length; i_3++) {
-                    var element = _resultado[i_3];
+                for (var i_4 = index; i_4 < _resultado.length; i_4++) {
+                    var element = _resultado[i_4];
                     tmp.push(element);
                 }
                 _resultado = tmp;
@@ -119,9 +132,9 @@ var Predicate = /** @class */ (function () {
                 var index = parseInt(expresion.valor) - 1;
                 if (index >= 0 && index < _resultado.length) {
                     var tmp = [];
-                    for (var i_4 = 0; i_4 < _resultado.length; i_4++) {
-                        var element = _resultado[i_4];
-                        if (i_4 != index)
+                    for (var i_5 = 0; i_5 < _resultado.length; i_5++) {
+                        var element = _resultado[i_5];
+                        if (i_5 != index)
                             tmp.push(element);
                     }
                     _resultado = tmp;

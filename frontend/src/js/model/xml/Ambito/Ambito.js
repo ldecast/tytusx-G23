@@ -69,6 +69,18 @@ var Ambito = /** @class */ (function () {
         }
         return { atributos: _array, elementos: _elements };
     };
+    Ambito.prototype.searchAnyText = function (_element, _array) {
+        var _this = this;
+        if (_element.childs) {
+            _element.childs.forEach(function (child) {
+                _array = _this.searchAnyText(child, _array);
+            });
+        }
+        if (_element.value) {
+            _array.push(_element.value);
+        }
+        return _array;
+    };
     Ambito.prototype.searchAttributesFromCurrent = function (_element, _id, _array, _elements) {
         var _this = this;
         var flag = false;

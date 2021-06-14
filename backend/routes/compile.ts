@@ -51,13 +51,16 @@ function compile(req: any) {
         let output: any = { cadena: "", retorno: null };
         let xPath_parse = xPath_ast.ast; // AST que genera Jison
         let bloque = Bloque(xPath_parse, cadena.ambito, output); // Procesa la secuencia de accesos (instrucciones)
+        if (bloque.error) {
+            errors.push(bloque);
+            return { arreglo_errores: errors, output: bloque.error }
+        }
 
         output = {
             arreglo_simbolos: simbolos,
             arreglo_errores: errors,
             output: bloque
         }
-
         errors = [];
         return output;
 

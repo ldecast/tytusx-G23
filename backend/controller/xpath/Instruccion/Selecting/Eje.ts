@@ -7,10 +7,10 @@ import { Predicate } from "./Predicate";
 
 function Eje(_instruccion: any, _ambito: Ambito, _contexto: any): any {
     let retorno = { cadena: Tipos.NONE, retorno: null }
-    let err = { err: "No se encontraron elementos.", linea: _instruccion.linea, columna: _instruccion.columna };
+    let _404 = { notFound: "No se encontraron elementos." };
     let contexto: any = (_contexto.retorno) ? (_contexto.retorno) : null;
     let expresion = Expresion(_instruccion.expresion.expresion, _ambito, contexto);
-    if (expresion.err) return expresion;
+    if (expresion.error) return expresion;
     let predicate = _instruccion.expresion.predicate;
     let root: any;
     if (expresion.tipo === Tipos.ELEMENTOS) {
@@ -19,7 +19,9 @@ function Eje(_instruccion: any, _ambito: Ambito, _contexto: any): any {
     }
     else if (expresion.tipo === Tipos.ATRIBUTOS) {
         root = getSymbolFromRoot({ id: expresion.valor, tipo: "@" }, contexto, _ambito, predicate);
-        if (root.atributos.length === 0) return err;
+        if (root.atributos.length === 0) return _404;
+        if (root.atributos.error) return root.atributos;
+        if (root.elementos.error) return root.elementos;
         retorno.cadena = Tipos.ATRIBUTOS;
     }
     else if (expresion.tipo === Tipos.ASTERISCO) {
@@ -28,14 +30,21 @@ function Eje(_instruccion: any, _ambito: Ambito, _contexto: any): any {
     }
     else if (expresion.tipo === Tipos.FUNCION_NODE) {
         root = getSymbolFromRoot(expresion.valor, contexto, _ambito, predicate);
-        if (root.nodos.length === 0) return err;
+        if (root.nodos.length === 0) return _404;
+        if (root.nodos.error) return root.nodos;
         retorno.cadena = root.tipo;
     }
-    else {
-        return { err: "Expresión no válida.\n", linea: _instruccion.linea, columna: _instruccion.columna };
+    else if (expresion.tipo === Tipos.FUNCION_TEXT) {
+        root = getSymbolFromRoot(expresion.valor, contexto, _ambito, predicate);
+        if (root.texto.length === 0) return _404;
+        if (root.texto.error) return root.texto;
+        retorno.cadena = Tipos.TEXTOS;
     }
-    if (root.err) return root;
-    if (root.length === 0 || root === null) return err;
+    else {
+        return { error: "Expresión no válida.", tipo: "Semántico", origen: "Query", linea: _instruccion.linea, columna: _instruccion.columna };
+    }
+    if (root.error) return root;
+    if (root.length === 0 || root === null) return _404;
     retorno.retorno = root;
     return retorno;
 }
@@ -51,8 +60,25 @@ function getSymbolFromRoot(_nodename: any, _contexto: Array<Element>, _ambito: A
 function getFromCurrent(_id: any, _contexto: any, _ambito: Ambito, _condicion: any): any {
     let elements = Array<Element>();
     let attributes = Array<Atributo>();
+    // Selecciona el texto contenido únicamente en el nodo
+    if (_id === "text()") {
+        let text = Array<string>();
+        for (let i = 0; i < _contexto.length; i++) {
+            const element = _contexto[i];
+            if (element.value) {
+                text.push(element.value);
+                elements.push(element);
+            }
+        }
+        if (_condicion) {
+            let filter = new Predicate(_condicion, _ambito, elements);
+            text = filter.filterElements(text);
+            elements = filter.contexto;
+        }
+        return { texto: text, elementos: elements };
+    }
     // Selecciona todos los hijos (elementos o texto)
-    if (_id === "node()") {
+    else if (_id === "node()") {
         let nodes = Array<any>();
         for (let i = 0; i < _contexto.length; i++) {
             const element = _contexto[i];
@@ -67,7 +93,7 @@ function getFromCurrent(_id: any, _contexto: any, _ambito: Ambito, _condicion: a
             let filter = new Predicate(_condicion, _ambito, elements);
             nodes = filter.filterElements(nodes);
         }
-        return { tipo: Tipos.COMBINADO, nodos: nodes };
+        return { tipo: Tipos.COMBINADO, nodos: nodes, elementos: _contexto };
     }
     // Selecciona todos los hijos (elementos)
     else if (_id === "*") {
@@ -174,9 +200,23 @@ function getFromCurrent(_id: any, _contexto: any, _ambito: Ambito, _condicion: a
 function getFromRoot(_id: any, _ambito: Ambito, _condicion: any): any {
     let elements = Array<Element>();
     let attributes = Array<Atributo>();
-    let text = Array<string>();
+    // Selecciona únicamente el texto contenido en el nodo y todos sus descendientes
+    if (_id === "text()") {
+        let text = Array<string>();
+        _ambito.tablaSimbolos.forEach(element => {
+            if (element.value) {
+                text.push(element.value);
+                elements.push(element);
+            }
+        });
+        if (_condicion) {
+            let filter = new Predicate(_condicion, _ambito, elements);
+            text = filter.filterElements(text);
+        }
+        return { texto: text, elementos: elements };
+    }
     // Selecciona todos los hijos (elementos o texto)
-    if (_id === "node()") {
+    else if (_id === "node()") {
         let nodes = Array<any>();
         _ambito.tablaSimbolos.forEach(element => {
             if (element.childs)
@@ -190,7 +230,7 @@ function getFromRoot(_id: any, _ambito: Ambito, _condicion: any): any {
             let filter = new Predicate(_condicion, _ambito, elements);
             nodes = filter.filterElements(nodes);
         }
-        return { tipo: Tipos.COMBINADO, nodos: nodes };
+        return { tipo: Tipos.COMBINADO, nodos: nodes, elementos: _ambito.tablaSimbolos };
     }
     // Selecciona todos los hijos (elementos)
     else if (_id === "*") {

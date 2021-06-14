@@ -16,18 +16,35 @@ function Bloque(_instruccion, _ambito, _retorno) {
             var instr = camino[j];
             if (instr.tipo === Enum_1.Tipos.SELECT_FROM_ROOT) {
                 tmp = Eje_1.default(instr, _ambito, _retorno);
-                if (tmp.err)
+                if (tmp.notFound) {
+                    _retorno = reset;
                     break;
-                _retorno = tmp;
+                }
+                if (tmp.error)
+                    return tmp;
+                if (tmp.retorno.elementos)
+                    _retorno.retorno = tmp.retorno.elementos;
+                else
+                    _retorno = tmp;
             }
             else if (instr.tipo === Enum_1.Tipos.SELECT_FROM_CURRENT) {
                 tmp = DobleEje_1.default(instr, _ambito, _retorno);
-                if (tmp.err)
+                if (tmp.notFound) {
+                    _retorno = reset;
                     break;
-                _retorno = tmp;
+                }
+                if (tmp.error)
+                    return tmp;
+                if (tmp.retorno.elementos)
+                    _retorno.retorno = tmp.retorno.elementos;
+                else
+                    _retorno = tmp;
+            }
+            else {
+                return { error: "Error: Instrucci\u00F3n no procesada.", tipo: "Semántico", linea: instr.linea, columna: instr.columna };
             }
         }
-        output.push(_retorno);
+        output.push(tmp);
         _retorno = reset;
     }
     return writeOutput();
@@ -37,7 +54,7 @@ function writeOutput() {
     for (var i = 0; i < output.length; i++) {
         var path = output[i];
         if (path.cadena === Enum_1.Tipos.TEXTOS) {
-            var root = path.retorno;
+            var root = (path.retorno.texto) ? (path.retorno.texto) : (path.retorno);
             root.forEach(function (txt) {
                 cadena += concatText(txt);
             });
