@@ -1,7 +1,6 @@
 "use strict";
 var Enum_1 = require("../../../model/xpath/Enum");
 function Expresion(_expresion, _ambito, _contexto) {
-    console.log(_expresion, "EXPRESIOON");
     var tipo = _expresion.tipo;
     if (tipo === Enum_1.Tipos.NODENAME) {
         return { valor: _expresion.nodename, tipo: Enum_1.Tipos.ELEMENTOS, linea: _expresion.linea, columna: _expresion.columna };
@@ -16,7 +15,7 @@ function Expresion(_expresion, _ambito, _contexto) {
         return { valor: "..", tipo: Enum_1.Tipos.ELEMENTOS, linea: _expresion.linea, columna: _expresion.columna };
     }
     else if (tipo === Enum_1.Tipos.SELECT_ATTRIBUTES) {
-        var valor = { id: _expresion.expresion, tipo: "@" }; // Se podría quitar
+        var valor = { id: _expresion.expresion, tipo: "@" };
         return { valor: valor, tipo: Enum_1.Tipos.ATRIBUTOS, linea: _expresion.linea, columna: _expresion.columna };
     }
     else if (tipo === Enum_1.Tipos.ASTERISCO) {

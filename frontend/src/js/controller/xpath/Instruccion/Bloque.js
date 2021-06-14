@@ -8,7 +8,7 @@ var Eje_1 = __importDefault(require("./Selecting/Eje"));
 function Bloque(_instruccion, _ambito) {
     var retorno = { cadena: "", retorno: null };
     var tmp;
-    console.log(_instruccion, 888888);
+    // console.log(_instruccion, 888888);
     for (var i = 0; i < _instruccion.length; i++) {
         var camino = _instruccion[i]; // En caso de tener varios caminos
         for (var j = 0; j < camino.length; j++) {
@@ -32,7 +32,7 @@ function Bloque(_instruccion, _ambito) {
             }
         }
     }
-    console.log(retorno, 888888888);
+    // console.log(retorno, 888888888)
     if (retorno.retorno) {
         var cadena_1 = "";
         if (retorno.cadena === Enum_1.Tipos.TEXTOS) {
@@ -58,7 +58,6 @@ function Bloque(_instruccion, _ambito) {
             });
         }
         else if (retorno.cadena === Enum_1.Tipos.COMBINADO) {
-            console.log(retorno, 3523523);
             var root = retorno.retorno.nodos;
             root.forEach(function (elemento) {
                 if (elemento.elementos) {

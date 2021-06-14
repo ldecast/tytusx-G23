@@ -6,7 +6,7 @@ export class Element {
     id_close: string;
     value: string; // Si tiene hijos no debería tener valor
     attributes: Array<Atributo>; // Lista de posibles atributos
-    father: any;
+    father: any; // Referencia al nombre, fila y columna del padre
     childs: Array<Element>; // Lista de otros posibles hijos
     line: string;
     column: string;
@@ -33,7 +33,7 @@ export class Element {
     /*
     * Devuelve el HTML para el AST del XML
     * */
-    public getXMLTree(): string {
+    public getASTXMLTree(): string {
         let str: string = "";
         str = "<li><a href=''>" + this.id_open + "</a>";
         if (this.attributes == null && this.childs == null && this.value == null) {
@@ -66,7 +66,7 @@ export class Element {
         if (this.childs != null) {
             str = str + "<li><a href=''>Children</a><ul>"
             this.childs.forEach((value) => {
-                str = str + value.getXMLTree();
+                str = str + value.getASTXMLTree();
             });
             str = str + "</ul></li>\n";
         }
@@ -76,166 +76,17 @@ export class Element {
     }
 
 
-    /*
-    * Devuelve el HTML para el CST Ascendente del XML
-    * */
-    public buildAscendingCst(): string {
-        let cst: string;
-        if (this.value != null) {
-            cst = `<li><a href="">XML</a><ul>`
-            cst = cst + this.getXmlOpenForCST();
-
-            cst = cst + `
-            <li><a href="">tk_content</a><ul>
-            <li><a href="">${this.value}</a></li>
-            </ul></li>
-
-            <li><a href="">tk_open_end_tag</a><ul>
-            <li><a href="">&lt/</a></li>
-            </ul></li>      
-
-            <li><a href="">tk_tag_name</a><ul>
-            <li><a href="">${this.id_close}</a></li>
-            </ul></li>  
-
-            <li><a href="">tk_close</a><ul>
-            <li><a href="">&gt</a></li>
-            </ul></li>
-            </ul></li>`;
-            return cst;
-        } else if (this.childs != null) {
-            let str: string = "";
-            this.childs.forEach((value) => {
-                str = `<li><a href="">CHILDREN</a><ul>
-                    ${str}
-                    ${value.buildAscendingCst()}
-                </ul></li>
-                `;
-
-            });
-            cst = `<li><a href="">XML</a><ul>` + this.getXmlOpenForCST() + str + `
-            <li><a href="">tk_open_end_tag</a><ul>
-            <li><a href="">&lt/</a></li>
-            </ul></li>      
-            
-             <li><a href="">tk_tag_name</a><ul>
-            <li><a href="">${this.id_close}</a></li>
-            </ul></li>
-            
-            <li><a href="">tk_close</a><ul>
-            <li><a href="">&gt</a></li>
-            </ul></li>
-            
-            </ul></li>`;
-
-            return cst;
-
-        } else if (this.id_close != null) {//Empty tag
-            cst = `<li><a href="">XML</a><ul>`
-            cst = cst + this.getXmlOpenForCST();
-            cst = cst + `
-
-            <li><a href="">tk_open_end_tag</a><ul>
-            <li><a href="">&lt/</a></li>
-            </ul></li>      
-
-            <li><a href="">tk_tag_name</a><ul>
-            <li><a href="">${this.id_close}</a></li>
-            </ul></li>  
-
-            <li><a href="">tk_close</a><ul>
-            <li><a href="">&gt</a></li>
-            </ul></li>
-            </ul></li>`;
-            return cst;
-
-        }
-        cst = `<li><a href="">XML</a><ul>
-                
-            <li><a href="">tk_open_end_tag</a><ul>
-            <li><a href="">&lt</a></li>
-            </ul></li> 
-            
-            <li><a href="">tk_tag_name</a><ul>
-            <li><a href="">${this.id_open}</a></li>
-            </ul></li>  
-            
-            ${this.getAttributesCST()}
-            
-            <li><a href="">tk_bar</a><ul>
-            <li><a href="">/</a></li>
-            </ul></li>
-
-            <li><a href="">tk_close</a><ul>
-            <li><a href="">&gt</a></li>
-            </ul></li>
-            
-            </ul></li>`;
-
-
-        return cst;
-    }
-
-    private getXmlOpenForCST(): string {
-        let temp: string = "";
-        temp = `<li><a href="">XML_OPEN</a>
-        <ul>
-        
-        <li><a href="">tk_open</a>
-        <ul>
-        <li><a href="">&lt</a></li>
-        </ul>
-        </li>
-        
-        <li><a href="">tk_tag_name</a>
-        <ul>
-        <li><a href="">${this.id_open}</a></li>
-        </ul>
-        </li>
-
-        `;
-        temp = temp + this.getAttributesCST();
-        temp = temp + `
-            <li><a href="">tk_open</a>
-            <ul>
-            <li><a href="">&gt</a></li>
-            </ul>
-            </li>
-            </ul></li>`
-        return temp;
-
-    }
-    private getAttributesCST(): string {
-        if (this.attributes != null) {
-            let str: string = "";
-            str = `<li>
-            <a href="">ATTRIBUTE_LIST</a>
-            <ul>
-            <li> 
-            <a href="">Empty</a>
-            </li>
-            </ul>
-            </li>
-            `;
-
-            this.attributes.forEach((value) => {
-                str = `<li>
-                <a href="">ATTRIBUTE_LIST</a>
-                <ul>
-                ${str}
-                ${value.Cst}
-                </ul>
-                </li>
-                `;
-            });
-            return str;
-        }
-        return "";
-    }
-
     /*PROPERTIES*/
     set Att_Arr(value: Array<Atributo>) {
         this.attributes = value;
+    }
+    set Children(value) {
+        if (value == null) { return; }
+        this.childs = value;
+        this.childs.forEach((value) => {
+            if (value == null) { return; }
+            value.Father = this;
+        });
     }
     set Close(value: string) {
         this.id_close = value;
@@ -243,9 +94,14 @@ export class Element {
     set Value(value: string) {
         this.value = value;
     }
+    set Father(value: any) {
+        this.father = value;
+    }
 
 
-
+    get Children() {
+        return this.childs;
+    }
 
 
 
@@ -284,6 +140,13 @@ export class Element {
             a += "-";
         }
         return a;
+    }
+    public printChildren() {
+        if (this.childs == null) { return; }
+        this.childs.forEach((value) => {
+            console.log(this);
+            value.printChildren();
+        });
     }
 
 }

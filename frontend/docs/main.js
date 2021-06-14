@@ -265,7 +265,7 @@ var Eje_1 = __importDefault(__webpack_require__(/*! ./Selecting/Eje */ "CG7/"));
 function Bloque(_instruccion, _ambito) {
     var retorno = { cadena: "", retorno: null };
     var tmp;
-    console.log(_instruccion, 888888);
+    // console.log(_instruccion, 888888);
     for (var i = 0; i < _instruccion.length; i++) {
         var camino = _instruccion[i]; // En caso de tener varios caminos
         for (var j = 0; j < camino.length; j++) {
@@ -289,7 +289,7 @@ function Bloque(_instruccion, _ambito) {
             }
         }
     }
-    console.log(retorno, 888888888);
+    // console.log(retorno, 888888888)
     if (retorno.retorno) {
         var cadena_1 = "";
         if (retorno.cadena === Enum_1.Tipos.TEXTOS) {
@@ -315,7 +315,6 @@ function Bloque(_instruccion, _ambito) {
             });
         }
         else if (retorno.cadena === Enum_1.Tipos.COMBINADO) {
-            console.log(retorno, 3523523);
             var root = retorno.retorno.nodos;
             root.forEach(function (elemento) {
                 if (elemento.elementos) {
@@ -1599,31 +1598,34 @@ var Enum_1 = __webpack_require__(/*! ./Enum */ "VvCz");
 var Encoding = /** @class */ (function () {
     function Encoding(encoding) {
         this.codes = Enum_1.Codes;
-        this.encoding = encoding;
-        this.getCode();
+        if (encoding === null)
+            this.encoding = this.codes.INVALID;
+        else {
+            this.encoding = encoding;
+            this.getCode();
+        }
     }
     Encoding.prototype.getCode = function () {
-        var decl = String(this.encoding).replace(/\s/g, '').toLowerCase();
-        var subs = decl.substr(decl.indexOf("encoding=") + 9);
-        var code;
-        if (subs[0] === "\"") {
-            code = subs.substr(1, subs.indexOf("\"", 1) - 1);
+        try {
+            var decl = String(this.encoding).replace(/\s/g, '').toLowerCase();
+            var code = decl.substr(decl.indexOf("encoding") + 8);
+            switch (code) {
+                case "utf-8":
+                    this.encoding = this.codes.UTF8;
+                    break;
+                case "iso-8859-1":
+                    this.encoding = this.codes.ISO8859_1;
+                    break;
+                case "ascii":
+                    this.encoding = this.codes.ASCII;
+                    break;
+                default:
+                    this.encoding = this.codes.INVALID;
+                    break;
+            }
         }
-        else if (subs[0] === "\'") {
-            code = subs.substr(1, subs.indexOf("\'", 1) - 1);
-        }
-        switch (code) {
-            case "utf-8":
-                this.encoding = this.codes.UTF8;
-                break;
-            case "iso-8859-1":
-                this.encoding = this.codes.ISO8859_1;
-                break;
-            case "ascii":
-                this.encoding = this.codes.ASCII;
-                break;
-            default:
-                this.encoding = this.codes.INVALID;
+        catch (error) {
+            this.encoding = this.codes.INVALID;
         }
     };
     return Encoding;
@@ -1696,6 +1698,7 @@ var Global = /** @class */ (function () {
     function Global(expresiones, ambito) {
         this.expresiones = expresiones;
         this.ambito = ambito;
+        console.log(expresiones, 89999);
         Hijos_1.default.exec(expresiones, this.ambito);
     }
     return Global;
@@ -1892,7 +1895,7 @@ var Element = /** @class */ (function () {
     /*
     * Devuelve el HTML para el AST del XML
     * */
-    Element.prototype.getXMLTree = function () {
+    Element.prototype.getASTXMLTree = function () {
         var str = "";
         str = "<li><a href=''>" + this.id_open + "</a>";
         if (this.attributes == null && this.childs == null && this.value == null) {
@@ -1921,63 +1924,37 @@ var Element = /** @class */ (function () {
         if (this.childs != null) {
             str = str + "<li><a href=''>Children</a><ul>";
             this.childs.forEach(function (value) {
-                str = str + value.getXMLTree();
+                str = str + value.getASTXMLTree();
             });
             str = str + "</ul></li>\n";
         }
         str = str + "</ul></li>\n";
         return str;
     };
-    /*
-    * Devuelve el HTML para el CST Ascendente del XML
-    * */
-    Element.prototype.buildAscendingCst = function () {
-        var cst;
-        if (this.value != null) {
-            cst = "<li><a href=\"\">XML</a><ul>";
-            cst = cst + this.getXmlOpenForCST();
-            cst = cst + ("\n            <li><a href=\"\">tk_content</a><ul>\n            <li><a href=\"\">" + this.value + "</a></li>\n            </ul></li>\n\n            <li><a href=\"\">tk_open_end_tag</a><ul>\n            <li><a href=\"\">&lt/</a></li>\n            </ul></li>      \n\n            <li><a href=\"\">tk_tag_name</a><ul>\n            <li><a href=\"\">" + this.id_close + "</a></li>\n            </ul></li>  \n\n            <li><a href=\"\">tk_close</a><ul>\n            <li><a href=\"\">&gt</a></li>\n            </ul></li>\n            </ul></li>");
-            return cst;
-        }
-        else if (this.childs != null) {
-            var str_1 = "";
-            this.childs.forEach(function (value) {
-                str_1 = "<li><a href=\"\">CHILDREN</a><ul>\n                    " + str_1 + "\n                    " + value.buildAscendingCst() + "\n                </ul></li>\n                ";
-            });
-            cst = "<li><a href=\"\">XML</a><ul>" + this.getXmlOpenForCST() + str_1 + ("\n            <li><a href=\"\">tk_open_end_tag</a><ul>\n            <li><a href=\"\">&lt/</a></li>\n            </ul></li>      \n            \n             <li><a href=\"\">tk_tag_name</a><ul>\n            <li><a href=\"\">" + this.id_close + "</a></li>\n            </ul></li>\n            \n            <li><a href=\"\">tk_close</a><ul>\n            <li><a href=\"\">&gt</a></li>\n            </ul></li>\n            \n            </ul></li>");
-            return cst;
-        }
-        else if (this.id_close != null) { //Empty tag
-            cst = "<li><a href=\"\">XML</a><ul>";
-            cst = cst + this.getXmlOpenForCST();
-            cst = cst + ("\n\n            <li><a href=\"\">tk_open_end_tag</a><ul>\n            <li><a href=\"\">&lt/</a></li>\n            </ul></li>      \n\n            <li><a href=\"\">tk_tag_name</a><ul>\n            <li><a href=\"\">" + this.id_close + "</a></li>\n            </ul></li>  \n\n            <li><a href=\"\">tk_close</a><ul>\n            <li><a href=\"\">&gt</a></li>\n            </ul></li>\n            </ul></li>");
-            return cst;
-        }
-        cst = "<li><a href=\"\">XML</a><ul>\n                \n            <li><a href=\"\">tk_open_end_tag</a><ul>\n            <li><a href=\"\">&lt</a></li>\n            </ul></li> \n            \n            <li><a href=\"\">tk_tag_name</a><ul>\n            <li><a href=\"\">" + this.id_open + "</a></li>\n            </ul></li>  \n            \n            " + this.getAttributesCST() + "\n            \n            <li><a href=\"\">tk_bar</a><ul>\n            <li><a href=\"\">/</a></li>\n            </ul></li>\n\n            <li><a href=\"\">tk_close</a><ul>\n            <li><a href=\"\">&gt</a></li>\n            </ul></li>\n            \n            </ul></li>";
-        return cst;
-    };
-    Element.prototype.getXmlOpenForCST = function () {
-        var temp = "";
-        temp = "<li><a href=\"\">XML_OPEN</a>\n        <ul>\n        \n        <li><a href=\"\">tk_open</a>\n        <ul>\n        <li><a href=\"\">&lt</a></li>\n        </ul>\n        </li>\n        \n        <li><a href=\"\">tk_tag_name</a>\n        <ul>\n        <li><a href=\"\">" + this.id_open + "</a></li>\n        </ul>\n        </li>\n\n        ";
-        temp = temp + this.getAttributesCST();
-        temp = temp + "\n            <li><a href=\"\">tk_open</a>\n            <ul>\n            <li><a href=\"\">&gt</a></li>\n            </ul>\n            </li>\n            </ul></li>";
-        return temp;
-    };
-    Element.prototype.getAttributesCST = function () {
-        if (this.attributes != null) {
-            var str_2 = "";
-            str_2 = "<li>\n            <a href=\"\">ATTRIBUTE_LIST</a>\n            <ul>\n            <li> \n            <a href=\"\">Empty</a>\n            </li>\n            </ul>\n            </li>\n            ";
-            this.attributes.forEach(function (value) {
-                str_2 = "<li>\n                <a href=\"\">ATTRIBUTE_LIST</a>\n                <ul>\n                " + str_2 + "\n                " + value.Cst + "\n                </ul>\n                </li>\n                ";
-            });
-            return str_2;
-        }
-        return "";
-    };
     Object.defineProperty(Element.prototype, "Att_Arr", {
         /*PROPERTIES*/
         set: function (value) {
             this.attributes = value;
+        },
+        enumerable: false,
+        configurable: true
+    });
+    Object.defineProperty(Element.prototype, "Children", {
+        get: function () {
+            return this.childs;
+        },
+        set: function (value) {
+            var _this = this;
+            if (value == null) {
+                return;
+            }
+            this.childs = value;
+            this.childs.forEach(function (value) {
+                if (value == null) {
+                    return;
+                }
+                value.Father = _this;
+            });
         },
         enumerable: false,
         configurable: true
@@ -1992,6 +1969,13 @@ var Element = /** @class */ (function () {
     Object.defineProperty(Element.prototype, "Value", {
         set: function (value) {
             this.value = value;
+        },
+        enumerable: false,
+        configurable: true
+    });
+    Object.defineProperty(Element.prototype, "Father", {
+        set: function (value) {
+            this.father = value;
         },
         enumerable: false,
         configurable: true
@@ -2029,6 +2013,16 @@ var Element = /** @class */ (function () {
             a += "-";
         }
         return a;
+    };
+    Element.prototype.printChildren = function () {
+        var _this = this;
+        if (this.childs == null) {
+            return;
+        }
+        this.childs.forEach(function (value) {
+            console.log(_this);
+            value.printChildren();
+        });
     };
     return Element;
 }());
@@ -3978,7 +3972,6 @@ if ( true && __webpack_require__.c[__webpack_require__.s] === module) {
 
 var Enum_1 = __webpack_require__(/*! ../../../model/xpath/Enum */ "MEUw");
 function Expresion(_expresion, _ambito, _contexto) {
-    console.log(_expresion, "EXPRESIOON");
     var tipo = _expresion.tipo;
     if (tipo === Enum_1.Tipos.NODENAME) {
         return { valor: _expresion.nodename, tipo: Enum_1.Tipos.ELEMENTOS, linea: _expresion.linea, columna: _expresion.columna };
@@ -3993,7 +3986,7 @@ function Expresion(_expresion, _ambito, _contexto) {
         return { valor: "..", tipo: Enum_1.Tipos.ELEMENTOS, linea: _expresion.linea, columna: _expresion.columna };
     }
     else if (tipo === Enum_1.Tipos.SELECT_ATTRIBUTES) {
-        var valor = { id: _expresion.expresion, tipo: "@" }; // Se podría quitar
+        var valor = { id: _expresion.expresion, tipo: "@" };
         return { valor: valor, tipo: Enum_1.Tipos.ATRIBUTOS, linea: _expresion.linea, columna: _expresion.columna };
     }
     else if (tipo === Enum_1.Tipos.ASTERISCO) {
@@ -4052,6 +4045,7 @@ var Bloque_1 = __importDefault(__webpack_require__(/*! ../controller/xpath/Instr
 var Ambito_1 = __webpack_require__(/*! ../model/xml/Ambito/Ambito */ "QFP7");
 var Global_1 = __webpack_require__(/*! ../model/xml/Ambito/Global */ "IRxg");
 function compile(req) {
+    var errors = [];
     try {
         // Datos de la petición desde Angular
         var xml = req.xml;
@@ -4066,56 +4060,51 @@ function compile(req) {
                 break;
             case 2:
                 parser_xml = __webpack_require__(/*! ../analyzers/xml_down */ "cW0F");
-                parser_xPath = "require('../analyzers/xpath_down);";
+                parser_xPath = __webpack_require__(/*! ../analyzers/xpath_down */ "jiUV");
                 break;
         }
         // Análisis de XML
         var xml_ast = parser_xml.parse(xml);
-        if (xml_ast === true || xml_ast.errors.length > 0 || xml_ast.ast === null) {
-            var output_1 = {
-                arreglo_simbolos: [],
-                arreglo_errores: (xml_ast === true ? [{ tipo: "Sintáctico", error: "Sintaxis errónea del documento XML.", origen: "XML", linea: 1, columna: 1 }] : xml_ast.errors),
-                output: "El documento XML contiene errores para analizar.\nIntente de nuevo."
-            };
-            return output_1;
+        if (xml_ast.errors.length > 0 || xml_ast.ast === null || xml_ast === true) {
+            if (xml_ast.errors.length > 0)
+                errors = xml_ast.errors;
+            if (xml_ast.ast === null || xml_ast === true) {
+                errors.push({ tipo: "Sintáctico", error: "Sintaxis errónea del documento XML.", origen: "XPath", linea: 1, columna: 1 });
+                return { output: "El documento XML contiene errores para analizar.\nIntente de nuevo.", arreglo_errores: errors };
+            }
         }
-        var xml_parse = xml_ast.ast;
-        var global_1 = new Ambito_1.Ambito(null, "global");
-        var cadena = new Global_1.Global(xml_parse, global_1);
-        var simbolos = cadena.ambito.getArraySymbols();
+        var xml_parse = xml_ast.ast; // AST que genera Jison
+        var global_1 = new Ambito_1.Ambito(null, "global"); // Ámbito global
+        var cadena = new Global_1.Global(xml_parse, global_1); // Llena la tabla de símbolos
+        var simbolos = cadena.ambito.getArraySymbols(); // Arreglo con los símbolos
         // Análisis de XPath
         var xPath_ast = parser_xPath.parse(xPath);
-        console.log(xPath_ast, 99);
-        if (xPath_ast === true || xPath_ast.errors.length > 0 || xPath_ast.ast === null) {
-            var output_2 = {
-                arreglo_simbolos: [],
-                arreglo_errores: (xPath_ast === true ? [{ tipo: "Sintáctico", error: "Sintaxis errónea de la consulta.", origen: "XPath", linea: 1, columna: 1 }] : xml_ast.errors),
-                output: "La consulta contiene errores para analizar.\nIntente de nuevo."
-            };
-            return output_2;
+        if (xPath_ast.errors.length > 0 || xPath_ast.ast === null || xPath_ast === true) {
+            if (xPath_ast.errors.length > 0)
+                errors = xPath_ast.errors;
+            else
+                errors.push({ tipo: "Sintáctico", error: "Sintaxis errónea de la consulta.", origen: "XPath", linea: 1, columna: 1 });
+            // output: "La consulta contiene errores para analizar.\nIntente de nuevo."
         }
-        var xPath_parse = xPath_ast.ast;
-        // console.log(xPath_parse, 88)
-        var bloque = Bloque_1.default(xPath_parse, cadena.ambito);
-        console.log(bloque, 88);
-        console.log("Salida:", xPath_parse);
-        var error = [];
+        var xPath_parse = xPath_ast.ast; // AST que genera Jison
+        var bloque = Bloque_1.default(xPath_parse, cadena.ambito); // Procesa la secuencia de accesos (instrucciones)
         if (bloque.err) {
-            error.push({ error: bloque.err, tipo: "Semántico", origen: "XPath", linea: bloque.linea, columna: bloque.columna });
+            errors.push({ error: bloque.err, tipo: "Semántico", origen: "XPath", linea: bloque.linea, columna: bloque.columna });
         }
         var output = {
             arreglo_simbolos: simbolos,
-            arreglo_errores: error,
+            arreglo_errores: errors,
             output: bloque.cadena ? bloque.cadena : bloque.err
         };
         return output;
     }
     catch (error) {
         console.log(error);
+        errors.push({ tipo: "Desconocido", error: "Error en tiempo de ejecución.", origen: "", linea: "", columna: "" });
         var output = {
             arreglo_simbolos: [],
-            arreglo_errores: [{ tipo: "Desconocido", error: "Error en tiempo de ejecución.", origen: "", linea: "", columna: "" }],
-            output: String(error)
+            arreglo_errores: errors,
+            output: (error.message) ? String(error.message) : String(error)
         };
         return output;
     }
@@ -4146,6 +4135,756 @@ function exec(_expresiones, _ambito) {
 }
 module.exports = { exec: exec };
 
+
+/***/ }),
+
+/***/ "jiUV":
+/*!****************************************!*\
+  !*** ./src/js/analyzers/xpath_down.js ***!
+  \****************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+/* WEBPACK VAR INJECTION */(function(module) {/* parser generated by jison 0.4.18 */
+/*
+  Returns a Parser object of the following structure:
+
+  Parser: {
+    yy: {}
+  }
+
+  Parser.prototype: {
+    yy: {},
+    trace: function(),
+    symbols_: {associative list: name ==> number},
+    terminals_: {associative list: number ==> name},
+    productions_: [...],
+    performAction: function anonymous(yytext, yyleng, yylineno, yy, yystate, $$, _$),
+    table: [...],
+    defaultActions: {...},
+    parseError: function(str, hash),
+    parse: function(input),
+
+    lexer: {
+        EOF: 1,
+        parseError: function(str, hash),
+        setInput: function(input),
+        input: function(),
+        unput: function(str),
+        more: function(),
+        less: function(n),
+        pastInput: function(),
+        upcomingInput: function(),
+        showPosition: function(),
+        test_match: function(regex_match_array, rule_index),
+        next: function(),
+        lex: function(),
+        begin: function(condition),
+        popState: function(),
+        _currentRules: function(),
+        topState: function(),
+        pushState: function(condition),
+
+        options: {
+            ranges: boolean           (optional: true ==> token location info will include a .range[] member)
+            flex: boolean             (optional: true ==> flex-like lexing behaviour where the rules are tested exhaustively to find the longest match)
+            backtrack_lexer: boolean  (optional: true ==> lexer regexes are tested in order and for each matching regex the action code is invoked; the lexer terminates the scan when a token is returned by the action code)
+        },
+
+        performAction: function(yy, yy_, $avoiding_name_collisions, YY_START),
+        rules: [...],
+        conditions: {associative list: name ==> set},
+    }
+  }
+
+
+  token location info (@$, _$, etc.): {
+    first_line: n,
+    last_line: n,
+    first_column: n,
+    last_column: n,
+    range: [start_number, end_number]       (where the numbers are indexes into the input string, regular zero-based)
+  }
+
+
+  the parseError function receives a 'hash' object with these members for lexer and parser errors: {
+    text:        (matched text)
+    token:       (the produced terminal token, if any)
+    line:        (yylineno)
+  }
+  while parser (grammar) errors will also provide these members, i.e. parser errors deliver a superset of attributes: {
+    loc:         (yylloc)
+    expected:    (string describing the set of expected tokens)
+    recoverable: (boolean: TRUE when the parser has a error recovery rule available for this particular error)
+  }
+*/
+var xpath_down = (function(){
+var o=function(k,v,o,l){for(o=o||{},l=k.length;l--;o[k[l]]=v);return o},$V0=[1,8],$V1=[1,9],$V2=[1,10],$V3=[1,11],$V4=[1,12],$V5=[1,13],$V6=[1,14],$V7=[1,15],$V8=[1,16],$V9=[1,17],$Va=[1,18],$Vb=[1,19],$Vc=[1,20],$Vd=[1,21],$Ve=[1,22],$Vf=[1,23],$Vg=[1,24],$Vh=[1,25],$Vi=[1,26],$Vj=[5,6,9,10,12,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,60,61,62],$Vk=[2,18],$Vl=[1,29],$Vm=[1,30],$Vn=[1,31],$Vo=[1,32],$Vp=[1,34],$Vq=[5,6,9,10,12,13,15,16,17,19,21,25,26,27,28,29,30,33,34,35,36,37,38,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,60,61,62],$Vr=[2,12],$Vs=[1,44],$Vt=[1,45],$Vu=[1,46],$Vv=[1,48],$Vw=[2,22],$Vx=[1,50],$Vy=[1,51],$Vz=[9,10,12,13,21,25,26,27,28,29,30,33,34,35,36,37,38],$VA=[2,51],$VB=[1,59],$VC=[1,57],$VD=[1,58],$VE=[1,84],$VF=[1,85],$VG=[1,83],$VH=[2,36],$VI=[1,77],$VJ=[1,78],$VK=[1,79],$VL=[1,80],$VM=[1,81],$VN=[1,82],$VO=[9,10,12,21,25,26,27,28,29,30],$VP=[2,45],$VQ=[1,89],$VR=[1,87],$VS=[1,88],$VT=[1,90],$VU=[1,91],$VV=[1,92],$VW=[1,93],$VX=[5,6,9,10,12,13,21,25,26,27,28,29,30,33,34,35,36,37,38,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,60,61,62],$VY=[2,25],$VZ=[1,105];
+var parser = {trace: function trace () { },
+yy: {},
+symbols_: {"error":2,"ini":3,"CONTI":4,"EOF":5,"tk_punto":6,"AXES":7,"CONTIp":8,"tk_bar":9,"tk_2bar":10,"PAL":11,"tk_4puntos":12,"tk_por":13,"SUBAX":14,"tk_arroba":15,"tk_line":16,"tk_2puntos":17,"CORCHET":18,"tk_corA":19,"E":20,"tk_corC":21,"CORCHETp":22,"T":23,"Ep":24,"tk_menorigual":25,"tk_menor":26,"tk_mayor":27,"tk_mayorigual":28,"tk_or":29,"tk_and":30,"F":31,"Tp":32,"tk_mas":33,"tk_menos":34,"tk_div":35,"tk_mod":36,"tk_diferent":37,"tk_equal":38,"O":39,"num":40,"Q":41,"tk_id":42,"tk_ancestor":43,"tk_ancestor2":44,"tk_attribute_d":45,"tk_attribute_s":46,"tk_child":47,"tk_descendant":48,"tk_descendant2":49,"tk_following":50,"tk_following2":51,"tk_namespace":52,"tk_parent":53,"tk_preceding":54,"tk_preceding2":55,"tk_self":56,"tk_node":57,"tk_ParA":58,"tk_ParC":59,"tk_last":60,"tk_text":61,"tk_position":62,"$accept":0,"$end":1},
+terminals_: {2:"error",5:"EOF",6:"tk_punto",9:"tk_bar",10:"tk_2bar",12:"tk_4puntos",13:"tk_por",15:"tk_arroba",16:"tk_line",17:"tk_2puntos",19:"tk_corA",21:"tk_corC",25:"tk_menorigual",26:"tk_menor",27:"tk_mayor",28:"tk_mayorigual",29:"tk_or",30:"tk_and",33:"tk_mas",34:"tk_menos",35:"tk_div",36:"tk_mod",37:"tk_diferent",38:"tk_equal",40:"num",42:"tk_id",43:"tk_ancestor",44:"tk_ancestor2",45:"tk_attribute_d",46:"tk_attribute_s",47:"tk_child",48:"tk_descendant",49:"tk_descendant2",50:"tk_following",51:"tk_following2",52:"tk_namespace",53:"tk_parent",54:"tk_preceding",55:"tk_preceding2",56:"tk_self",57:"tk_node",58:"tk_ParA",59:"tk_ParC",60:"tk_last",61:"tk_text",62:"tk_position"},
+productions_: [0,[3,2],[4,3],[4,3],[4,3],[4,3],[4,3],[8,3],[8,3],[8,3],[8,3],[8,3],[8,0],[7,2],[7,2],[7,1],[7,1],[7,1],[7,0],[14,1],[14,1],[14,1],[14,0],[18,4],[22,4],[22,0],[20,2],[24,3],[24,3],[24,3],[24,3],[24,3],[24,3],[24,3],[24,3],[24,3],[24,0],[23,2],[32,3],[32,3],[32,3],[32,3],[32,3],[32,3],[32,3],[32,0],[31,2],[31,1],[31,1],[31,2],[31,1],[31,0],[39,1],[39,1],[41,1],[41,0],[11,1],[11,1],[11,1],[11,1],[11,1],[11,1],[11,1],[11,1],[11,1],[11,1],[11,1],[11,1],[11,1],[11,1],[11,1],[11,3],[11,3],[11,3],[11,3]],
+performAction: function anonymous(yytext, yyleng, yylineno, yy, yystate /* action[1] */, $$ /* vstack */, _$ /* lstack */) {
+/* this == yyval */
+
+var $0 = $$.length - 1;
+switch (yystate) {
+case 1:
+console.log("fin del archivo descendente");
+break;
+}
+},
+table: [{3:1,4:2,6:[1,3],9:[1,4],10:[1,5],11:6,12:[1,7],42:$V0,43:$V1,44:$V2,45:$V3,46:$V4,47:$V5,48:$V6,49:$V7,50:$V8,51:$V9,52:$Va,53:$Vb,54:$Vc,55:$Vd,56:$Ve,57:$Vf,60:$Vg,61:$Vh,62:$Vi},{1:[3]},{5:[1,27]},o($Vj,$Vk,{7:28,18:33,13:$Vl,15:$Vm,16:$Vn,17:$Vo,19:$Vp}),o($Vj,$Vk,{18:33,7:35,13:$Vl,15:$Vm,16:$Vn,17:$Vo,19:$Vp}),o($Vj,$Vk,{18:33,7:36,13:$Vl,15:$Vm,16:$Vn,17:$Vo,19:$Vp}),o($Vj,$Vk,{18:33,7:37,13:$Vl,15:$Vm,16:$Vn,17:$Vo,19:$Vp}),o($Vj,$Vk,{18:33,7:38,13:$Vl,15:$Vm,16:$Vn,17:$Vo,19:$Vp}),o($Vq,[2,56]),o($Vq,[2,57]),o($Vq,[2,58]),o($Vq,[2,59]),o($Vq,[2,60]),o($Vq,[2,61]),o($Vq,[2,62]),o($Vq,[2,63]),o($Vq,[2,64]),o($Vq,[2,65]),o($Vq,[2,66]),o($Vq,[2,67]),o($Vq,[2,68]),o($Vq,[2,69]),o($Vq,[2,70]),{58:[1,39]},{58:[1,40]},{58:[1,41]},{58:[1,42]},{1:[2,1]},{5:$Vr,6:$Vs,8:43,9:$Vt,10:$Vu,11:47,12:$Vv,42:$V0,43:$V1,44:$V2,45:$V3,46:$V4,47:$V5,48:$V6,49:$V7,50:$V8,51:$V9,52:$Va,53:$Vb,54:$Vc,55:$Vd,56:$Ve,57:$Vf,60:$Vg,61:$Vh,62:$Vi},o($Vj,$Vw,{14:49,18:52,13:$Vx,15:$Vy,19:$Vp}),o($Vj,$Vw,{18:52,14:53,13:$Vx,15:$Vy,19:$Vp}),o($Vj,[2,15]),o($Vj,[2,16]),o($Vj,[2,17]),o($Vz,$VA,{20:54,23:55,31:56,11:60,18:61,6:$VB,15:$VC,19:$Vp,40:$VD,42:$V0,43:$V1,44:$V2,45:$V3,46:$V4,47:$V5,48:$V6,49:$V7,50:$V8,51:$V9,52:$Va,53:$Vb,54:$Vc,55:$Vd,56:$Ve,57:$Vf,60:$Vg,61:$Vh,62:$Vi}),{5:$Vr,6:$Vs,8:62,9:$Vt,10:$Vu,11:47,12:$Vv,42:$V0,43:$V1,44:$V2,45:$V3,46:$V4,47:$V5,48:$V6,49:$V7,50:$V8,51:$V9,52:$Va,53:$Vb,54:$Vc,55:$Vd,56:$Ve,57:$Vf,60:$Vg,61:$Vh,62:$Vi},{5:$Vr,6:$Vs,8:63,9:$Vt,10:$Vu,11:47,12:$Vv,42:$V0,43:$V1,44:$V2,45:$V3,46:$V4,47:$V5,48:$V6,49:$V7,50:$V8,51:$V9,52:$Va,53:$Vb,54:$Vc,55:$Vd,56:$Ve,57:$Vf,60:$Vg,61:$Vh,62:$Vi},{5:$Vr,6:$Vs,8:64,9:$Vt,10:$Vu,11:47,12:$Vv,42:$V0,43:$V1,44:$V2,45:$V3,46:$V4,47:$V5,48:$V6,49:$V7,50:$V8,51:$V9,52:$Va,53:$Vb,54:$Vc,55:$Vd,56:$Ve,57:$Vf,60:$Vg,61:$Vh,62:$Vi},{5:$Vr,6:$Vs,8:65,9:$Vt,10:$Vu,11:47,12:$Vv,42:$V0,43:$V1,44:$V2,45:$V3,46:$V4,47:$V5,48:$V6,49:$V7,50:$V8,51:$V9,52:$Va,53:$Vb,54:$Vc,55:$Vd,56:$Ve,57:$Vf,60:$Vg,61:$Vh,62:$Vi},{59:[1,66]},{59:[1,67]},{59:[1,68]},{59:[1,69]},{5:[2,2]},o($Vj,$Vk,{18:33,7:70,13:$Vl,15:$Vm,16:$Vn,17:$Vo,19:$Vp}),o($Vj,$Vk,{18:33,7:71,13:$Vl,15:$Vm,16:$Vn,17:$Vo,19:$Vp}),o($Vj,$Vk,{18:33,7:72,13:$Vl,15:$Vm,16:$Vn,17:$Vo,19:$Vp}),o($Vj,$Vk,{18:33,7:73,13:$Vl,15:$Vm,16:$Vn,17:$Vo,19:$Vp}),o($Vj,$Vk,{18:33,7:74,13:$Vl,15:$Vm,16:$Vn,17:$Vo,19:$Vp}),o($Vj,[2,13]),o($Vj,[2,19]),o($Vj,[2,20]),o($Vj,[2,21]),o($Vj,[2,14]),{21:[1,75]},{9:$VE,10:$VF,12:$VG,21:$VH,24:76,25:$VI,26:$VJ,27:$VK,28:$VL,29:$VM,30:$VN},o($VO,$VP,{32:86,13:$VQ,33:$VR,34:$VS,35:$VT,36:$VU,37:$VV,38:$VW}),{13:[1,96],39:94,42:[1,95]},o($Vz,[2,47]),o($Vz,[2,48]),o($Vz,[2,55],{41:97,18:98,19:$Vp}),o($Vz,[2,50]),{5:[2,3]},{5:[2,4]},{5:[2,5]},{5:[2,6]},o($Vq,[2,71]),o($Vq,[2,72]),o($Vq,[2,73]),o($Vq,[2,74]),{5:$Vr,6:$Vs,8:99,9:$Vt,10:$Vu,11:47,12:$Vv,42:$V0,43:$V1,44:$V2,45:$V3,46:$V4,47:$V5,48:$V6,49:$V7,50:$V8,51:$V9,52:$Va,53:$Vb,54:$Vc,55:$Vd,56:$Ve,57:$Vf,60:$Vg,61:$Vh,62:$Vi},{5:$Vr,6:$Vs,8:100,9:$Vt,10:$Vu,11:47,12:$Vv,42:$V0,43:$V1,44:$V2,45:$V3,46:$V4,47:$V5,48:$V6,49:$V7,50:$V8,51:$V9,52:$Va,53:$Vb,54:$Vc,55:$Vd,56:$Ve,57:$Vf,60:$Vg,61:$Vh,62:$Vi},{5:$Vr,6:$Vs,8:101,9:$Vt,10:$Vu,11:47,12:$Vv,42:$V0,43:$V1,44:$V2,45:$V3,46:$V4,47:$V5,48:$V6,49:$V7,50:$V8,51:$V9,52:$Va,53:$Vb,54:$Vc,55:$Vd,56:$Ve,57:$Vf,60:$Vg,61:$Vh,62:$Vi},{5:$Vr,6:$Vs,8:102,9:$Vt,10:$Vu,11:47,12:$Vv,42:$V0,43:$V1,44:$V2,45:$V3,46:$V4,47:$V5,48:$V6,49:$V7,50:$V8,51:$V9,52:$Va,53:$Vb,54:$Vc,55:$Vd,56:$Ve,57:$Vf,60:$Vg,61:$Vh,62:$Vi},{5:$Vr,6:$Vs,8:103,9:$Vt,10:$Vu,11:47,12:$Vv,42:$V0,43:$V1,44:$V2,45:$V3,46:$V4,47:$V5,48:$V6,49:$V7,50:$V8,51:$V9,52:$Va,53:$Vb,54:$Vc,55:$Vd,56:$Ve,57:$Vf,60:$Vg,61:$Vh,62:$Vi},o($VX,$VY,{22:104,19:$VZ}),{21:[2,26]},o($Vz,$VA,{31:56,11:60,18:61,23:106,6:$VB,15:$VC,19:$Vp,40:$VD,42:$V0,43:$V1,44:$V2,45:$V3,46:$V4,47:$V5,48:$V6,49:$V7,50:$V8,51:$V9,52:$Va,53:$Vb,54:$Vc,55:$Vd,56:$Ve,57:$Vf,60:$Vg,61:$Vh,62:$Vi}),o($Vz,$VA,{31:56,11:60,18:61,23:107,6:$VB,15:$VC,19:$Vp,40:$VD,42:$V0,43:$V1,44:$V2,45:$V3,46:$V4,47:$V5,48:$V6,49:$V7,50:$V8,51:$V9,52:$Va,53:$Vb,54:$Vc,55:$Vd,56:$Ve,57:$Vf,60:$Vg,61:$Vh,62:$Vi}),o($Vz,$VA,{31:56,11:60,18:61,23:108,6:$VB,15:$VC,19:$Vp,40:$VD,42:$V0,43:$V1,44:$V2,45:$V3,46:$V4,47:$V5,48:$V6,49:$V7,50:$V8,51:$V9,52:$Va,53:$Vb,54:$Vc,55:$Vd,56:$Ve,57:$Vf,60:$Vg,61:$Vh,62:$Vi}),o($Vz,$VA,{31:56,11:60,18:61,23:109,6:$VB,15:$VC,19:$Vp,40:$VD,42:$V0,43:$V1,44:$V2,45:$V3,46:$V4,47:$V5,48:$V6,49:$V7,50:$V8,51:$V9,52:$Va,53:$Vb,54:$Vc,55:$Vd,56:$Ve,57:$Vf,60:$Vg,61:$Vh,62:$Vi}),o($Vz,$VA,{31:56,11:60,18:61,23:110,6:$VB,15:$VC,19:$Vp,40:$VD,42:$V0,43:$V1,44:$V2,45:$V3,46:$V4,47:$V5,48:$V6,49:$V7,50:$V8,51:$V9,52:$Va,53:$Vb,54:$Vc,55:$Vd,56:$Ve,57:$Vf,60:$Vg,61:$Vh,62:$Vi}),o($Vz,$VA,{31:56,11:60,18:61,23:111,6:$VB,15:$VC,19:$Vp,40:$VD,42:$V0,43:$V1,44:$V2,45:$V3,46:$V4,47:$V5,48:$V6,49:$V7,50:$V8,51:$V9,52:$Va,53:$Vb,54:$Vc,55:$Vd,56:$Ve,57:$Vf,60:$Vg,61:$Vh,62:$Vi}),o($Vz,$VA,{31:56,11:60,18:61,23:112,6:$VB,15:$VC,19:$Vp,40:$VD,42:$V0,43:$V1,44:$V2,45:$V3,46:$V4,47:$V5,48:$V6,49:$V7,50:$V8,51:$V9,52:$Va,53:$Vb,54:$Vc,55:$Vd,56:$Ve,57:$Vf,60:$Vg,61:$Vh,62:$Vi}),o($Vz,$VA,{31:56,11:60,18:61,23:113,6:$VB,15:$VC,19:$Vp,40:$VD,42:$V0,43:$V1,44:$V2,45:$V3,46:$V4,47:$V5,48:$V6,49:$V7,50:$V8,51:$V9,52:$Va,53:$Vb,54:$Vc,55:$Vd,56:$Ve,57:$Vf,60:$Vg,61:$Vh,62:$Vi}),o($Vz,$VA,{31:56,11:60,18:61,23:114,6:$VB,15:$VC,19:$Vp,40:$VD,42:$V0,43:$V1,44:$V2,45:$V3,46:$V4,47:$V5,48:$V6,49:$V7,50:$V8,51:$V9,52:$Va,53:$Vb,54:$Vc,55:$Vd,56:$Ve,57:$Vf,60:$Vg,61:$Vh,62:$Vi}),o($VO,[2,37]),o($Vz,$VA,{11:60,18:61,31:115,6:$VB,15:$VC,19:$Vp,40:$VD,42:$V0,43:$V1,44:$V2,45:$V3,46:$V4,47:$V5,48:$V6,49:$V7,50:$V8,51:$V9,52:$Va,53:$Vb,54:$Vc,55:$Vd,56:$Ve,57:$Vf,60:$Vg,61:$Vh,62:$Vi}),o($Vz,$VA,{11:60,18:61,31:116,6:$VB,15:$VC,19:$Vp,40:$VD,42:$V0,43:$V1,44:$V2,45:$V3,46:$V4,47:$V5,48:$V6,49:$V7,50:$V8,51:$V9,52:$Va,53:$Vb,54:$Vc,55:$Vd,56:$Ve,57:$Vf,60:$Vg,61:$Vh,62:$Vi}),o($Vz,$VA,{11:60,18:61,31:117,6:$VB,15:$VC,19:$Vp,40:$VD,42:$V0,43:$V1,44:$V2,45:$V3,46:$V4,47:$V5,48:$V6,49:$V7,50:$V8,51:$V9,52:$Va,53:$Vb,54:$Vc,55:$Vd,56:$Ve,57:$Vf,60:$Vg,61:$Vh,62:$Vi}),o($Vz,$VA,{11:60,18:61,31:118,6:$VB,15:$VC,19:$Vp,40:$VD,42:$V0,43:$V1,44:$V2,45:$V3,46:$V4,47:$V5,48:$V6,49:$V7,50:$V8,51:$V9,52:$Va,53:$Vb,54:$Vc,55:$Vd,56:$Ve,57:$Vf,60:$Vg,61:$Vh,62:$Vi}),o($Vz,$VA,{11:60,18:61,31:119,6:$VB,15:$VC,19:$Vp,40:$VD,42:$V0,43:$V1,44:$V2,45:$V3,46:$V4,47:$V5,48:$V6,49:$V7,50:$V8,51:$V9,52:$Va,53:$Vb,54:$Vc,55:$Vd,56:$Ve,57:$Vf,60:$Vg,61:$Vh,62:$Vi}),o($Vz,$VA,{11:60,18:61,31:120,6:$VB,15:$VC,19:$Vp,40:$VD,42:$V0,43:$V1,44:$V2,45:$V3,46:$V4,47:$V5,48:$V6,49:$V7,50:$V8,51:$V9,52:$Va,53:$Vb,54:$Vc,55:$Vd,56:$Ve,57:$Vf,60:$Vg,61:$Vh,62:$Vi}),o($Vz,$VA,{11:60,18:61,31:121,6:$VB,15:$VC,19:$Vp,40:$VD,42:$V0,43:$V1,44:$V2,45:$V3,46:$V4,47:$V5,48:$V6,49:$V7,50:$V8,51:$V9,52:$Va,53:$Vb,54:$Vc,55:$Vd,56:$Ve,57:$Vf,60:$Vg,61:$Vh,62:$Vi}),o($Vz,[2,46]),o($Vz,[2,52]),o($Vz,[2,53]),o($Vz,[2,49]),o($Vz,[2,54]),{5:[2,7]},{5:[2,8]},{5:[2,9]},{5:[2,10]},{5:[2,11]},o($VX,[2,23]),o($Vz,$VA,{23:55,31:56,11:60,18:61,20:122,6:$VB,15:$VC,19:$Vp,40:$VD,42:$V0,43:$V1,44:$V2,45:$V3,46:$V4,47:$V5,48:$V6,49:$V7,50:$V8,51:$V9,52:$Va,53:$Vb,54:$Vc,55:$Vd,56:$Ve,57:$Vf,60:$Vg,61:$Vh,62:$Vi}),{9:$VE,10:$VF,12:$VG,21:$VH,24:123,25:$VI,26:$VJ,27:$VK,28:$VL,29:$VM,30:$VN},{9:$VE,10:$VF,12:$VG,21:$VH,24:124,25:$VI,26:$VJ,27:$VK,28:$VL,29:$VM,30:$VN},{9:$VE,10:$VF,12:$VG,21:$VH,24:125,25:$VI,26:$VJ,27:$VK,28:$VL,29:$VM,30:$VN},{9:$VE,10:$VF,12:$VG,21:$VH,24:126,25:$VI,26:$VJ,27:$VK,28:$VL,29:$VM,30:$VN},{9:$VE,10:$VF,12:$VG,21:$VH,24:127,25:$VI,26:$VJ,27:$VK,28:$VL,29:$VM,30:$VN},{9:$VE,10:$VF,12:$VG,21:$VH,24:128,25:$VI,26:$VJ,27:$VK,28:$VL,29:$VM,30:$VN},{9:$VE,10:$VF,12:$VG,21:$VH,24:129,25:$VI,26:$VJ,27:$VK,28:$VL,29:$VM,30:$VN},{9:$VE,10:$VF,12:$VG,21:$VH,24:130,25:$VI,26:$VJ,27:$VK,28:$VL,29:$VM,30:$VN},{9:$VE,10:$VF,12:$VG,21:$VH,24:131,25:$VI,26:$VJ,27:$VK,28:$VL,29:$VM,30:$VN},o($VO,$VP,{32:132,13:$VQ,33:$VR,34:$VS,35:$VT,36:$VU,37:$VV,38:$VW}),o($VO,$VP,{32:133,13:$VQ,33:$VR,34:$VS,35:$VT,36:$VU,37:$VV,38:$VW}),o($VO,$VP,{32:134,13:$VQ,33:$VR,34:$VS,35:$VT,36:$VU,37:$VV,38:$VW}),o($VO,$VP,{32:135,13:$VQ,33:$VR,34:$VS,35:$VT,36:$VU,37:$VV,38:$VW}),o($VO,$VP,{32:136,13:$VQ,33:$VR,34:$VS,35:$VT,36:$VU,37:$VV,38:$VW}),o($VO,$VP,{32:137,13:$VQ,33:$VR,34:$VS,35:$VT,36:$VU,37:$VV,38:$VW}),o($VO,$VP,{32:138,13:$VQ,33:$VR,34:$VS,35:$VT,36:$VU,37:$VV,38:$VW}),{21:[1,139]},{21:[2,27]},{21:[2,28]},{21:[2,29]},{21:[2,30]},{21:[2,31]},{21:[2,32]},{21:[2,33]},{21:[2,34]},{21:[2,35]},o($VO,[2,38]),o($VO,[2,39]),o($VO,[2,40]),o($VO,[2,41]),o($VO,[2,42]),o($VO,[2,43]),o($VO,[2,44]),o($VX,$VY,{22:140,19:$VZ}),o($VX,[2,24])],
+defaultActions: {27:[2,1],43:[2,2],62:[2,3],63:[2,4],64:[2,5],65:[2,6],76:[2,26],99:[2,7],100:[2,8],101:[2,9],102:[2,10],103:[2,11],123:[2,27],124:[2,28],125:[2,29],126:[2,30],127:[2,31],128:[2,32],129:[2,33],130:[2,34],131:[2,35]},
+parseError: function parseError (str, hash) {
+    if (hash.recoverable) {
+        this.trace(str);
+    } else {
+        var error = new Error(str);
+        error.hash = hash;
+        throw error;
+    }
+},
+parse: function parse(input) {
+    var self = this, stack = [0], tstack = [], vstack = [null], lstack = [], table = this.table, yytext = '', yylineno = 0, yyleng = 0, recovering = 0, TERROR = 2, EOF = 1;
+    var args = lstack.slice.call(arguments, 1);
+    var lexer = Object.create(this.lexer);
+    var sharedState = { yy: {} };
+    for (var k in this.yy) {
+        if (Object.prototype.hasOwnProperty.call(this.yy, k)) {
+            sharedState.yy[k] = this.yy[k];
+        }
+    }
+    lexer.setInput(input, sharedState.yy);
+    sharedState.yy.lexer = lexer;
+    sharedState.yy.parser = this;
+    if (typeof lexer.yylloc == 'undefined') {
+        lexer.yylloc = {};
+    }
+    var yyloc = lexer.yylloc;
+    lstack.push(yyloc);
+    var ranges = lexer.options && lexer.options.ranges;
+    if (typeof sharedState.yy.parseError === 'function') {
+        this.parseError = sharedState.yy.parseError;
+    } else {
+        this.parseError = Object.getPrototypeOf(this).parseError;
+    }
+    function popStack(n) {
+        stack.length = stack.length - 2 * n;
+        vstack.length = vstack.length - n;
+        lstack.length = lstack.length - n;
+    }
+    _token_stack:
+        var lex = function () {
+            var token;
+            token = lexer.lex() || EOF;
+            if (typeof token !== 'number') {
+                token = self.symbols_[token] || token;
+            }
+            return token;
+        };
+    var symbol, preErrorSymbol, state, action, a, r, yyval = {}, p, len, newState, expected;
+    while (true) {
+        state = stack[stack.length - 1];
+        if (this.defaultActions[state]) {
+            action = this.defaultActions[state];
+        } else {
+            if (symbol === null || typeof symbol == 'undefined') {
+                symbol = lex();
+            }
+            action = table[state] && table[state][symbol];
+        }
+                    if (typeof action === 'undefined' || !action.length || !action[0]) {
+                var errStr = '';
+                expected = [];
+                for (p in table[state]) {
+                    if (this.terminals_[p] && p > TERROR) {
+                        expected.push('\'' + this.terminals_[p] + '\'');
+                    }
+                }
+                if (lexer.showPosition) {
+                    errStr = 'Parse error on line ' + (yylineno + 1) + ':\n' + lexer.showPosition() + '\nExpecting ' + expected.join(', ') + ', got \'' + (this.terminals_[symbol] || symbol) + '\'';
+                } else {
+                    errStr = 'Parse error on line ' + (yylineno + 1) + ': Unexpected ' + (symbol == EOF ? 'end of input' : '\'' + (this.terminals_[symbol] || symbol) + '\'');
+                }
+                this.parseError(errStr, {
+                    text: lexer.match,
+                    token: this.terminals_[symbol] || symbol,
+                    line: lexer.yylineno,
+                    loc: yyloc,
+                    expected: expected
+                });
+            }
+        if (action[0] instanceof Array && action.length > 1) {
+            throw new Error('Parse Error: multiple actions possible at state: ' + state + ', token: ' + symbol);
+        }
+        switch (action[0]) {
+        case 1:
+            stack.push(symbol);
+            vstack.push(lexer.yytext);
+            lstack.push(lexer.yylloc);
+            stack.push(action[1]);
+            symbol = null;
+            if (!preErrorSymbol) {
+                yyleng = lexer.yyleng;
+                yytext = lexer.yytext;
+                yylineno = lexer.yylineno;
+                yyloc = lexer.yylloc;
+                if (recovering > 0) {
+                    recovering--;
+                }
+            } else {
+                symbol = preErrorSymbol;
+                preErrorSymbol = null;
+            }
+            break;
+        case 2:
+            len = this.productions_[action[1]][1];
+            yyval.$ = vstack[vstack.length - len];
+            yyval._$ = {
+                first_line: lstack[lstack.length - (len || 1)].first_line,
+                last_line: lstack[lstack.length - 1].last_line,
+                first_column: lstack[lstack.length - (len || 1)].first_column,
+                last_column: lstack[lstack.length - 1].last_column
+            };
+            if (ranges) {
+                yyval._$.range = [
+                    lstack[lstack.length - (len || 1)].range[0],
+                    lstack[lstack.length - 1].range[1]
+                ];
+            }
+            r = this.performAction.apply(yyval, [
+                yytext,
+                yyleng,
+                yylineno,
+                sharedState.yy,
+                action[1],
+                vstack,
+                lstack
+            ].concat(args));
+            if (typeof r !== 'undefined') {
+                return r;
+            }
+            if (len) {
+                stack = stack.slice(0, -1 * len * 2);
+                vstack = vstack.slice(0, -1 * len);
+                lstack = lstack.slice(0, -1 * len);
+            }
+            stack.push(this.productions_[action[1]][0]);
+            vstack.push(yyval.$);
+            lstack.push(yyval._$);
+            newState = table[stack[stack.length - 2]][stack[stack.length - 1]];
+            stack.push(newState);
+            break;
+        case 3:
+            return true;
+        }
+    }
+    return true;
+}};
+
+	var attribute = '';
+	var errors = [];
+/* generated by jison-lex 0.3.4 */
+var lexer = (function(){
+var lexer = ({
+
+EOF:1,
+
+parseError:function parseError(str, hash) {
+        if (this.yy.parser) {
+            this.yy.parser.parseError(str, hash);
+        } else {
+            throw new Error(str);
+        }
+    },
+
+// resets the lexer, sets new input
+setInput:function (input, yy) {
+        this.yy = yy || this.yy || {};
+        this._input = input;
+        this._more = this._backtrack = this.done = false;
+        this.yylineno = this.yyleng = 0;
+        this.yytext = this.matched = this.match = '';
+        this.conditionStack = ['INITIAL'];
+        this.yylloc = {
+            first_line: 1,
+            first_column: 0,
+            last_line: 1,
+            last_column: 0
+        };
+        if (this.options.ranges) {
+            this.yylloc.range = [0,0];
+        }
+        this.offset = 0;
+        return this;
+    },
+
+// consumes and returns one char from the input
+input:function () {
+        var ch = this._input[0];
+        this.yytext += ch;
+        this.yyleng++;
+        this.offset++;
+        this.match += ch;
+        this.matched += ch;
+        var lines = ch.match(/(?:\r\n?|\n).*/g);
+        if (lines) {
+            this.yylineno++;
+            this.yylloc.last_line++;
+        } else {
+            this.yylloc.last_column++;
+        }
+        if (this.options.ranges) {
+            this.yylloc.range[1]++;
+        }
+
+        this._input = this._input.slice(1);
+        return ch;
+    },
+
+// unshifts one char (or a string) into the input
+unput:function (ch) {
+        var len = ch.length;
+        var lines = ch.split(/(?:\r\n?|\n)/g);
+
+        this._input = ch + this._input;
+        this.yytext = this.yytext.substr(0, this.yytext.length - len);
+        //this.yyleng -= len;
+        this.offset -= len;
+        var oldLines = this.match.split(/(?:\r\n?|\n)/g);
+        this.match = this.match.substr(0, this.match.length - 1);
+        this.matched = this.matched.substr(0, this.matched.length - 1);
+
+        if (lines.length - 1) {
+            this.yylineno -= lines.length - 1;
+        }
+        var r = this.yylloc.range;
+
+        this.yylloc = {
+            first_line: this.yylloc.first_line,
+            last_line: this.yylineno + 1,
+            first_column: this.yylloc.first_column,
+            last_column: lines ?
+                (lines.length === oldLines.length ? this.yylloc.first_column : 0)
+                 + oldLines[oldLines.length - lines.length].length - lines[0].length :
+              this.yylloc.first_column - len
+        };
+
+        if (this.options.ranges) {
+            this.yylloc.range = [r[0], r[0] + this.yyleng - len];
+        }
+        this.yyleng = this.yytext.length;
+        return this;
+    },
+
+// When called from action, caches matched text and appends it on next action
+more:function () {
+        this._more = true;
+        return this;
+    },
+
+// When called from action, signals the lexer that this rule fails to match the input, so the next matching rule (regex) should be tested instead.
+reject:function () {
+        if (this.options.backtrack_lexer) {
+            this._backtrack = true;
+        } else {
+            return this.parseError('Lexical error on line ' + (this.yylineno + 1) + '. You can only invoke reject() in the lexer when the lexer is of the backtracking persuasion (options.backtrack_lexer = true).\n' + this.showPosition(), {
+                text: "",
+                token: null,
+                line: this.yylineno
+            });
+
+        }
+        return this;
+    },
+
+// retain first n characters of the match
+less:function (n) {
+        this.unput(this.match.slice(n));
+    },
+
+// displays already matched input, i.e. for error messages
+pastInput:function () {
+        var past = this.matched.substr(0, this.matched.length - this.match.length);
+        return (past.length > 20 ? '...':'') + past.substr(-20).replace(/\n/g, "");
+    },
+
+// displays upcoming input, i.e. for error messages
+upcomingInput:function () {
+        var next = this.match;
+        if (next.length < 20) {
+            next += this._input.substr(0, 20-next.length);
+        }
+        return (next.substr(0,20) + (next.length > 20 ? '...' : '')).replace(/\n/g, "");
+    },
+
+// displays the character position where the lexing error occurred, i.e. for error messages
+showPosition:function () {
+        var pre = this.pastInput();
+        var c = new Array(pre.length + 1).join("-");
+        return pre + this.upcomingInput() + "\n" + c + "^";
+    },
+
+// test the lexed token: return FALSE when not a match, otherwise return token
+test_match:function(match, indexed_rule) {
+        var token,
+            lines,
+            backup;
+
+        if (this.options.backtrack_lexer) {
+            // save context
+            backup = {
+                yylineno: this.yylineno,
+                yylloc: {
+                    first_line: this.yylloc.first_line,
+                    last_line: this.last_line,
+                    first_column: this.yylloc.first_column,
+                    last_column: this.yylloc.last_column
+                },
+                yytext: this.yytext,
+                match: this.match,
+                matches: this.matches,
+                matched: this.matched,
+                yyleng: this.yyleng,
+                offset: this.offset,
+                _more: this._more,
+                _input: this._input,
+                yy: this.yy,
+                conditionStack: this.conditionStack.slice(0),
+                done: this.done
+            };
+            if (this.options.ranges) {
+                backup.yylloc.range = this.yylloc.range.slice(0);
+            }
+        }
+
+        lines = match[0].match(/(?:\r\n?|\n).*/g);
+        if (lines) {
+            this.yylineno += lines.length;
+        }
+        this.yylloc = {
+            first_line: this.yylloc.last_line,
+            last_line: this.yylineno + 1,
+            first_column: this.yylloc.last_column,
+            last_column: lines ?
+                         lines[lines.length - 1].length - lines[lines.length - 1].match(/\r?\n?/)[0].length :
+                         this.yylloc.last_column + match[0].length
+        };
+        this.yytext += match[0];
+        this.match += match[0];
+        this.matches = match;
+        this.yyleng = this.yytext.length;
+        if (this.options.ranges) {
+            this.yylloc.range = [this.offset, this.offset += this.yyleng];
+        }
+        this._more = false;
+        this._backtrack = false;
+        this._input = this._input.slice(match[0].length);
+        this.matched += match[0];
+        token = this.performAction.call(this, this.yy, this, indexed_rule, this.conditionStack[this.conditionStack.length - 1]);
+        if (this.done && this._input) {
+            this.done = false;
+        }
+        if (token) {
+            return token;
+        } else if (this._backtrack) {
+            // recover context
+            for (var k in backup) {
+                this[k] = backup[k];
+            }
+            return false; // rule action called reject() implying the next rule should be tested instead.
+        }
+        return false;
+    },
+
+// return next match in input
+next:function () {
+        if (this.done) {
+            return this.EOF;
+        }
+        if (!this._input) {
+            this.done = true;
+        }
+
+        var token,
+            match,
+            tempMatch,
+            index;
+        if (!this._more) {
+            this.yytext = '';
+            this.match = '';
+        }
+        var rules = this._currentRules();
+        for (var i = 0; i < rules.length; i++) {
+            tempMatch = this._input.match(this.rules[rules[i]]);
+            if (tempMatch && (!match || tempMatch[0].length > match[0].length)) {
+                match = tempMatch;
+                index = i;
+                if (this.options.backtrack_lexer) {
+                    token = this.test_match(tempMatch, rules[i]);
+                    if (token !== false) {
+                        return token;
+                    } else if (this._backtrack) {
+                        match = false;
+                        continue; // rule action called reject() implying a rule MISmatch.
+                    } else {
+                        // else: this is a lexer rule which consumes input without producing a token (e.g. whitespace)
+                        return false;
+                    }
+                } else if (!this.options.flex) {
+                    break;
+                }
+            }
+        }
+        if (match) {
+            token = this.test_match(match, rules[index]);
+            if (token !== false) {
+                return token;
+            }
+            // else: this is a lexer rule which consumes input without producing a token (e.g. whitespace)
+            return false;
+        }
+        if (this._input === "") {
+            return this.EOF;
+        } else {
+            return this.parseError('Lexical error on line ' + (this.yylineno + 1) + '. Unrecognized text.\n' + this.showPosition(), {
+                text: "",
+                token: null,
+                line: this.yylineno
+            });
+        }
+    },
+
+// return next match that has a token
+lex:function lex () {
+        var r = this.next();
+        if (r) {
+            return r;
+        } else {
+            return this.lex();
+        }
+    },
+
+// activates a new lexer condition state (pushes the new lexer condition state onto the condition stack)
+begin:function begin (condition) {
+        this.conditionStack.push(condition);
+    },
+
+// pop the previously active lexer condition state off the condition stack
+popState:function popState () {
+        var n = this.conditionStack.length - 1;
+        if (n > 0) {
+            return this.conditionStack.pop();
+        } else {
+            return this.conditionStack[0];
+        }
+    },
+
+// produce the lexer rule set which is active for the currently active lexer condition state
+_currentRules:function _currentRules () {
+        if (this.conditionStack.length && this.conditionStack[this.conditionStack.length - 1]) {
+            return this.conditions[this.conditionStack[this.conditionStack.length - 1]].rules;
+        } else {
+            return this.conditions["INITIAL"].rules;
+        }
+    },
+
+// return the currently active lexer condition state; when an index argument is provided it produces the N-th previous condition state, if available
+topState:function topState (n) {
+        n = this.conditionStack.length - 1 - Math.abs(n || 0);
+        if (n >= 0) {
+            return this.conditionStack[n];
+        } else {
+            return "INITIAL";
+        }
+    },
+
+// alias for begin(condition)
+pushState:function pushState (condition) {
+        this.begin(condition);
+    },
+
+// return the number of states currently on the stack
+stateStackSize:function stateStackSize() {
+        return this.conditionStack.length;
+    },
+options: {"case-insensitive":true},
+performAction: function anonymous(yy,yy_,$avoiding_name_collisions,YY_START) {
+var YYSTATE=YY_START;
+switch($avoiding_name_collisions) {
+case 0:// Whitespace
+break;
+case 1:// MultiLineComment
+break;
+case 2:// Declaration XML
+break;
+case 3:return 40
+break;
+case 4:return 26
+break;
+case 5:return 27
+break;
+case 6:return 10
+break;
+case 7:return 9
+break;
+case 8:return 38
+break;
+case 9:return 17
+break;
+case 10:return 6
+break;
+case 11:return 12
+break;
+case 12:return 15
+break;
+case 13:return 19
+break;
+case 14:return 21
+break;
+case 15:return 58
+break;
+case 16:return 59
+break;
+case 17:return 13
+break;
+case 18:return 43
+break;
+case 19:return 44
+break;
+case 20:return 'tk_attribute'
+break;
+case 21:return 47
+break;
+case 22:return 48
+break;
+case 23:return 49
+break;
+case 24:return 50
+break;
+case 25:return 51
+break;
+case 26:return 52 //no se si namespace se refiere al propio nombre de un nodo o si es una palabra reservada. asi que lo agrego por si acaso
+break;
+case 27:return 53
+break;
+case 28:return 54
+break;
+case 29:return 55
+break;
+case 30:return 56
+break;
+case 31:return 57
+break;
+case 32:return 60
+break;
+case 33:return 61
+break;
+case 34:return 62
+break;
+case 35:return 16
+break;
+case 36:return 33
+break;
+case 37:return 34
+break;
+case 38:return 35
+break;
+case 39:return 37
+break;
+case 40:return 25
+break;
+case 41:return 28
+break;
+case 42:return 29
+break;
+case 43:return 30
+break;
+case 44:return 36
+break;
+case 45:return 42
+break;
+case 46: attribute = ''; this.begin("string_doubleq"); 
+break;
+case 47: attribute += yy_.yytext; 
+break;
+case 48: attribute += "\""; 
+break;
+case 49: attribute += "\n"; 
+break;
+case 50: attribute += " ";  
+break;
+case 51: attribute += "\t"; 
+break;
+case 52: attribute += "\\"; 
+break;
+case 53: attribute += "\'"; 
+break;
+case 54: attribute += "\r"; 
+break;
+case 55: yy_.yytext = attribute; this.popState(); return 45; 
+break;
+case 56: attribute = ''; this.begin("string_singleq"); 
+break;
+case 57: attribute += yy_.yytext; 
+break;
+case 58: attribute += "\""; 
+break;
+case 59: attribute += "\n"; 
+break;
+case 60: attribute += " ";  
+break;
+case 61: attribute += "\t"; 
+break;
+case 62: attribute += "\\"; 
+break;
+case 63: attribute += "\'"; 
+break;
+case 64: attribute += "\r"; 
+break;
+case 65: yy_.yytext = attribute; this.popState(); return 46; 
+break;
+case 66:return 5
+break;
+case 67:return 'anything'
+break;
+case 68: errors.push({ tipo: "Léxico", error: yy_.yytext, origen: "XML", linea: yy_.yylloc.first_line, columna: yy_.yylloc.first_column+1 }); return 'INVALID'; 
+break;
+}
+},
+rules: [/^(?:\s+)/i,/^(?:<!--[\s\S\n]*?-->)/i,/^(?:<\?xml[\s\S\n]*?\?>)/i,/^(?:[0-9]+(\.[0-9]+)?\b)/i,/^(?:<)/i,/^(?:>)/i,/^(?:\/\/)/i,/^(?:\/)/i,/^(?:=)/i,/^(?:\.\.)/i,/^(?:\.)/i,/^(?:::)/i,/^(?:@)/i,/^(?:\[)/i,/^(?:\])/i,/^(?:\()/i,/^(?:\))/i,/^(?:\*)/i,/^(?:ancestor\b)/i,/^(?:ancestor-or-self\b)/i,/^(?:attribute\b)/i,/^(?:child\b)/i,/^(?:descendant\b)/i,/^(?:descendant-or-self\b)/i,/^(?:following\b)/i,/^(?:following-sibling\b)/i,/^(?:namespace\b)/i,/^(?:parent\b)/i,/^(?:preceding\b)/i,/^(?:preceding-sibling\b)/i,/^(?:self\b)/i,/^(?:node\b)/i,/^(?:last\b)/i,/^(?:text\b)/i,/^(?:position\b)/i,/^(?:\|)/i,/^(?:\+)/i,/^(?:-)/i,/^(?:div\b)/i,/^(?:!=)/i,/^(?:<=)/i,/^(?:>=)/i,/^(?:or\b)/i,/^(?:and\b)/i,/^(?:mod\b)/i,/^(?:[\w\u00e1\u00e9\u00ed\u00f3\u00fa\u00c1\u00c9\u00cd\u00d3\u00da\u00f1\u00d1]+)/i,/^(?:["])/i,/^(?:[^"\\]+)/i,/^(?:\\")/i,/^(?:\\n)/i,/^(?:\s)/i,/^(?:\\t)/i,/^(?:\\\\)/i,/^(?:\\\\')/i,/^(?:\\r)/i,/^(?:["])/i,/^(?:['])/i,/^(?:[^'\\]+)/i,/^(?:\\")/i,/^(?:\\n)/i,/^(?:\s)/i,/^(?:\\t)/i,/^(?:\\\\)/i,/^(?:\\\\')/i,/^(?:\\r)/i,/^(?:['])/i,/^(?:$)/i,/^(?:[^></]+)/i,/^(?:.)/i],
+conditions: {"string_singleq":{"rules":[57,58,59,60,61,62,63,64,65],"inclusive":false},"string_doubleq":{"rules":[47,48,49,50,51,52,53,54,55],"inclusive":false},"INITIAL":{"rules":[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,56,66,67,68],"inclusive":true}}
+});
+return lexer;
+})();
+parser.lexer = lexer;
+function Parser () {
+  this.yy = {};
+}
+Parser.prototype = parser;parser.Parser = Parser;
+return new Parser;
+})();
+
+
+if (true) {
+exports.parser = xpath_down;
+exports.Parser = xpath_down.Parser;
+exports.parse = function () { return xpath_down.parse.apply(xpath_down, arguments); };
+exports.main = function commonjsMain (args) {
+    if (!args[1]) {
+        console.log('Usage: '+args[0]+' FILE');
+        process.exit(1);
+    }
+    var source = __webpack_require__(/*! fs */ 1).readFileSync(__webpack_require__(/*! path */ 2).normalize(args[1]), "utf8");
+    return exports.parser.parse(source);
+};
+if ( true && __webpack_require__.c[__webpack_require__.s] === module) {
+  exports.main(process.argv.slice(1));
+}
+}
+/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./../../../node_modules/webpack/buildin/module.js */ "YuTi")(module)))
 
 /***/ }),
 
@@ -4230,152 +4969,366 @@ module.exports = { exec: exec };
   }
 */
 var xml_up = (function(){
-var o=function(k,v,o,l){for(o=o||{},l=k.length;l--;o[k[l]]=v);return o},$V0=[1,7],$V1=[1,6],$V2=[2,6,8],$V3=[1,11],$V4=[11,13],$V5=[1,26],$V6=[1,28],$V7=[1,29],$V8=[1,30],$V9=[1,27],$Va=[1,34],$Vb=[1,35],$Vc=[2,8],$Vd=[8,9,13,18,19,21],$Ve=[9,11,13];
+var o=function(k,v,o,l){for(o=o||{},l=k.length;l--;o[k[l]]=v);return o},$V0=[1,9],$V1=[1,12],$V2=[1,18],$V3=[1,16],$V4=[1,17],$V5=[2,13],$V6=[2,6,23],$V7=[2,21,22,23],$V8=[2,6,21,23],$V9=[1,34],$Va=[1,35],$Vb=[1,36],$Vc=[1,37],$Vd=[2,21,23],$Ve=[2,11,12,14,16,17,18,21,22,23,24];
 var parser = {trace: function trace () { },
 yy: {},
-symbols_: {"error":2,"ini":3,"tk_declaration_xml":4,"ROOT":5,"EOF":6,"XML":7,"tk_open":8,"tk_id":9,"ATTR":10,"tk_close":11,"CHILD":12,"tk_bar":13,"CONTENT":14,"ATTR_P":15,"tk_equal":16,"TK_ATTR":17,"tk_attribute_d":18,"tk_attribute_s":19,"PROP":20,"anything":21,"$accept":0,"$end":1},
-terminals_: {2:"error",4:"tk_declaration_xml",6:"EOF",8:"tk_open",9:"tk_id",11:"tk_close",13:"tk_bar",16:"tk_equal",18:"tk_attribute_d",19:"tk_attribute_s",21:"anything"},
-productions_: [0,[3,3],[3,2],[5,2],[5,1],[7,9],[7,9],[7,5],[7,8],[7,2],[7,2],[10,1],[10,0],[15,4],[15,3],[17,1],[17,1],[12,2],[12,1],[14,2],[14,1],[20,1],[20,1],[20,1],[20,1],[20,1]],
+symbols_: {"error":2,"INI":3,"XML_DECLARATION":4,"ROOT":5,"EOF":6,"XML":7,"tk_open_declaration":8,"ATTRIBUTE_LIST":9,"XML_CLOSE_DECLARATION":10,"tk_close_delcaraton":11,"tk_close":12,"ATTRIBUTE":13,"tk_attribute_name":14,"tk_string":15,"tk_equal":16,"tk_tag_name":17,"cadena_err":18,"XML_OPEN":19,"CHILDREN":20,"tk_open_end_tag":21,"tk_content":22,"tk_open":23,"tk_bar":24,"$accept":0,"$end":1},
+terminals_: {2:"error",6:"EOF",8:"tk_open_declaration",11:"tk_close_delcaraton",12:"tk_close",14:"tk_attribute_name",15:"tk_string",16:"tk_equal",17:"tk_tag_name",18:"cadena_err",21:"tk_open_end_tag",22:"tk_content",23:"tk_open",24:"tk_bar"},
+productions_: [0,[3,3],[3,2],[3,2],[3,1],[3,2],[5,2],[5,1],[4,3],[10,1],[10,1],[10,2],[9,2],[9,0],[13,2],[13,1],[13,2],[13,1],[13,2],[13,1],[7,5],[7,5],[7,5],[7,4],[7,3],[7,3],[7,4],[7,4],[7,6],[7,4],[7,4],[7,4],[7,3],[7,3],[7,2],[19,4],[19,3],[19,1],[19,2],[20,2],[20,1]],
 performAction: function anonymous(yytext, yyleng, yylineno, yy, yystate /* action[1] */, $$ /* vstack */, _$ /* lstack */) {
 /* this == yyval */
 
 var $0 = $$.length - 1;
 switch (yystate) {
 case 1:
+/*$$[$0-2][0].printTest(0);console.log($$[$0-2][0].getTree());*/
+                                            prod_1 = grammar_stack.pop();
+                                            prod_2 = grammar_stack.pop();
+                                            grammar_stack.push({'INI-> XML_DECLARATION ROOT EOF': [prod_2, prod_1, 'EOF' ]});
+                                            printstrack(grammar_stack, 0); //TODO: Delete is just for testing purposes
+                                            // console.log(printHtml(grammar_stack));
 
-		encoding = new Encoding($$[$0-2]);
-		if (encoding.encoding === encoding.codes.INVALID ) {
-			errors.push({ tipo: "Léxico", error: "La codificación del XML no es válida.", origen: "XML", linea: this._$.first_line, columna: this._$.first_column+1 }); return { ast: null, errors: errors };
-		}
-		ast = { ast: $$[$0-1], encoding: encoding,  errors: errors };
-		errors = [];
-		return ast;
-	
+                                            if($$[$0-2]!= null){
+                                                encoding = new Encoding($$[$0-2]);
+                                                if (encoding.encoding === encoding.codes.INVALID ) {
+                                                    errors.push({ tipo: "Léxico", error: "La codificación del XML no es válida.", origen: "XML", linea: this._$.first_line, columna: this._$.first_column+1 }); return { ast: null, errors: errors };
+                                                }
+                                                ast = { ast: $$[$0-1], encoding: encoding, errors: errors, cst:"<p>TEST CST </p>", grammar_report: "<p>grammar report test</p>"};
+                                            } else{
+                                                ast = { ast: $$[$0-1], encoding: null, cst: null, grammar_report: null, errors: errors };
+                                            }
+                                            errors = [];
+                                            return ast;
+                                            
 break;
 case 2:
- errors.push({ tipo: "Sintáctico", error: "Sintaxis errónea del documento XML.", origen: "XML", linea: this._$.first_line, columna: this._$.first_column+1 }); return { ast: null, errors: errors }; 
+
+                                            prod_1 = grammar_stack.pop();
+                                            grammar_stack.push({'INI -> XML_DECLARATION  EOF': [prod_1, 'EOF' ]});
+                                            printstrack(grammar_stack, 0);
+                                            // console.log(printHtml(grammar_stack));
+
+                                            ast = { ast: null, encoding: null,  errors: errors, cst: null, grammar_report: "<p>grammar report test</p>" };
+                                            errors = [];
+                                            return ast;
+                                            
 break;
 case 3:
- if ($$[$0]!==null) { $$[$0-1].push($$[$0]); this.$=$$[$0-1]; } else { this.$=null; } 
+
+                                            prod_1 = grammar_stack.pop();
+                                            grammar_stack.push({'INI -> ROOT EOF': [prod_1, 'EOF' ]});
+                                            printstrack(grammar_stack, 0);
+                                            // console.log(printHtml(grammar_stack));
+
+                                            errors.push({ tipo: "Sintáctico", error: "Falta declaracion del XML", origen: "XML", linea: _$[$0-1].first_line, columna: _$[$0-1].first_column+1 });
+                                            ast = { ast: null, encoding: null,  errors: errors, cst: null, grammar_report: "<p>grammar report test</p>" };
+                                            errors = [];
+                                            return ast;
+                                            
 break;
-case 4: case 18:
- if ($$[$0]!==null) { this.$=[$$[$0]]; } else { this.$=[]; } 
+case 4:
+
+                                            grammar_stack.push({'INI -> EOF': [ 'EOF']});
+                                            printstrack(grammar_stack, 0);
+                                            // console.log(printHtml(grammar_stack));
+
+	                                        ast = { ast: null, encoding: null,  errors: errors, cst: null, grammar_report: "<p>grammar report test</p>" }
+	                                        errors = [];
+	                                        return ast;
+	                                        
 break;
 case 5:
 
-			tag = new Element($$[$0-7], $$[$0-6], null, $$[$0-4], this._$.first_line, this._$.first_column+1, $$[$0-1]);
-            hasConflict = tag.verificateNames();
-			if (hasConflict === "") {
-				tag.childs.forEach(child => {
-					child.father = {id: $$[$0-7], line: tag.line, column: tag.column};
-            	});
-				this.$ = tag;
-			}
-			else {
-				errors.push({ tipo: "Semántico", error: hasConflict, origen: "XML", linea: _$[$0-1].first_line, columna: _$[$0-1].first_column+1 });
-				this.$ = null;
-			}
-		
+	                                        grammar_stack.push({'INI -> error EOF': ['Token: error\t Lexema: ', 'EOF' ]});
+                                            printstrack(grammar_stack, 0);
+                                            // console.log(printHtml(grammar_stack));
+
+                                            errors.push({ tipo: "Sintáctico", error: "Token no esperado.", origen: "XML", linea: _$[$0-1].first_line, columna: _$[$0-1].first_column+1 });
+                                            ast = { ast: null, encoding: null,  errors: errors, cst: null, grammar_report: "<p>grammar report test</p>" };
+                                            errors = [];
+                                            return ast;
+                                            
 break;
 case 6:
-
-			tag = new Element($$[$0-7], $$[$0-6], $$[$0-4].val, null, this._$.first_line, this._$.first_column+1, $$[$0-1]);
-            hasConflict = tag.verificateNames();
-			if (hasConflict === "") {
-				this.$ = tag;
-			}
-			else {
-				errors.push({ tipo: "Semántico", error: hasConflict, origen: "XML", linea: _$[$0-1].first_line, columna: _$[$0-1].first_column+1 });
-				this.$ = null;
-			}
-		
+$$[$0-1].push($$[$0]);
+                                                prod_1 = grammar_stack.pop();
+                                                prod_2 = grammar_stack.pop();
+                                                grammar_stack.push({'ROOT -> ROOT XML': [prod_2, prod_1 ]});
+                                                
 break;
 case 7:
-
-			tag = new Element($$[$0-3], $$[$0-2], null, null, this._$.first_line, this._$.first_column+1, null);
-            hasConflict = tag.verificateNames();
-			if (hasConflict === "") {
-				this.$ = tag;
-			}
-			else {
-				errors.push({ tipo: "Semántico", error: hasConflict, origen: "XML", linea: _$[$0-3].first_line, columna: _$[$0-3].first_column+1 });
-				this.$ = null;
-			}
-		
+this.$ = [$$[$0]];
+	                                            prod_1 = grammar_stack.pop();
+	                                            grammar_stack.push({'ROOT -> XML': [prod_1 ]});
+	                                            
 break;
 case 8:
+if($$[$0-1] == null || $$[$0] == null){
+                                                                            this.$ = null}else{
+                                                                            let str = "";
+                                                                           $$[$0-1].forEach((value)=>{
+                                                                           str = str + value.id+value.value;
+                                                                           });
+                                                                           this.$=str;
+                                                                           }
 
-			tag = new Element($$[$0-6], $$[$0-5], null, null, this._$.first_line, this._$.first_column+1, $$[$0-1]);
-            hasConflict = tag.verificateNames();
-			if (hasConflict === "") {
-				this.$ = tag;
-			}
-			else {
-				errors.push({ tipo: "Semántico", error: hasConflict, origen: "XML", linea: _$[$0-1].first_line, columna: _$[$0-1].first_column+1 });
-				this.$ = null;
-			}
-		
+                                                                           prod_3 = grammar_stack.pop();
+                                                                           prod_2 = grammar_stack.pop();
+                                                                           grammar_stack.push({'XML_DECLARATION': ['Token: tk_open_declaration\t Lexema: ' + $$[$0-2], prod_2, prod_3]} );
+                                                                           
 break;
-case 9: case 10:
- errors.push({ tipo: "Sintáctico", error: "La etiqueta no fue declarada correctamente.", origen: "XML", linea: this._$.first_line, columna: this._$.first_column+1 }); this.$ = null; 
+case 9:
+  this.$ = "?>"
+                                                grammar_stack.push({'XML_CLOSE_DECLARATION -> tk_close_delcaraton': ['Token: tk_close_delcaraton\t Lexema: ' + $$[$0]]});
+                                                
 break;
-case 11: case 15: case 16:
- this.$=$$[$0]; 
+case 10:
+this.$ = null;
+                                                 errors.push({ tipo: "Sintáctico", error: "Se esperaba token /", origen: "XML", linea: _$[$0].first_line, columna: _$[$0].first_column+1 });
+                                                grammar_stack.push({'XML_CLOSE_DECLARATION -> tk_close': ['Token: tk_close\t Lexema: ' + $$[$0]]});
+                                                
+break;
+case 11:
+ this.$ = null;
+                                                 errors.push({ tipo: "Sintáctico", error: "Token no esperado. " + $$[$0-1], origen: "XML", linea: _$[$0-1].first_line, columna: _$[$0-1].first_column+1 });
+                                                 grammar_stack.push({'XML_CLOSE_DECLARATION -> error tk_close': ['Token: error\t Lexema: ' + $$[$0-1], 'Token: tk_close\t Lexema: ' + $$[$0]]});
+                                                 
 break;
 case 12:
- this.$=null; 
+if($$[$0] == null){this.$ = null}else if($$[$0-1] == null){this.$ = [$$[$0]]}else{$$[$0-1].push($$[$0]); this.$ = $$[$0-1]}
+                                            prod_1 = grammar_stack.pop();
+                                            prod_2 = grammar_stack.pop();
+                                            grammar_stack.push({'ATTRIBUTE_LIST -> ATTRIBUTE_LIST ATTRIBUTE': [ prod_2, prod_1 ] });
+                                          
 break;
 case 13:
-
-		attr = new Atributo($$[$0-2], $$[$0], this._$.first_line, this._$.first_column+1);
-		$$[$0-3].push(attr);
-		this.$=$$[$0-3];
-	
+this.$ = null;             grammar_stack.push({'ATTRIBUTE_LIST -> Empty': ['EMPTY'] });      
 break;
 case 14:
-
-		attr = new Atributo($$[$0-2], $$[$0], this._$.first_line, this._$.first_column+1);
-		this.$=[attr];
-	
+attr = new Atributo($$[$0-1].slice(0, -1), $$[$0].slice(1,-1), this._$.first_line, this._$.first_column+1);
+                                            attr.Cst= `<li><a href=''>ATTRIBUTE</a>
+                                            <ul>
+                                            <li><a href=''>tk_attribute_name</a><ul>\n<li><a href=''>${$$[$0-1]}</a></li></ul></li>
+                                            <li><a href=''>tk_string</a><ul>\n<li><a href=''>${$$[$0]}</a></li></ul></li>
+                                            </ul>
+                                            </li>`;
+                                            this.$ = attr;
+                                            grammar_stack.push({'ATTRIBUTE -> tk_attribute_name tk_string': ['Token: tk_attribute_name\t Lexema: ' + $$[$0-1], 'Token: tk_string\t Lexema: ' + $$[$0] ]});
+                                            
+break;
+case 15:
+ this.$ = null;
+                                            errors.push({ tipo: "Sintáctico", error: "Se esperaba un atributo después de =.", origen: "XML", linea: _$[$0].first_line, columna: _$[$0].first_column+1 });
+                                            grammar_stack.push({'ATTRIBUTE -> tk_attribute_name':['Token: tk_attribute_name\t Lexema: ' + $$[$0]]});
+                                            
+break;
+case 16:
+ this.$ = null;
+                                            errors.push({ tipo: "Sintáctico", error: "Se esperaba un nombre para atributo antes de =.", origen: "XML", linea: _$[$0-1].first_line, columna: _$[$0-1].first_column+1 });
+                                            grammar_stack.push({'ATTRIBUTE -> tk_equal tk_string':['Token: tk_equal\t Lexema: ' + $$[$0-1], 'Token: tk_string\t Lexema: ' + $$[$0]]});
+                                            
 break;
 case 17:
- if ($$[$0]!==null) { $$[$0-1].push($$[$0]); } this.$=$$[$0-1]; 
+ this.$ = null;
+                                            errors.push({ tipo: "Sintáctico", error: "Se esperaba signo =", origen: "XML", linea: _$[$0].first_line, columna: _$[$0].first_column+1 });
+                                            grammar_stack.push({'ATTRIBUTE -> tk_tag_name':['Token: tk_tag_name\t Lexema: ' + $$[$0]]});
+                                            
+break;
+case 18:
+ this.$ = null;
+                                            errors.push({ tipo: "Léxico", error: "Nombre del atributo no puede empezar con dígitos.", origen: "XML", linea: _$[$0-1].first_line, columna: _$[$0-1].first_column+1 });
+                                            grammar_stack.push({'ATTRIBUTE -> cadena_err tk_string':['Token: cadena_err\t Lexema: ' + $$[$0-1], 'Token: tk_string\t Lexema: ' + $$[$0]]});
+                                            
 break;
 case 19:
-
-		if ($$[$0].tipo !== $$[$0-1].tipo) {
-			$$[$0-1].val+=$$[$0].val;
-		}
-		else {
-			$$[$0-1].val+=' '+$$[$0].val;
-		}
-		this.$={tipo:$$[$0].tipo, val:$$[$0-1].val};
-	
+ this.$ = null;
+                                            errors.push({ tipo: "Léxico", error: "Nombre del atributo no puede empezar con dígitos, y debe tener signo = y atributo a continuación.", origen: "XML", linea: _$[$0].first_line, columna: _$[$0].first_column+1 });
+                                            grammar_stack.push({'ATTRIBUTE -> cadena_err':['Token: cadena_err\t Lexema: ' + $$[$0]]});
+                                            
 break;
 case 20:
-
-		this.$={tipo:$$[$0].tipo, val:$$[$0].val};
-	
+if($$[$0-4] != null){  $$[$0-4].Children = $$[$0-3]; $$[$0-4].Close = $$[$0-1]; this.$ = $$[$0-4];
+                                                                                let hasConflict = $$[$0-4].verificateNames();
+																				if(hasConflict === "") {
+																					$$[$0-4].childs.forEach(child => {
+																					child.Father = {id: $$[$0-4].id_open, line: $$[$0-4].line, column: $$[$0-4].column};
+																					});
+																					this.$ = $$[$0-4];
+																				}
+																				 else {
+																					errors.push({ tipo: "Semántico", error: hasConflict, origen: "XML", linea: _$[$0-1].first_line, columna: _$[$0-1].first_column+1 });
+                                                                                    this.$ = null;
+																				 }
+                                                                                 }else{this.$ = null;}
+                                                                                 prod_1 = grammar_stack.pop();
+                                                                                 prod_2 = grammar_stack.pop();
+                                                                                 grammar_stack.push({'XML-> XML_OPEN CHILDREN tk_open_end_tag tk_tag_name tk_close':[prod_2, prod_1, 'Token: tk_open_end_tag\t Lexema: ' + $$[$0-2], 'Token: tk_tag_name\t Lexema: ' + $$[$0-1], 'Token: tk_close\t Lexema: ' +$$[$0]]});
+                                                                                 
 break;
 case 21:
- this.$={tipo:1, val:$$[$0]}; 
+if($$[$0-4] != null){$$[$0-4].Value = $$[$0-3]; $$[$0-4].Close = $$[$0-1];  this.$ = $$[$0-4];
+                                                                                let hasConflict = $$[$0-4].verificateNames();
+                                                                                if(hasConflict !== ""){
+                                                                                 errors.push({ tipo: "Semántico", error: hasConflict, origen: "XML", linea: _$[$0-1].first_line, columna: _$[$0-1].first_column+1 });
+                                                                                 this.$ = null;
+                                                                                 }
+	                                                                             }else{this.$ = null;}
+	                                                                             prod_1 = grammar_stack.pop();
+	                                                                             grammar_stack.push({'XML -> XML_OPEN tk_content tk_open_end_tag tk_tag_name tk_close':[prod_1, 'Token: tk_content\t Lexema: ' + $$[$0-3], 'Token: tk_open_end_tag\t Lexema: ' + $$[$0-2], 'Token: tk_tag_name\t Lexema: ' + $$[$0-1], 'Token: tk_close\t Lexema: ' + $$[$0]]});
+	                                                                             
 break;
 case 22:
- this.$={tipo:2, val:$$[$0]}; 
+this.$ = new Element($$[$0-3], $$[$0-2], null, null, _$[$0-4].first_line, _$[$0-4].first_column+1, null);
+
+                                                                                prod_1 = grammar_stack.pop();
+                                                                                grammar_stack.push({'XML -> tk_open tk_tag_name ATTRIBUTE_LIST tk_bar tk_close':['Token: tk_open\t Lexema: ' + $$[$0-4], 'Token: tk_tag_name\t Lexema: ' + $$[$0-3], prod_1, 'Token: tk_bar\t Lexema: ' + $$[$0-1], 'Token: tk_close\t Lexema: ' + $$[$0]]});
+	                                                                            
 break;
 case 23:
- this.$={tipo:3, val:$$[$0]}; 
+if($$[$0-3] != null){$$[$0-3].Close = $$[$0-1]; this.$ = $$[$0-3];
+	                                                                            let hasConflict = $$[$0-3].verificateNames();
+	                                                                             if(hasConflict !== ""){
+                                                                                errors.push({ tipo: "Semántico", error: hasConflict, origen: "XML", linea: _$[$0].first_line, columna: _$[$0].first_column+1 });
+                                                                                this.$ = null;
+
+                                                                                prod_1 = grammar_stack.pop();
+                                                                                }
+	                                                                            }else{this.$ = null;}
+	                                                                            grammar_stack.push({'XML -> XML_OPEN tk_open_end_tag tk_tag_name tk_close':[prod_1, 'Token: tk_open_end_tag\t Lexema: ' + $$[$0-2], 'Token: tk_tag_name\t Lexema: ' + $$[$0-1], 'Token: tk_close\t Lexema: '  + $$[$0]]});
+	                                                                            
 break;
 case 24:
- this.$={tipo:4, val:$$[$0]}; 
+this.$ =null;
+                                                                                errors.push({ tipo: "Sintáctico", error: "Falta etiquta de cierre \">\". ", origen: "XML", linea: _$[$0].first_line, columna: _$[$0].first_column+1 });
+
+                                                                                prod_1 = grammar_stack.pop();
+	                                                                            grammar_stack.push({'XML -> XML_OPEN tk_open_end_tag tk_tag_name':[prod_1, 'Token: tk_open_end_tag\t Lexema: ' + $$[$0-1], 'Token: tk_tag_name\t Lexema: '  + $$[$0]]});
+	                                                                            
 break;
 case 25:
- this.$={tipo:5, val:$$[$0]}; 
+this.$ =null;
+                                                                                errors.push({ tipo: "Sintáctico", error: "Se esperaba un identificador. ", origen: "XML", linea: _$[$0-1].first_line, columna: _$[$0-1].first_column+1 });
+
+                                                                                prod_1 = grammar_stack.pop();
+	                                                                            grammar_stack.push({'XML -> XML_OPEN tk_open_end_tag  tk_close':[prod_1, 'Token: tk_open_end_tag\t Lexema: ' + $$[$0-1],  'Token: tk_close\t Lexema: ' + $$[$0]]});
+	                                                                            
+break;
+case 26:
+this.$ =null;
+                                                                                errors.push({ tipo: "Sintáctico", error: "Falta etiquta de cierre \">\". ", origen: "XML", linea: _$[$0].first_line, columna: _$[$0].first_column+1 });
+
+                                                                                prod_1 = grammar_stack.pop();
+	                                                                            grammar_stack.push({'XML -> XML_OPEN tk_content tk_open_end_tag tk_tag_name':[prod_1, 'Token: tk_content\t Lexema: ' + $$[$0-2], 'Token: tk_open_end_tag\t Lexema: ' + $$[$0-1], 'Token: tk_tag_name\t Lexema: ' + $$[$0]]});
+	                                                                            
+break;
+case 27:
+this.$ =null;
+                                                                                errors.push({ tipo: "Sintáctico", error: "Se esperaba un identificador. ", origen: "XML", linea: _$[$0-1].first_line, columna: _$[$0-1].first_column+1 });
+
+                                                                                prod_1 = grammar_stack.pop();
+                                                                                grammar_stack.push({'XML -> XML_OPEN tk_content tk_open_end_tag  tk_close':[prod_1, 'Token: tk_content\t Lexema: ' + $$[$0-2], 'Token: tk_open_end_tag\t Lexema: ' + $$[$0-1],  'Token: tk_close\t Lexema: ' + $$[$0]  ]});
+                                                                            	
+break;
+case 28:
+this.$ =null;
+                                                                                errors.push({ tipo: "Sintáctico", error: "Se esperaba etiqueta de cierre. ", origen: "XML", linea: _$[$0-4].first_line, columna: _$[$0-4].first_column+1 });
+
+                                                                                prod_1 = grammar_stack.pop();
+                                                                                prod_2 = grammar_stack.pop();
+	                                                                            grammar_stack.push({'XML -> XML_OPEN tk_content  tk_open tk_tag_name ATTRIBUTE_LIST tk_close':[prod_2, 'Token: tk_content\t Lexema: ' + $$[$0-4],  'Token: tk_open\t Lexema: ' + $$[$0-3], 'Token: tk_tag_name\t Lexema: ' + $$[$0-2], prod_1, 'Token: tk_close\t Lexema: ' + $$[$0]]});
+	                                                                            
+break;
+case 29:
+this.$ =null;
+	                                                                            errors.push({ tipo: "Sintáctico", error: "Falta etiquta de cierre \">\". ", origen: "XML", linea: _$[$0].first_line, columna: _$[$0].first_column+1 });
+
+                                                                                prod_1 = grammar_stack.pop();
+                                                                                prod_2 = grammar_stack.pop();
+	                                                                            grammar_stack.push({'XML -> XML_OPEN CHILDREN tk_open_end_tag tk_tag_name':[prod_2, prod_1, 'Token: tk_open_end_tag\t Lexema: ' + $$[$0-1], 'Token: tk_tag_name\t Lexema: ' + $$[$0]]});
+	                                                                            
+break;
+case 30:
+this.$ =null;
+	                                                                            errors.push({ tipo: "Sintáctico", error: "Se esperaba un identificador.", origen: "XML", linea: _$[$0-1].first_line, columna: _$[$0-1].first_column+1 });
+
+                                                                                prod_1 = grammar_stack.pop();
+                                                                                prod_2 = grammar_stack.pop();
+	                                                                            grammar_stack.push({'XML -> XML_OPEN CHILDREN tk_open_end_tag  tk_close':[prod_2, prod_1, 'Token: tk_open_end_tag\t Lexema: ' + $$[$0-1],  'Token: tk_close\t Lexema: '  + $$[$0]]});
+	                                                                            
+break;
+case 31:
+this.$ =null;
+	                                                                        errors.push({ tipo: "Sintáctico", error: "Token no esperado " + $$[$0-3], origen: "XML", linea: _$[$0-3].first_line, columna: _$[$0-3].first_column+1 });
+
+                                                                             grammar_stack.push({'XML -> error tk_open_end_tag tk_tag_name tk_close':['Token: error\t Lexema: ' + $$[$0-3], 'Token: tk_open_end_tag\t Lexema: ' + $$[$0-2], 'Token: tk_tag_name\t Lexema: ' + $$[$0-1], 'Token: tk_close\t Lexema: '  + $$[$0]]});
+                                                                             
+break;
+case 32:
+this.$ =null;
+    	                                                                    errors.push({ tipo: "Sintáctico", error: "Token no esperado " + $$[$0-2], origen: "XML", linea: _$[$0-2].first_line, columna: _$[$0-2].first_column+1 });
+
+                                                                            grammar_stack.push({'XML -> error tk_open_end_tag tk_tag_name':['Token: error\t Lexema: ' + $$[$0-2], 'Token: tk_open_end_tag\t Lexema: ' + $$[$0-1], 'Token: tk_tag_name\t Lexema: ' + $$[$0]]});
+                                                                            
+break;
+case 33:
+this.$ =null;
+	                                                                        errors.push({ tipo: "Sintáctico", error: "Token no esperado " + $$[$0-2], origen: "XML", linea: _$[$0-2].first_line, columna: _$[$0-2].first_column+1 });
+
+	                                                                        grammar_stack.push({'XML -> error tk_bar tk_close':['Token: error\t Lexema: ' + $$[$0-2], 'Token: tk_bar\t Lexema: ' + $$[$0-1], 'Token: tk_close\t Lexema: ' + $$[$0]]});
+	                                                                        
+break;
+case 34:
+this.$ =null;
+	                                                                        errors.push({ tipo: "Sintáctico", error: "Token no esperado " + $$[$0-1], origen: "XML", linea: _$[$0-1].first_line, columna: _$[$0-1].first_column+1 });
+
+	                                                                        grammar_stack.push({'XML -> error  tk_close':['Token: error\t Lexema: ' + $$[$0-1],  'Token: tk_close\t Lexema: ' + $$[$0]]});
+	                                                                        
+break;
+case 35:
+ this.$ = new Element($$[$0-2], $$[$0-1], null, null,  _$[$0-3].first_line,  _$[$0-3].first_column+1);
+
+                                                        prod_1 = grammar_stack.pop();
+                                                        grammar_stack.push({'XML_OPEN -> tk_open tk_tag_name ATTRIBUTE_LIST tk_close':['Token: tk_open\t Lexema: ' + $$[$0-3], 'Token: tk_tag_name\t Lexema: ' + $$[$0-2], prod_1, 'Token: tk_close\t Lexema: ' + $$[$0]]});
+                                                         
+break;
+case 36:
+
+                                                        this.$ = null;
+                                                        errors.push({ tipo: "Sintáctico", error: "Se esperaba \">\" después de la cadena de atributos.", origen: "XML", linea: _$[$0].first_line, columna: _$[$0].first_column+1 });
+
+                                                        prod_1 = grammar_stack.pop();
+                                                        grammar_stack.push({'XML_OPEN -> tk_open tk_tag_name ATTRIBUTE_LIST':['Token: tk_open\t Lexema: ' + $$[$0-2], 'Token: tk_tag_name\t Lexema: ' + $$[$0-1], prod_1]});
+                                                        
+break;
+case 37:
+ this.$ = null;
+                                                        errors.push({ tipo: "Sintáctico", error: "", origen: "XML", linea: _$[$0].first_line, columna: _$[$0].first_column+1 });
+                                                        grammar_stack.push({'XML_OPEN -> tk_open':['Token: tk_open\t Lexema: ' + $$[$0]]});
+                                                        
+break;
+case 38:
+ this.$ = null;
+                                                         errors.push({ tipo: "Sintáctico", error: "Se esperaba un identificador para la etiqueta", origen: "XML", linea: _$[$0-1].first_line, columna: _$[$0-1].first_column+1 });
+                                                         grammar_stack.push({'XML_OPEN -> tk_open tk_close':['Token: tk_open\t Lexema: ' + $$[$0-1], 'Token: tk_close\t Lexema: ' + $$[$0]]});
+                                                         
+break;
+case 39:
+if($$[$0-1] != null && $$[$0] != null){ $$[$0-1].push($$[$0]); this.$ = $$[$0-1]; } else{this.$ = null;}
+                                                            prod_1 = grammar_stack.pop();
+                                                            prod_2 = grammar_stack.pop();
+                                                             grammar_stack.push({'CHILDREN -> CHILDREN XML':[prod_2,  prod_1]});
+                                                            
+break;
+case 40:
+ if($$[$0]!=null ){this.$ = [$$[$0]];}else{this.$ = null;}
+	                                                        prod_1 = grammar_stack.pop();
+                                                            grammar_stack.push({'CHILDREN -> XML':[prod_1]});
+	                                                        
 break;
 }
 },
-table: [{2:[1,3],3:1,4:[1,2]},{1:[3]},{2:$V0,5:4,7:5,8:$V1},{6:[1,8]},{2:$V0,6:[1,9],7:10,8:$V1},o($V2,[2,4]),{9:$V3},{8:[1,13],11:[1,12]},{1:[2,2]},{1:[2,1]},o($V2,[2,3]),o($V4,[2,12],{10:14,15:15,9:[1,16]}),o($V2,[2,9]),o($V2,[2,10]),{11:[1,17],13:[1,18]},o($V4,[2,11],{9:[1,19]}),{16:[1,20]},{2:$V0,7:24,8:[1,23],9:$V5,12:21,13:$V6,14:22,18:$V7,19:$V8,20:25,21:$V9},{11:[1,31]},{16:[1,32]},{17:33,18:$Va,19:$Vb},{2:$V0,7:37,8:[1,36]},{8:[1,38],9:$V5,13:$V6,18:$V7,19:$V8,20:39,21:$V9},{9:$V3,13:[1,40]},o($Vc,[2,18]),o($Vd,[2,20]),o($Vd,[2,21]),o($Vd,[2,22]),o($Vd,[2,23]),o($Vd,[2,24]),o($Vd,[2,25]),o($V2,[2,7]),{17:41,18:$Va,19:$Vb},o($Ve,[2,14]),o($Ve,[2,15]),o($Ve,[2,16]),{9:$V3,13:[1,42]},o($Vc,[2,17]),{13:[1,43]},o($Vd,[2,19]),{9:[1,44]},o($Ve,[2,13]),{9:[1,45]},{9:[1,46]},{11:[1,47]},{11:[1,48]},{11:[1,49]},o($V2,$Vc),o($V2,[2,5]),o($V2,[2,6])],
-defaultActions: {8:[2,2],9:[2,1]},
+table: [{2:[1,5],3:1,4:2,5:3,6:[1,4],7:7,8:[1,6],19:8,23:$V0},{1:[3]},{2:$V1,5:10,6:[1,11],7:7,19:8,23:$V0},{2:$V1,6:[1,13],7:14,19:8,23:$V0},{1:[2,4]},{6:[1,15],12:$V2,21:$V3,24:$V4},o([2,11,12,14,16,17,18],$V5,{9:19}),o($V6,[2,7]),{2:$V1,7:23,19:8,20:20,21:[1,22],22:[1,21],23:$V0},o($V7,[2,37],{12:[1,25],17:[1,24]}),{2:$V1,6:[1,26],7:14,19:8,23:$V0},{1:[2,2]},{12:$V2,21:$V3,24:$V4},{1:[2,3]},o($V6,[2,6]),{1:[2,5]},{17:[1,27]},{12:[1,28]},o($V8,[2,34]),{2:[1,33],10:29,11:[1,31],12:[1,32],13:30,14:$V9,16:$Va,17:$Vb,18:$Vc},{2:$V1,7:39,19:8,21:[1,38],23:$V0},{21:[1,40],23:[1,41]},{12:[1,43],17:[1,42]},o($Vd,[2,40]),o([2,12,14,16,17,18,21,22,23,24],$V5,{9:44}),o($V7,[2,38]),{1:[2,1]},o($V8,[2,32],{12:[1,45]}),o($V8,[2,33]),o($V6,[2,8]),o($Ve,[2,12]),o($V6,[2,9]),o($V6,[2,10]),{12:[1,46]},o($Ve,[2,15],{15:[1,47]}),{15:[1,48]},o($Ve,[2,17]),o($Ve,[2,19],{15:[1,49]}),{12:[1,51],17:[1,50]},o($Vd,[2,39]),{12:[1,53],17:[1,52]},{17:[1,54]},o($V8,[2,24],{12:[1,55]}),o($V8,[2,25]),o($V7,[2,36],{13:30,12:[1,57],14:$V9,16:$Va,17:$Vb,18:$Vc,24:[1,56]}),o($V8,[2,31]),o($V6,[2,11]),o($Ve,[2,14]),o($Ve,[2,16]),o($Ve,[2,18]),o($V8,[2,29],{12:[1,58]}),o($V8,[2,30]),o($V8,[2,26],{12:[1,59]}),o($V8,[2,27]),o([12,14,16,17,18],$V5,{9:60}),o($V8,[2,23]),{12:[1,61]},o($V7,[2,35]),o($V8,[2,20]),o($V8,[2,21]),{12:[1,62],13:30,14:$V9,16:$Va,17:$Vb,18:$Vc},o($V8,[2,22]),o($V8,[2,28])],
+defaultActions: {4:[2,4],11:[2,2],13:[2,3],15:[2,5],26:[2,1]},
 parseError: function parseError (str, hash) {
     if (hash.recoverable) {
         this.trace(str);
@@ -4630,6 +5583,82 @@ _handle_error:
 
 	var attribute = '';
 	var errors = [];
+	let re = /[^\n\t\r ]+/g
+	//let ast = null;
+	let grammar_stack = [];
+
+
+    function printHtml(obj){
+        if(obj == null){return "";}
+        let str = "";
+        if(Array.isArray(obj)){ //IS ARRAY
+            obj.forEach((value)=>{
+            if(typeof value === 'string' ){
+                str = str + `<li class= "string">${value}</li>
+                `;
+            }else if(Array.isArray(value)){console.log("ERROR 5: Arreglo de arreglos");}else{
+                for(let key in value){
+                    str = str + printHtml(value);
+                }
+            }
+            });
+        }else if(typeof obj === 'string' ){ // IS STRING
+            return "";
+        }else{// IS OBJECT
+            for(let key in obj){
+                str = `<li><span class="caret">${key}</span>
+                <ul class="nested">
+                `;
+                str = str + printHtml(obj[key]);
+                str = str + `
+                </ul>
+                </li>`;
+            }
+        }
+                return str;
+    }
+
+
+
+//just for testing purposes
+	function printstrack(obj, lines){
+	return;
+
+        if(Array.isArray(obj)){ //IS ARRAY
+            str = ""
+            for(let i = 0; i < lines; i++){str = str + "- ";}
+            obj.forEach((value)=>{
+                if(typeof value === 'string' ){
+                     str = ""
+                     for(let i = 0; i < lines; i++){str = str + "- ";}
+                     // console.log(str + value);
+                }else if(Array.isArray(value)){console.log("ERROR 5");}else{
+                    str = ""
+                    for(let i = 0; i < lines; i++){ str = str + "- ";}
+                    for(let key in value){
+                       // console.log(`${str}${key}`);
+                       printstrack(value[key], lines + 1);
+                    }
+                }
+
+                //printstrack(value, lines +1);
+            });
+        }else if(typeof obj === 'string' ){ // IS STRING
+            str = ""
+            for(let i = 0; i < lines; i++){str = str + "- ";}
+            // console.log(str + obj);
+        }else{// IS OBJECT
+            str = ""
+            for(let i = 0; i < lines; i++){ str = str + "- ";}
+            for(let key in obj){
+                // console.log(`${str}Key: ${key}`);
+                //console.log(obj[key]);
+                printstrack(obj[key], lines + 1);
+            }
+        }
+	}
+
+
 
 	const { Atributo } = __webpack_require__(/*! ../model/xml/Atributo */ "tSns");
 	const { Element } = __webpack_require__(/*! ../model/xml/Element */ "Kypw");
@@ -4964,70 +5993,54 @@ var YYSTATE=YY_START;
 switch($avoiding_name_collisions) {
 case 0:// Whitespace
 break;
-case 1:// MultiLineComment
+case 1://MultiLineComment 
 break;
-case 2:return 4
+case 2:return 8;
 break;
-case 3:return 8
+case 3:return 11;
 break;
-case 4:return 11
+case 4:return 14;
 break;
-case 5:return 13
+case 5:return 17;
 break;
-case 6:return 16
+case 6:return 21
 break;
-case 7:return 9
+case 7:return 23;
 break;
-case 8: attribute = ''; this.begin("string_doubleq"); 
+case 8: this.pushState('content');  return 12;
 break;
-case 9: attribute += yy_.yytext; 
+case 9:return 24;
 break;
-case 10: attribute += "\""; 
+case 10:return 16;
 break;
-case 11: attribute += "\n"; 
+case 11:return 15;
 break;
-case 12: attribute += " ";  
+case 12:return cadena_err;
 break;
-case 13: attribute += "\t"; 
+case 13:return id_err;
 break;
-case 14: attribute += "\\"; 
+case 14:
+                                    if(yy_.yytext.match(re)){return 22;}
+                                 
 break;
-case 15: attribute += "\'"; 
+case 15:return 6
 break;
-case 16: attribute += "\r"; 
+case 16:this.popState(); return 12;
 break;
-case 17: yy_.yytext = attribute; this.popState(); return 18; 
+case 17: this.popState(); return 21
 break;
-case 18: attribute = ''; this.begin("string_singleq"); 
+case 18:  this.popState(); return 23;
 break;
-case 19: attribute += yy_.yytext; 
+case 19: errors.push({ tipo: "Léxico", error: yy_.yytext, origen: "XML", linea: yy_.yylloc.first_line, columna: yy_.yylloc.first_column+1 }); return 'INVALID'; 
 break;
-case 20: attribute += "\""; 
+case 20:return 6
 break;
-case 21: attribute += "\n"; 
-break;
-case 22: attribute += " ";  
-break;
-case 23: attribute += "\t"; 
-break;
-case 24: attribute += "\\"; 
-break;
-case 25: attribute += "\'"; 
-break;
-case 26: attribute += "\r"; 
-break;
-case 27: yy_.yytext = attribute; this.popState(); return 19; 
-break;
-case 28:return 6
-break;
-case 29:return 21
-break;
-case 30: errors.push({ tipo: "Léxico", error: yy_.yytext, origen: "XML", linea: yy_.yylloc.first_line, columna: yy_.yylloc.first_column+1 }); return 'INVALID'; 
+case 21: errors.push({ tipo: "Léxico", error: yy_.yytext, origen: "XML", linea: yy_.yylloc.first_line, columna: yy_.yylloc.first_column+1 }); return 'INVALID'; 
 break;
 }
 },
-rules: [/^(?:\s+)/i,/^(?:<!--[\s\S\n]*?-->)/i,/^(?:<\?xml[\s\S\n]*?\?>)/i,/^(?:<)/i,/^(?:>)/i,/^(?:\/)/i,/^(?:=)/i,/^(?:[\w\u00e1\u00e9\u00ed\u00f3\u00fa\u00c1\u00c9\u00cd\u00d3\u00da\u00f1\u00d1]+)/i,/^(?:["])/i,/^(?:[^"\\]+)/i,/^(?:\\")/i,/^(?:\\n)/i,/^(?:\s)/i,/^(?:\\t)/i,/^(?:\\\\)/i,/^(?:\\\\')/i,/^(?:\\r)/i,/^(?:["])/i,/^(?:['])/i,/^(?:[^'\\]+)/i,/^(?:\\")/i,/^(?:\\n)/i,/^(?:\s)/i,/^(?:\\t)/i,/^(?:\\\\)/i,/^(?:\\\\')/i,/^(?:\\r)/i,/^(?:['])/i,/^(?:$)/i,/^(?:[^><]+)/i,/^(?:.)/i],
-conditions: {"string_singleq":{"rules":[19,20,21,22,23,24,25,26,27],"inclusive":false},"string_doubleq":{"rules":[9,10,11,12,13,14,15,16,17],"inclusive":false},"INITIAL":{"rules":[0,1,2,3,4,5,6,7,8,18,28,29,30],"inclusive":true}}
+rules: [/^(?:\s+)/i,/^(?:[<][!][-][-][\s\S\n]*?[-][-][>])/i,/^(?:<\?([_a-zA-Z]([a-zA-Z0-9_.-]|([\u00e1\u00e9\u00ed\u00f3\u00fa\u00c1\u00c9\u00cd\u00d3\u00da\u00f1\u00d1]+))*))/i,/^(?:\?>)/i,/^(?:(([_a-zA-Z]([a-zA-Z0-9_.-]|([\u00e1\u00e9\u00ed\u00f3\u00fa\u00c1\u00c9\u00cd\u00d3\u00da\u00f1\u00d1]+))*)\s*=))/i,/^(?:([_a-zA-Z]([a-zA-Z0-9_.-]|([\u00e1\u00e9\u00ed\u00f3\u00fa\u00c1\u00c9\u00cd\u00d3\u00da\u00f1\u00d1]+))*))/i,/^(?:<\/)/i,/^(?:<)/i,/^(?:>)/i,/^(?:\/)/i,/^(?:=)/i,/^(?:(("[^\"\n]*[\"\n])|('[^\'\n]*[\'\n])))/i,/^(?:([0-9]+(\.[0-9]+)?([a-zA-Z0-9_.-]|([\u00e1\u00e9\u00ed\u00f3\u00fa\u00c1\u00c9\u00cd\u00d3\u00da\u00f1\u00d1]+))*=?))/i,/^(?:{id_err})/i,/^(?:(([^<>&\"]|&alt;|&gt;|&amp;|&apos;|&quot;)+))/i,/^(?:$)/i,/^(?:>)/i,/^(?:<\/)/i,/^(?:<)/i,/^(?:.)/i,/^(?:$)/i,/^(?:.)/i],
+conditions: {"content":{"rules":[14,15,16,17,18,19],"inclusive":false},"INITIAL":{"rules":[0,1,2,3,4,5,6,7,8,9,10,11,12,13,20,21],"inclusive":true}}
 });
 return lexer;
 })();
@@ -5290,19 +6303,10 @@ function menorigual(_opIzq, _opDer) {
     };
 }
 function igual(_opIzq, _opDer) {
-    console.log(_opIzq, 3333333);
-    if (_opIzq.tipo === Enum_1.Tipos.FUNCION_POSITION || _opDer.tipo === Enum_1.Tipos.FUNCION_POSITION) {
-        return {
-            valor: ((_opIzq.tipo === Enum_1.Tipos.FUNCION_POSITION) ? (_opDer.valor) : (_opIzq.valor)),
-            tipo: Enum_1.Tipos.NUMBER
-        };
-    }
-    if (_opIzq.tipo === Enum_1.Tipos.FUNCION_LAST || _opDer.tipo === Enum_1.Tipos.FUNCION_LAST) {
-        return {
-            valor: ((_opIzq.valor == _opDer.valor) ? (_opDer.valor) : (-1)),
-            tipo: Enum_1.Tipos.NUMBER
-        };
-    }
+    if (_opIzq.tipo === Enum_1.Tipos.FUNCION_POSITION || _opDer.tipo === Enum_1.Tipos.FUNCION_POSITION)
+        return { valor: ((_opIzq.tipo === Enum_1.Tipos.FUNCION_POSITION) ? (_opDer.valor) : (_opIzq.valor)), tipo: Enum_1.Tipos.NUMBER };
+    if (_opIzq.tipo === Enum_1.Tipos.FUNCION_LAST || _opDer.tipo === Enum_1.Tipos.FUNCION_LAST)
+        return { valor: ((_opIzq.valor == _opDer.valor) ? (_opDer.valor) : (-1)), tipo: Enum_1.Tipos.NUMBER };
     return {
         valor: (_opIzq == _opDer),
         tipo: Enum_1.Tipos.RELACIONAL_IGUAL
