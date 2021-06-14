@@ -24,10 +24,10 @@ export class Predicate {
         let expresion: any;
         for (let i = 0; i < this.predicado.length; i++) {
             const e = this.predicado[i]; // En caso de tener varios predicados seguidos
-            // console.log(e, "Predicado")
+            console.log(e, "Predicado")
             expresion = Expresion(e.condicion, this.ambito, this.contexto);
             console.log(expresion, "Expresion predicado")
-            if (expresion.err) return expresion;
+            if (expresion.error) return expresion;
             if (expresion.tipo === Tipos.NUMBER) {
                 let index = parseInt(expresion.valor) - 1;
                 if (index < 0 || index >= _resultado.length)
@@ -44,7 +44,7 @@ export class Predicate {
                             const attribute: Atributo = element.attributes[i];
                             if (expresion.atributo) { // Es una comparación
                                 if (expresion.desigualdad) { // (<,<=,>,>=)
-                                    if (this.operarDesigualdad(expresion.desigualdad, expresion.condicion, attribute.value)) {
+                                    if (expresion.atributo == attribute.id && this.operarDesigualdad(expresion.desigualdad, expresion.condicion, attribute.value)) {
                                         tmp.push(element);
                                         this.contexto.push(element);
                                         break;
@@ -68,13 +68,26 @@ export class Predicate {
                                 this.contexto.push(element);
                                 break;
                             }
-                            else {
-                                console.log(expresion, 111111111);
-                            }
                         }
                 });
                 _resultado = tmp;
                 return _resultado;
+            }
+            else if (expresion.tipo === Tipos.FUNCION_TEXT) {
+                this.contexto = [];
+                for (let i = 0; i < _resultado.length; i++) {
+                    const element = _resultado[i];
+                    let text = element.value;
+                    if (text) {
+                        if (expresion.exclude) {
+                            if (text != expresion.condicion) // text() != 'x'
+                                this.contexto.push(element);
+                        }
+                        else if (text == expresion.condicion) // text() == 'x'
+                            this.contexto.push(element);
+                    }
+                }
+                return this.contexto;
             }
             else if (expresion.tipo === Tipos.FUNCION_LAST) {
                 let index = _resultado.length - 1;

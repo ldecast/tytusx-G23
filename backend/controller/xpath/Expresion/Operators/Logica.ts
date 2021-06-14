@@ -1,29 +1,36 @@
-import { Ambito } from "../../../../model/xml/Ambito/Ambito";
 import { Tipos } from "../../../../model/xpath/Enum";
 
-function Logica(_expresion: any, _ambito: Ambito) {
-    switch (_expresion.tipo) {
+function Logica(_expresion: any, _contexto: Array<any>) {
+    let operators = init(_expresion.opIzq, _expresion.opDer, _contexto, _expresion.tipo);
+    if (operators.error) return operators;
+    switch (operators.tipo) {
         case Tipos.LOGICA_AND:
-            return and(_expresion.opIzq, _expresion.opDer, _ambito);
+            return and(operators.op1, operators.op2, _contexto);
         case Tipos.LOGICA_OR:
-            return or(_expresion.opIzq, _expresion.opDer, _ambito);
+            return or(operators.op1, operators.op2, _contexto);
         default:
-            break;
+            return null;
     }
 }
 
-function and(_opIzq: any, _opDer: any, _ambito: Ambito) {
+function init(_opIzq: any, _opDer: any, _contexto: Array<any>, _tipo: Tipos) {
     const Expresion = require("../Expresion");
-    let op1 = Expresion(_opIzq, _ambito);
-    let op2 = Expresion(_opDer, _ambito);
-    let tipo;
+    let op1 = Expresion(_opIzq, _contexto);
+    if (op1.error) return op1;
+    let op2 = Expresion(_opDer, _contexto);
+    if (op2.error) return op2;
+    let tipo: Tipos = _tipo;
+
+    // else return { error: "Relación lógica no aceptable.", tipo: "Semántico", origen: "Query", linea: _opIzq.linea, columna: _opIzq.columna }
+    return { op1: op1, op2: op2, tipo: tipo };
 }
 
-function or(_opIzq: any, _opDer: any, _ambito: Ambito) {
-    const Expresion = require("../Expresion");
-    let op1 = Expresion(_opIzq, _ambito);
-    let op2 = Expresion(_opDer, _ambito);
-    let tipo;
+function and(_opIzq: any, _opDer: any, _contexto: Array<any>) {
+
+}
+
+function or(_opIzq: any, _opDer: any, _contexto: Array<any>) {
+
 }
 
 export = Logica;

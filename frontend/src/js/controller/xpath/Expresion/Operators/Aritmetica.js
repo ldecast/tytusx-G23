@@ -2,7 +2,7 @@
 var Enum_1 = require("../../../../model/xpath/Enum");
 function Aritmetica(_expresion, _ambito) {
     var operators = init(_expresion.opIzq, _expresion.opDer, _ambito, _expresion.tipo);
-    if (operators.err)
+    if (operators.error)
         return operators;
     switch (operators.tipo) {
         case Enum_1.Tipos.OPERACION_SUMA:
@@ -24,7 +24,11 @@ function Aritmetica(_expresion, _ambito) {
 function init(_opIzq, _opDer, _ambito, _tipo) {
     var Expresion = require("../Expresion");
     var op1 = Expresion(_opIzq, _ambito);
+    if (op1.error)
+        return op1;
     var op2 = Expresion(_opDer, _ambito);
+    if (op2.error)
+        return op2;
     var tipo = _tipo;
     if (op1.tipo === Enum_1.Tipos.FUNCION_LAST && op2.tipo === Enum_1.Tipos.NUMBER) {
         op1 = _ambito.length;
@@ -47,7 +51,7 @@ function init(_opIzq, _opDer, _ambito, _tipo) {
         op2 = Number(op2.valor);
     }
     else
-        return { err: "Solamente se pueden operar aritméticamente valores numéricos.\n", linea: _opIzq.linea, columna: _opIzq.columna };
+        return { error: "Solamente se pueden operar aritméticamente valores numéricos.", tipo: "Semántico", origen: "Query", linea: _opIzq.linea, columna: _opIzq.columna };
     return { op1: op1, op2: op2, tipo: tipo };
 }
 function suma(_opIzq, _opDer) {

@@ -32,6 +32,9 @@ function Expresion(_expresion, _ambito, _contexto) {
     else if (tipo === Enum_1.Tipos.FUNCION_POSITION) {
         return { valor: "position()", tipo: Enum_1.Tipos.FUNCION_POSITION, linea: _expresion.linea, columna: _expresion.columna };
     }
+    else if (tipo === Enum_1.Tipos.FUNCION_TEXT) {
+        return { valor: "text()", tipo: Enum_1.Tipos.FUNCION_TEXT, linea: _expresion.linea, columna: _expresion.columna };
+    }
     else if (tipo === Enum_1.Tipos.OPERACION_SUMA || tipo === Enum_1.Tipos.OPERACION_RESTA || tipo === Enum_1.Tipos.OPERACION_MULTIPLICACION
         || tipo === Enum_1.Tipos.OPERACION_DIVISION || tipo === Enum_1.Tipos.OPERACION_MODULO || tipo === Enum_1.Tipos.OPERACION_NEGACION_UNARIA) {
         var Aritmetica = require("./Operators/Aritmetica");
@@ -49,7 +52,7 @@ function Expresion(_expresion, _ambito, _contexto) {
     }
     else {
         console.log(_expresion, "SSSSSSSS");
-        return { err: "Error: Expresi\u00F3n no procesada.\n", linea: _expresion.linea, columna: _expresion.columna };
+        return { error: "Error: Expresión no procesada.", tipo: "Semántico", origen: "Query", linea: _expresion.linea, columna: _expresion.columna };
     }
 }
 module.exports = Expresion;
