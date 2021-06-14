@@ -3,7 +3,10 @@ import { Tipos } from "../../../model/xpath/Enum";
 
 function Expresion(_expresion: any, _ambito: Ambito, _contexto: any): any {
     let tipo: Tipos = _expresion.tipo;
-    if (tipo === Tipos.NODENAME) {
+    if (tipo === Tipos.EXPRESION) {
+        return Expresion(_expresion.expresion, _ambito, _contexto);
+    }
+    else if (tipo === Tipos.NODENAME) {
         return { valor: _expresion.nodename, tipo: Tipos.ELEMENTOS, linea: _expresion.linea, columna: _expresion.columna };
     }
     else if (tipo === Tipos.STRING || tipo === Tipos.NUMBER) {
@@ -16,8 +19,7 @@ function Expresion(_expresion: any, _ambito: Ambito, _contexto: any): any {
         return { valor: "..", tipo: Tipos.ELEMENTOS, linea: _expresion.linea, columna: _expresion.columna };
     }
     else if (tipo === Tipos.SELECT_ATTRIBUTES) {
-        let valor = { id: _expresion.expresion, tipo: "@" };
-        return { valor: valor, tipo: Tipos.ATRIBUTOS, linea: _expresion.linea, columna: _expresion.columna };
+        return { valor: _expresion.expresion, tipo: Tipos.ATRIBUTOS, linea: _expresion.linea, columna: _expresion.columna };
     }
     else if (tipo === Tipos.ASTERISCO) {
         return { valor: "*", tipo: Tipos.ASTERISCO, linea: _expresion.linea, columna: _expresion.columna };
@@ -30,9 +32,6 @@ function Expresion(_expresion: any, _ambito: Ambito, _contexto: any): any {
     }
     else if (tipo === Tipos.FUNCION_POSITION) {
         return { valor: "position()", tipo: Tipos.FUNCION_POSITION, linea: _expresion.linea, columna: _expresion.columna };
-    }
-    if (tipo === Tipos.EXPRESION) {
-        return Expresion(_expresion.expresion, _ambito, _contexto);
     }
     else if (tipo === Tipos.OPERACION_SUMA || tipo === Tipos.OPERACION_RESTA || tipo === Tipos.OPERACION_MULTIPLICACION
         || tipo === Tipos.OPERACION_DIVISION || tipo === Tipos.OPERACION_MODULO || tipo === Tipos.OPERACION_NEGACION_UNARIA) {

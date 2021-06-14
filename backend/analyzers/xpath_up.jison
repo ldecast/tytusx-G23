@@ -97,7 +97,6 @@
 %}
 
 /* operator associations and precedence */
-// %left 'tk_por'
 %left 'tk_or' 'tk_line'
 %left 'tk_and'
 %left 'tk_equal' 'tk_diferent' 'tk_menor' 'tk_menorigual' 'tk_mayor' 'tk_mayorigual'
@@ -110,7 +109,7 @@
 
 %% // GRAMATICA DE DOCUMENTO XPath ANALISIS ASCENDENTE
 
-ini: XPATH_U EOF { console.log($1,999); ast = { ast: $1, errors: errors }; errors = []; return ast; }
+ini: XPATH_U EOF { ast = { ast: $1, errors: errors }; errors = []; return ast; }
 ;
 
 XPATH_U: XPATH_U tk_line XPATH { $1.push($3); $$=$1; }

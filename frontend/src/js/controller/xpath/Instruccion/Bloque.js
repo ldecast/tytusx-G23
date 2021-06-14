@@ -5,72 +5,75 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 var Enum_1 = require("../../../model/xpath/Enum");
 var DobleEje_1 = __importDefault(require("./Selecting/DobleEje"));
 var Eje_1 = __importDefault(require("./Selecting/Eje"));
-function Bloque(_instruccion, _ambito) {
-    var retorno = { cadena: "", retorno: null };
+var reset = { cadena: "", retorno: null };
+var output = [];
+function Bloque(_instruccion, _ambito, _retorno) {
     var tmp;
     // console.log(_instruccion, 888888);
     for (var i = 0; i < _instruccion.length; i++) {
         var camino = _instruccion[i]; // En caso de tener varios caminos
         for (var j = 0; j < camino.length; j++) {
             var instr = camino[j];
-            console.log(instr, 7777777);
-            switch (instr.tipo) {
-                case Enum_1.Tipos.SELECT_FROM_ROOT:
-                    tmp = Eje_1.default(instr, _ambito, retorno);
-                    if (tmp.err)
-                        return tmp;
-                    retorno = tmp;
+            if (instr.tipo === Enum_1.Tipos.SELECT_FROM_ROOT) {
+                tmp = Eje_1.default(instr, _ambito, _retorno);
+                if (tmp.err)
                     break;
-                case Enum_1.Tipos.SELECT_FROM_CURRENT:
-                    tmp = DobleEje_1.default(instr, _ambito, retorno);
-                    if (tmp.err)
-                        return tmp;
-                    retorno = tmp;
+                _retorno = tmp;
+            }
+            else if (instr.tipo === Enum_1.Tipos.SELECT_FROM_CURRENT) {
+                tmp = DobleEje_1.default(instr, _ambito, _retorno);
+                if (tmp.err)
                     break;
-                default:
-                    return { err: "Instrucción no procesada.\n", linea: instr.linea, columna: instr.columna };
+                _retorno = tmp;
             }
         }
+        output.push(_retorno);
+        _retorno = reset;
     }
-    // console.log(retorno, 888888888)
-    if (retorno.retorno) {
-        var cadena_1 = "";
-        if (retorno.cadena === Enum_1.Tipos.TEXTOS) {
-            var root = retorno.retorno;
+    return writeOutput();
+}
+function writeOutput() {
+    var cadena = "";
+    for (var i = 0; i < output.length; i++) {
+        var path = output[i];
+        if (path.cadena === Enum_1.Tipos.TEXTOS) {
+            var root = path.retorno;
             root.forEach(function (txt) {
-                cadena_1 += concatText(txt);
+                cadena += concatText(txt);
             });
         }
-        else if (retorno.cadena === Enum_1.Tipos.ELEMENTOS) {
-            var root = retorno.retorno;
+        else if (path.cadena === Enum_1.Tipos.ELEMENTOS) {
+            var root = path.retorno;
             root.forEach(function (element) {
-                cadena_1 += concatChilds(element, "");
+                cadena += concatChilds(element, "");
             });
         }
-        else if (retorno.cadena === Enum_1.Tipos.ATRIBUTOS) {
+        else if (path.cadena === Enum_1.Tipos.ATRIBUTOS) {
             // let root: Array<Atributo> = attr; // <-- muestra sólo el atributo
             // root.forEach(attribute => {
             //     cadena += concatAttributes(attribute);
             // });
-            var root = retorno.retorno.elementos; // <-- muestra toda la etiqueta
+            var root = path.retorno.elementos; // <-- muestra toda la etiqueta
             root.forEach(function (element) {
-                cadena_1 += extractAttributes(element, "");
+                cadena += extractAttributes(element, "");
             });
         }
-        else if (retorno.cadena === Enum_1.Tipos.COMBINADO) {
-            var root = retorno.retorno.nodos;
+        else if (path.cadena === Enum_1.Tipos.COMBINADO) {
+            var root = path.retorno.nodos;
             root.forEach(function (elemento) {
                 if (elemento.elementos) {
-                    cadena_1 += concatChilds(elemento.elementos, "");
+                    cadena += concatChilds(elemento.elementos, "");
                 }
                 else if (elemento.textos) {
-                    cadena_1 += concatText(elemento.textos);
+                    cadena += concatText(elemento.textos);
                 }
             });
         }
-        retorno.cadena = cadena_1.substring(1);
     }
-    return retorno;
+    output = [];
+    if (cadena)
+        return cadena.substring(1);
+    return "No se encontraron elementos.";
 }
 function concatChilds(_element, cadena) {
     cadena = ("\n<" + _element.id_open);
