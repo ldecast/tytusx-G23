@@ -4,48 +4,50 @@ import Expresion from "../../Expresion/Expresion";
 import { Element } from "../../../../model/xml/Element";
 import { Atributo } from "../../../../model/xml/Atributo";
 import { Predicate } from "./Predicate";
+import Axis from "./Axis";
 
 function DobleEje(_instruccion: any, _ambito: Ambito, _contexto: any): any {
-    let retorno = { cadena: Tipos.NONE, retorno: Array<any>() }
+    let retorno = { cadena: Tipos.NONE, elementos: null }
     let _404 = { notFound: "No se encontraron elementos." };
-    let contexto: any = (_contexto.retorno) ? (_contexto.retorno) : null;
-    let expresion = Expresion(_instruccion.expresion.expresion, _ambito, contexto);
+    let contexto: any = (_contexto.elementos) ? (_contexto.elementos) : null;
+    let expresion;
+    if (_instruccion.expresion.expresion) expresion = Expresion(_instruccion.expresion.expresion, _ambito, contexto);
+    else expresion = Expresion(_instruccion.expresion, _ambito, contexto);
     if (expresion.error) return expresion;
     let predicate = _instruccion.expresion.predicate;
     let root: any;
     if (expresion.tipo === Tipos.ELEMENTOS) {
         root = getAllSymbolFromCurrent(expresion.valor, contexto, _ambito, predicate);
-        retorno.cadena = Tipos.ELEMENTOS;
     }
     else if (expresion.tipo === Tipos.ATRIBUTOS) {
         root = getAllSymbolFromCurrent({ id: expresion.valor, tipo: "@" }, contexto, _ambito, predicate);
         if (root.atributos.length === 0) return _404;
         if (root.atributos.error) return root.atributos;
-        if (root.elementos.error) return root.elementos;
-        retorno.cadena = Tipos.ATRIBUTOS;
     }
     else if (expresion.tipo === Tipos.ASTERISCO) {
         root = getAllSymbolFromCurrent(expresion.valor, contexto, _ambito, predicate);
-        retorno.cadena = Tipos.ELEMENTOS;
     }
     else if (expresion.tipo === Tipos.FUNCION_NODE) {
         root = getAllSymbolFromCurrent(expresion.valor, contexto, _ambito, predicate);
         if (root.nodos.length === 0) return _404;
         if (root.nodos.error) return root.nodos;
-        retorno.cadena = root.tipo;
     }
     else if (expresion.tipo === Tipos.FUNCION_TEXT) {
         root = getAllSymbolFromCurrent(expresion.valor, contexto, _ambito, predicate);
         if (root.texto.length === 0) return _404;
         if (root.texto.error) return root.texto;
-        retorno.cadena = Tipos.TEXTOS;
+    }
+    else if (expresion.tipo === Tipos.SELECT_AXIS) {
+        root = Axis.GetAxis(expresion.axisname, expresion.nodetest, expresion.predicate, contexto, _ambito);
+        if (root.atributos.error) return root.atributos;
+        if (root.elementos.error) return root.elementos;
     }
     else {
         return { error: "Expresión no válida.", tipo: "Semántico", origen: "Query", linea: _instruccion.linea, columna: _instruccion.columna };
     }
     if (root.error) return root;
-    if (root.length === 0 || root === null) return _404;
-    retorno.retorno = root;
+    if (root.elementos.length === 0 || root.elementos.error || root === null) return _404;
+    retorno = root;
     return retorno;
 }
 
@@ -72,7 +74,7 @@ function getFromCurrent(_id: any, _contexto: any, _ambito: Ambito, _condicion: a
             let filter = new Predicate(_condicion, _ambito, elements);
             text = filter.filterElements(text);
         }
-        return { texto: text, elementos: elements };
+        return { texto: text, elementos: elements, cadena: Tipos.TEXTOS };
     }
     // Selecciona todos los descencientes (elementos y/o texto)
     else if (_id === "node()") {
@@ -92,7 +94,7 @@ function getFromCurrent(_id: any, _contexto: any, _ambito: Ambito, _condicion: a
             nodes = filter.filterElements(nodes);
             elements = filter.contexto;
         }
-        return { tipo: Tipos.COMBINADO, nodos: nodes, elementos: elements };
+        return { cadena: Tipos.COMBINADO, nodos: nodes, elementos: _contexto };
     }
     // Selecciona todos los atributos a partir del contexto
     else if (_id.tipo === "@") {
@@ -114,7 +116,7 @@ function getFromCurrent(_id: any, _contexto: any, _ambito: Ambito, _condicion: a
             a.atributos = filter.filterElements(a.atributos);
             a.elementos = filter.contexto;
         }
-        return a;
+        return { atributos: a.atributos, elementos: a.elementos, cadena: Tipos.ATRIBUTOS };
     }
     else if (_id === "..") {
         if (_contexto.atributos) {
@@ -128,7 +130,7 @@ function getFromCurrent(_id: any, _contexto: any, _ambito: Ambito, _condicion: a
                 let filter = new Predicate(_condicion, _ambito, elements);
                 elements = filter.filterElements(elements);
             }
-            return elements;
+            return { elementos: elements, cadena: Tipos.ELEMENTOS };
         }
         for (let i = 0; i < _contexto.length; i++) {
             const element = _contexto[i];
@@ -148,9 +150,9 @@ function getFromCurrent(_id: any, _contexto: any, _ambito: Ambito, _condicion: a
             let filter = new Predicate(_condicion, _ambito, elements);
             elements = filter.filterElements(elements);
         }
-        return elements;
+        return { elementos: elements, cadena: Tipos.ELEMENTOS };
     }
-    // Selecciona todos los descendientes con el id
+    // Selecciona todos los descendientes con el id o en el caso que sea //*
     else {
         for (let i = 0; i < _contexto.length; i++) {
             const element = _contexto[i];
@@ -163,7 +165,7 @@ function getFromCurrent(_id: any, _contexto: any, _ambito: Ambito, _condicion: a
             let filter = new Predicate(_condicion, _ambito, elements);
             elements = filter.filterElements(elements);
         }
-        return elements;
+        return { elementos: elements, cadena: Tipos.ELEMENTOS };
     }
 }
 

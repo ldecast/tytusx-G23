@@ -33,7 +33,23 @@ export class AppComponent {
     language: 'xml'
   }
 
-  entrada: string = '';
+  entrada: string = `
+  <?xml version="1.0" encoding="UTF-8"?>
+  <bookstore f="false">
+  <book>
+    <title lang="en">Harry Potter</title>
+    <price>29.99</price>
+  </book>
+  <book>
+    <title lang="en">Learning XML</title>
+    <price>39.95</price>
+  </book>
+  <book id="5">
+    <title lang="en">Harry Potter</title>
+    <price>29.99</price>
+  </book>
+  
+  </bookstore>`;
   consulta: string = '';
   salida: string = '';
 

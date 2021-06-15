@@ -130,6 +130,66 @@ export class Ambito {
         return _array;
     }
 
+    searchIndexElement(_element: Element, _currentNode: Element, _index: number) {
+        if (_element == _currentNode) {
+            return _index;
+        }
+        if (_element.childs) {
+            for (let i = 0; i < _element.childs.length; i++) {
+                const child = _element.childs[i];
+                _index = this.searchIndexElement(child, _currentNode, _index);
+            }
+        }
+        return _index + 1;
+    }
+
+    searchFollowing(_element: Element, _currentNode: Element, _includeSibling: boolean, _array: Array<Element>): any {
+        if (_element == _currentNode) { // for hasta que se acaben los elementos
+            if (_includeSibling) _array.push(_element);
+            return { found: _array };
+        }
+        if (_element.childs) {
+            for (let i = 0; i < _element.childs.length; i++) {
+                const child = _element.childs[i];
+                let a: any;
+                a = this.searchFollowing(child, _currentNode, _includeSibling, _array);
+                if (a.found) {
+                    if (_includeSibling) {
+
+                    }
+                    else {
+                        for (let j = i; j < _element.childs.length; j++) {
+                            const childp = _element.childs[j];
+                            _array.push(childp);
+                        }
+                    }
+                    return { found: _array };
+                }
+            }
+            // _element.childs.forEach(child => {
+            //     this.searchFollowing(child, _currentNode, _includeSibling, _array)
+            // });
+        }
+        return _array;
+    }
+
+    searchAncestors(_element: Element, _currentNode: Element, _array: Array<Element>): any {
+        if (_element == _currentNode) { // for hasta que se acaben los elementos
+            return { found: _array };
+        }
+        if (_element.childs) {
+            let a: any;
+            for (let i = 0; i < _element.childs.length; i++) {
+                const child = _element.childs[i];
+                a = this.searchAncestors(child, _currentNode, _array);
+                if (a.found) return a.found;
+                else _array = a;
+            }
+        }
+        _array.push(_element);
+        return _array;
+    }
+
     getGlobal() {
         let e: Ambito;
         for (e = this; e != null; e = e.anterior) {

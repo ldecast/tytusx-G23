@@ -1,6 +1,7 @@
 import Bloque from '../controller/xpath/Instruccion/Bloque';
 import { Ambito } from '../model/xml/Ambito/Ambito';
 import { Global } from '../model/xml/Ambito/Global';
+import { Element } from '../model/xml/Element';
 
 function compile(req: any) {
     let errors = [];
@@ -48,7 +49,8 @@ function compile(req: any) {
             }
         }
 
-        let output: any = { cadena: "", retorno: null };
+        let root: Element = new Element("[object XMLDocument]", [], "", cadena.ambito.tablaSimbolos, "0", "0", "[object XMLDocument]")
+        let output: any = { cadena: "", elementos: [root] };
         let xPath_parse = xPath_ast.ast; // AST que genera Jison
         let bloque = Bloque(xPath_parse, cadena.ambito, output); // Procesa la secuencia de accesos (instrucciones)
         if (bloque.error) {

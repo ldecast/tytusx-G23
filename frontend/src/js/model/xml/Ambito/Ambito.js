@@ -121,6 +121,65 @@ var Ambito = /** @class */ (function () {
         }
         return _array;
     };
+    Ambito.prototype.searchIndexElement = function (_element, _currentNode, _index) {
+        if (_element == _currentNode) {
+            return _index;
+        }
+        if (_element.childs) {
+            for (var i = 0; i < _element.childs.length; i++) {
+                var child = _element.childs[i];
+                _index = this.searchIndexElement(child, _currentNode, _index);
+            }
+        }
+        return _index + 1;
+    };
+    Ambito.prototype.searchFollowing = function (_element, _currentNode, _includeSibling, _array) {
+        if (_element == _currentNode) { // for hasta que se acaben los elementos
+            if (_includeSibling)
+                _array.push(_element);
+            return { found: _array };
+        }
+        if (_element.childs) {
+            for (var i = 0; i < _element.childs.length; i++) {
+                var child = _element.childs[i];
+                var a = void 0;
+                a = this.searchFollowing(child, _currentNode, _includeSibling, _array);
+                if (a.found) {
+                    if (_includeSibling) {
+                    }
+                    else {
+                        for (var j = i; j < _element.childs.length; j++) {
+                            var childp = _element.childs[j];
+                            _array.push(childp);
+                        }
+                    }
+                    return { found: _array };
+                }
+            }
+            // _element.childs.forEach(child => {
+            //     this.searchFollowing(child, _currentNode, _includeSibling, _array)
+            // });
+        }
+        return _array;
+    };
+    Ambito.prototype.searchAncestors = function (_element, _currentNode, _array) {
+        if (_element == _currentNode) { // for hasta que se acaben los elementos
+            return { found: _array };
+        }
+        if (_element.childs) {
+            var a = void 0;
+            for (var i = 0; i < _element.childs.length; i++) {
+                var child = _element.childs[i];
+                a = this.searchAncestors(child, _currentNode, _array);
+                if (a.found)
+                    return a.found;
+                else
+                    _array = a;
+            }
+        }
+        _array.push(_element);
+        return _array;
+    };
     Ambito.prototype.getGlobal = function () {
         var e;
         for (e = this; e != null; e = e.anterior) {

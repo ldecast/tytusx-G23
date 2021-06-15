@@ -4,12 +4,14 @@ import { Atributo } from "../../../model/xml/Atributo";
 import { Tipos } from "../../../model/xpath/Enum";
 import DobleEje from "./Selecting/DobleEje";
 import Eje from "./Selecting/Eje";
+import Axis from "./Selecting/Axis";
 
-let reset: any = { cadena: "", retorno: null };
+let reset: any;
 let output: Array<any> = [];
 
 function Bloque(_instruccion: Array<any>, _ambito: Ambito, _retorno: any) {
     let tmp: any;
+    reset = _retorno;
     // console.log(_instruccion, 888888);
     for (let i = 0; i < _instruccion.length; i++) {
         const camino = _instruccion[i]; // En caso de tener varios caminos
@@ -19,21 +21,25 @@ function Bloque(_instruccion: Array<any>, _ambito: Ambito, _retorno: any) {
                 tmp = Eje(instr, _ambito, _retorno);
                 if (tmp.notFound) { _retorno = reset; break; }
                 if (tmp.error) return tmp;
-                if (tmp.retorno.elementos) _retorno.retorno = tmp.retorno.elementos
-                else _retorno = tmp;
+                _retorno = tmp;
             }
             else if (instr.tipo === Tipos.SELECT_FROM_CURRENT) {
                 tmp = DobleEje(instr, _ambito, _retorno);
                 if (tmp.notFound) { _retorno = reset; break; }
                 if (tmp.error) return tmp;
-                if (tmp.retorno.elementos) _retorno.retorno = tmp.retorno.elementos;
-                else _retorno = tmp;
+                _retorno = tmp;
+            }
+            else if (instr.tipo === Tipos.SELECT_AXIS) {
+                tmp = Axis.SA(instr, _ambito, _retorno);
+                if (tmp.notFound) { _retorno = reset; break; }
+                if (tmp.error) return tmp;
+                _retorno = tmp;
             }
             else {
-                return { error: `Error: Instrucción no procesada.`, tipo: "Semántico", linea: instr.linea, columna: instr.columna };
+                return { error: "Error: Instrucción no procesada.", tipo: "Semántico", origen: "Query", linea: instr.linea, columna: instr.columna };
             }
         }
-        output.push(tmp);
+        output.push(_retorno);
         _retorno = reset;
     }
     return writeOutput();
@@ -44,29 +50,33 @@ function writeOutput() {
     for (let i = 0; i < output.length; i++) {
         const path = output[i];
         if (path.cadena === Tipos.TEXTOS) {
-            let root: Array<string> = (path.retorno.texto) ? (path.retorno.texto) : (path.retorno);
+            let root: Array<string> = (path.texto) ? (path.texto) : (path.elementos);
             root.forEach(txt => {
                 cadena += concatText(txt);
             });
         }
         else if (path.cadena === Tipos.ELEMENTOS) {
-            let root: Array<Element> = path.retorno;
+            let root: Array<Element> = path.elementos;
             root.forEach(element => {
                 cadena += concatChilds(element, "");
             });
         }
         else if (path.cadena === Tipos.ATRIBUTOS) {
-            // let root: Array<Atributo> = attr; // <-- muestra sólo el atributo
-            // root.forEach(attribute => {
-            //     cadena += concatAttributes(attribute);
-            // });
-            let root: Array<Element> = path.retorno.elementos; // <-- muestra toda la etiqueta
-            root.forEach(element => {
-                cadena += extractAttributes(element, "");
-            });
+            if (path.atributos) {
+                let root: Array<Atributo> = path.atributos; // <-- muestra sólo el atributo
+                root.forEach(attr => {
+                    cadena += concatAttributes(attr);
+                });
+            }
+            else {
+                let root: Array<Element> = path.elementos; // <-- muestra toda la etiqueta
+                root.forEach(element => {
+                    cadena += extractAttributes(element, "");
+                });
+            }
         }
         else if (path.cadena === Tipos.COMBINADO) {
-            let root: Array<any> = path.retorno.nodos;
+            let root: Array<any> = path.nodos;
             root.forEach((elemento: any) => {
                 if (elemento.elementos) {
                     cadena += concatChilds(elemento.elementos, "");
