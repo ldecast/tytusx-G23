@@ -3,6 +3,7 @@ import { Tipos } from "../../../model/xpath/Enum";
 
 function Expresion(_expresion: any, _ambito: Ambito, _contexto: any): any {
     let tipo: Tipos = _expresion.tipo;
+    // console.log(_expresion, 1111111)
     if (tipo === Tipos.EXPRESION) {
         return Expresion(_expresion.expresion, _ambito, _contexto);
     }
@@ -20,6 +21,11 @@ function Expresion(_expresion: any, _ambito: Ambito, _contexto: any): any {
     }
     else if (tipo === Tipos.SELECT_ATTRIBUTES) {
         return { valor: _expresion.expresion, tipo: Tipos.ATRIBUTOS, linea: _expresion.linea, columna: _expresion.columna };
+    }
+    else if (tipo === Tipos.SELECT_AXIS) {
+        let nodetest = Expresion(_expresion.nodetest.expresion, _ambito, _contexto);
+        if (nodetest.error) return nodetest;
+        return { axisname: _expresion.axisname, nodetest: nodetest, predicate: _expresion.nodetest.predicate, tipo: Tipos.SELECT_AXIS, linea: _expresion.linea, columna: _expresion.columna };
     }
     else if (tipo === Tipos.ASTERISCO) {
         return { valor: "*", tipo: Tipos.ASTERISCO, linea: _expresion.linea, columna: _expresion.columna };

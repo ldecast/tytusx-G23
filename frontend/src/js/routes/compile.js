@@ -5,6 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 var Bloque_1 = __importDefault(require("../controller/xpath/Instruccion/Bloque"));
 var Ambito_1 = require("../model/xml/Ambito/Ambito");
 var Global_1 = require("../model/xml/Ambito/Global");
+var Element_1 = require("../model/xml/Element");
 function compile(req) {
     var errors = [];
     try {
@@ -48,7 +49,8 @@ function compile(req) {
                 return { output: "La consulta contiene errores para analizar.\nIntente de nuevo.", arreglo_errores: errors };
             }
         }
-        var output = { cadena: "", retorno: null };
+        var root = new Element_1.Element("[object XMLDocument]", [], "", cadena.ambito.tablaSimbolos, "0", "0", "[object XMLDocument]");
+        var output = { cadena: "", elementos: [root] };
         var xPath_parse = xPath_ast.ast; // AST que genera Jison
         var bloque = Bloque_1.default(xPath_parse, cadena.ambito, output); // Procesa la secuencia de accesos (instrucciones)
         if (bloque.error) {

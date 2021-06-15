@@ -2,6 +2,7 @@
 var Enum_1 = require("../../../model/xpath/Enum");
 function Expresion(_expresion, _ambito, _contexto) {
     var tipo = _expresion.tipo;
+    // console.log(_expresion, 1111111)
     if (tipo === Enum_1.Tipos.EXPRESION) {
         return Expresion(_expresion.expresion, _ambito, _contexto);
     }
@@ -19,6 +20,12 @@ function Expresion(_expresion, _ambito, _contexto) {
     }
     else if (tipo === Enum_1.Tipos.SELECT_ATTRIBUTES) {
         return { valor: _expresion.expresion, tipo: Enum_1.Tipos.ATRIBUTOS, linea: _expresion.linea, columna: _expresion.columna };
+    }
+    else if (tipo === Enum_1.Tipos.SELECT_AXIS) {
+        var nodetest = Expresion(_expresion.nodetest.expresion, _ambito, _contexto);
+        if (nodetest.error)
+            return nodetest;
+        return { axisname: _expresion.axisname, nodetest: nodetest, predicate: _expresion.nodetest.predicate, tipo: Enum_1.Tipos.SELECT_AXIS, linea: _expresion.linea, columna: _expresion.columna };
     }
     else if (tipo === Enum_1.Tipos.ASTERISCO) {
         return { valor: "*", tipo: Enum_1.Tipos.ASTERISCO, linea: _expresion.linea, columna: _expresion.columna };

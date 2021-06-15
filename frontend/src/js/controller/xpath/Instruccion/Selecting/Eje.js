@@ -5,18 +5,22 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 var Enum_1 = require("../../../../model/xpath/Enum");
 var Expresion_1 = __importDefault(require("../../Expresion/Expresion"));
 var Predicate_1 = require("./Predicate");
+var Axis_1 = __importDefault(require("./Axis"));
 function Eje(_instruccion, _ambito, _contexto) {
-    var retorno = { cadena: Enum_1.Tipos.NONE, retorno: null };
+    var retorno = { cadena: Enum_1.Tipos.NONE, elementos: null };
     var _404 = { notFound: "No se encontraron elementos." };
-    var contexto = (_contexto.retorno) ? (_contexto.retorno) : null;
-    var expresion = Expresion_1.default(_instruccion.expresion.expresion, _ambito, contexto);
+    var contexto = (_contexto.elementos) ? (_contexto.elementos) : null;
+    var expresion;
+    if (_instruccion.expresion.expresion)
+        expresion = Expresion_1.default(_instruccion.expresion.expresion, _ambito, contexto);
+    else
+        expresion = Expresion_1.default(_instruccion.expresion, _ambito, contexto);
     if (expresion.error)
         return expresion;
     var predicate = _instruccion.expresion.predicate;
     var root;
     if (expresion.tipo === Enum_1.Tipos.ELEMENTOS) {
         root = getSymbolFromRoot(expresion.valor, contexto, _ambito, predicate);
-        retorno.cadena = Enum_1.Tipos.ELEMENTOS;
     }
     else if (expresion.tipo === Enum_1.Tipos.ATRIBUTOS) {
         root = getSymbolFromRoot({ id: expresion.valor, tipo: "@" }, contexto, _ambito, predicate);
@@ -24,13 +28,9 @@ function Eje(_instruccion, _ambito, _contexto) {
             return _404;
         if (root.atributos.error)
             return root.atributos;
-        if (root.elementos.error)
-            return root.elementos;
-        retorno.cadena = Enum_1.Tipos.ATRIBUTOS;
     }
     else if (expresion.tipo === Enum_1.Tipos.ASTERISCO) {
         root = getSymbolFromRoot(expresion.valor, contexto, _ambito, predicate);
-        retorno.cadena = Enum_1.Tipos.ELEMENTOS;
     }
     else if (expresion.tipo === Enum_1.Tipos.FUNCION_NODE) {
         root = getSymbolFromRoot(expresion.valor, contexto, _ambito, predicate);
@@ -38,7 +38,6 @@ function Eje(_instruccion, _ambito, _contexto) {
             return _404;
         if (root.nodos.error)
             return root.nodos;
-        retorno.cadena = root.tipo;
     }
     else if (expresion.tipo === Enum_1.Tipos.FUNCION_TEXT) {
         root = getSymbolFromRoot(expresion.valor, contexto, _ambito, predicate);
@@ -46,16 +45,23 @@ function Eje(_instruccion, _ambito, _contexto) {
             return _404;
         if (root.texto.error)
             return root.texto;
-        retorno.cadena = Enum_1.Tipos.TEXTOS;
+    }
+    else if (expresion.tipo === Enum_1.Tipos.SELECT_AXIS) {
+        root = Axis_1.default.GetAxis(expresion.axisname, expresion.nodetest, expresion.predicate, contexto, _ambito);
+        if (root.atributos.error)
+            return root.atributos;
+        if (root.elementos.error)
+            return root.elementos;
+        // retorno.cadena = root.cadena;
     }
     else {
         return { error: "Expresión no válida.", tipo: "Semántico", origen: "Query", linea: _instruccion.linea, columna: _instruccion.columna };
     }
     if (root.error)
         return root;
-    if (root.length === 0 || root === null)
+    if (root.elementos.length === 0 || root.elementos.error || root === null)
         return _404;
-    retorno.retorno = root;
+    retorno = root;
     return retorno;
 }
 function getSymbolFromRoot(_nodename, _contexto, _ambito, _condicion) {
@@ -83,7 +89,7 @@ function getFromCurrent(_id, _contexto, _ambito, _condicion) {
             text = filter.filterElements(text);
             elements = filter.contexto;
         }
-        return { texto: text, elementos: elements };
+        return { texto: text, elementos: elements, cadena: Enum_1.Tipos.TEXTOS };
     }
     // Selecciona todos los hijos (elementos o texto)
     else if (_id === "node()") {
@@ -101,7 +107,7 @@ function getFromCurrent(_id, _contexto, _ambito, _condicion) {
             var filter = new Predicate_1.Predicate(_condicion, _ambito, elements);
             nodes_1 = filter.filterElements(nodes_1);
         }
-        return { tipo: Enum_1.Tipos.COMBINADO, nodos: nodes_1, elementos: _contexto };
+        return { cadena: Enum_1.Tipos.COMBINADO, nodos: nodes_1, elementos: _contexto };
     }
     // Selecciona todos los hijos (elementos)
     else if (_id === "*") {
@@ -117,7 +123,7 @@ function getFromCurrent(_id, _contexto, _ambito, _condicion) {
             var filter = new Predicate_1.Predicate(_condicion, _ambito, elements);
             elements = filter.filterElements(elements);
         }
-        return elements;
+        return { elementos: elements, cadena: Enum_1.Tipos.ELEMENTOS };
     }
     // Selecciona los atributos
     else if (_id.tipo === "@") {
@@ -141,7 +147,7 @@ function getFromCurrent(_id, _contexto, _ambito, _condicion) {
             attributes = filter.filterElements(attributes);
             elements = filter.contexto;
         }
-        return { atributos: attributes, elementos: elements };
+        return { atributos: attributes, elementos: elements, cadena: Enum_1.Tipos.ATRIBUTOS };
     }
     // Selecciona el padre
     else if (_id === "..") {
@@ -155,7 +161,7 @@ function getFromCurrent(_id, _contexto, _ambito, _condicion) {
             for (var i = 0; i < _contexto.atributos.length; i++) {
                 _loop_1(i);
             }
-            return elements;
+            return { elementos: elements };
         }
         var _loop_2 = function (i) {
             var element = _contexto[i];
@@ -178,7 +184,7 @@ function getFromCurrent(_id, _contexto, _ambito, _condicion) {
             var filter = new Predicate_1.Predicate(_condicion, _ambito, elements);
             elements = filter.filterElements(elements);
         }
-        return elements;
+        return { elementos: elements, cadena: Enum_1.Tipos.ELEMENTOS };
     }
     // Selecciona el nodo actual
     else if (_id === ".") {
@@ -190,7 +196,7 @@ function getFromCurrent(_id, _contexto, _ambito, _condicion) {
             var filter = new Predicate_1.Predicate(_condicion, _ambito, elements);
             elements = filter.filterElements(elements);
         }
-        return elements;
+        return { elementos: elements, cadena: Enum_1.Tipos.ELEMENTOS };
     }
     // Búsqueda en los hijos por id
     else {
@@ -206,9 +212,10 @@ function getFromCurrent(_id, _contexto, _ambito, _condicion) {
             var filter = new Predicate_1.Predicate(_condicion, _ambito, elements);
             elements = filter.filterElements(elements);
         }
-        return elements;
+        return { elementos: elements, cadena: Enum_1.Tipos.ELEMENTOS };
     }
 }
+/*            //////                         */
 // Desde la raíz
 function getFromRoot(_id, _ambito, _condicion) {
     var elements = Array();
@@ -254,7 +261,7 @@ function getFromRoot(_id, _ambito, _condicion) {
             var filter = new Predicate_1.Predicate(_condicion, _ambito, elements);
             elements = filter.filterElements(elements);
         }
-        return elements;
+        return { elementos: elements };
     }
     // Selecciona los atributos
     else if (_id.tipo === "@") {
@@ -288,7 +295,7 @@ function getFromRoot(_id, _ambito, _condicion) {
             var filter = new Predicate_1.Predicate(_condicion, _ambito, elements);
             elements = filter.filterElements(elements);
         }
-        return elements;
+        return { elementos: elements };
     }
     // Búsqueda por id
     else {
@@ -300,7 +307,7 @@ function getFromRoot(_id, _ambito, _condicion) {
             var filter = new Predicate_1.Predicate(_condicion, _ambito, elements);
             elements = filter.filterElements(elements);
         }
-        return elements;
+        return { elementos: elements };
     }
 }
 module.exports = Eje;
