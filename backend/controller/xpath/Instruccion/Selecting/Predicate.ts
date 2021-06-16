@@ -134,7 +134,7 @@ export class Predicate {
                             }
                         }
                     }
-                    if (element.childs && tmp.length === 0) { // Hace match con algún hijo
+                    if (element.childs) { // Hace match con algún hijo
                         for (let j = 0; j < element.childs.length; j++) {
                             const child = element.childs[j];
                             condition = this.verificarDesigualdad(expresion.desigualdad, child.id_open, e1, child.value, e2);
@@ -144,13 +144,15 @@ export class Predicate {
                             }
                         }
                     }
-                    if (tmp.length === 0) { // Hace match con el elemento
-                        condition = this.verificarDesigualdad(expresion.desigualdad, element.id_open, e1, element.value, e2);
-                        if (condition)
-                            tmp.push(element);
-                    }
+                    // Hace match con el elemento
+                    condition = this.verificarDesigualdad(expresion.desigualdad, element.id_open, e1, element.value, e2);
+                    if (condition)
+                        tmp.push(element);
                 }
                 _resultado = tmp;
+            }
+            else if (expresion.tipo === Tipos.LOGICA_OR || expresion.tipo === Tipos.LOGICA_AND) {
+                _resultado = expresion.elementos;
             }
             else if (expresion.tipo === Tipos.EXCLUDE) {
                 let index = parseInt(expresion.valor) - 1;

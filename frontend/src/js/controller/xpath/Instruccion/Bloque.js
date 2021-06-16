@@ -98,8 +98,17 @@ function writeOutput() {
     }
     output = [];
     if (cadena)
-        return cadena.substring(1);
+        return replaceEntity(cadena.substring(1));
     return "No se encontraron elementos.";
+}
+function replaceEntity(cadena) {
+    var _lessThan = /&lt;/gi;
+    var _greaterThan = /&gt;/gi;
+    var _ampersand = /&amp;/gi;
+    var _apostrophe = /&apos;/gi;
+    var _quotation = /&quot;/gi;
+    var salida = cadena.replace(_lessThan, "<").replace(_greaterThan, ">").replace(_ampersand, "&").replace(_apostrophe, "\'").replace(_quotation, "\"");
+    return salida;
 }
 function concatChilds(_element, cadena) {
     cadena = ("\n<" + _element.id_open);

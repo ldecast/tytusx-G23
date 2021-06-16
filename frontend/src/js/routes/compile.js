@@ -27,6 +27,7 @@ function compile(req) {
         }
         // Análisis de XML
         var xml_ast = parser_xml.parse(xml);
+        var encoding = xml_ast.encoding; // Encoding del documento XML
         if (xml_ast.errors.length > 0 || xml_ast.ast === null || xml_ast === true) {
             if (xml_ast.errors.length > 0)
                 errors = xml_ast.errors;
@@ -50,7 +51,7 @@ function compile(req) {
             }
         }
         var root = new Element_1.Element("[object XMLDocument]", [], "", cadena.ambito.tablaSimbolos, "0", "0", "[object XMLDocument]");
-        var output = { cadena: "", elementos: [root] };
+        var output = { cadena: "", elementos: [root], atributos: null };
         var xPath_parse = xPath_ast.ast; // AST que genera Jison
         var bloque = Bloque_1.default(xPath_parse, cadena.ambito, output); // Procesa la secuencia de accesos (instrucciones)
         if (bloque.error) {
@@ -60,7 +61,8 @@ function compile(req) {
         output = {
             arreglo_simbolos: simbolos,
             arreglo_errores: errors,
-            output: bloque
+            output: bloque,
+            encoding: encoding
         };
         errors = [];
         return output;
@@ -71,7 +73,8 @@ function compile(req) {
         var output = {
             arreglo_simbolos: [],
             arreglo_errores: errors,
-            output: (error.message) ? String(error.message) : String(error)
+            output: (error.message) ? String(error.message) : String(error),
+            encoding: "utf-8"
         };
         errors = [];
         return output;

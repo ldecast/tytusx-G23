@@ -89,7 +89,7 @@ unicode_chars                      	[\u00e1\u00e9\u00ed\u00f3\u00fa\u00c1\u00c9\
 tag_name                           	[_a-zA-Z]([a-zA-Z0-9_.-]|{unicode_chars})*
 attribute_name                     	{tag_name}\s*'='
 string                             	(\"[^\"\n]*[\"\n]) | (\'[^\'\n]*[\'\n])
-element_content                    	([^<>&\"] | '&alt;' | '&gt;' | '&amp;' | '&apos;' | '&quot;' )+
+element_content                    	([^<>&\"] | '&lt;' | '&gt;' | '&amp;' | '&apos;' | '&quot;' )+
 
 cadena_err							[0-9]+("."[0-9]+)?([a-zA-Z0-9_.-]|{unicode_chars})*"="?
 %%
@@ -151,7 +151,7 @@ INI: XML_DECLARATION ROOT EOF               {/*$1[0].printTest(0);console.log($1
                                                 if (encoding.encoding === encoding.codes.INVALID ) {
                                                     errors.push({ tipo: "Léxico", error: "La codificación del XML no es válida.", origen: "XML", linea: this._$.first_line, columna: this._$.first_column+1 }); return { ast: null, errors: errors };
                                                 }
-                                                ast = { ast: $2, encoding: encoding, errors: errors, cst:"<p>TEST CST </p>", grammar_report: "<p>grammar report test</p>"};
+                                                ast = { ast: $2, encoding: encoding.encoding, errors: errors, cst:"<p>TEST CST </p>", grammar_report: "<p>grammar report test</p>"};
                                             } else{
                                                 ast = { ast: $2, encoding: null, cst: null, grammar_report: null, errors: errors };
                                             }

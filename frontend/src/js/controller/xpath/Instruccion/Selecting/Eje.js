@@ -7,9 +7,10 @@ var Expresion_1 = __importDefault(require("../../Expresion/Expresion"));
 var Predicate_1 = require("./Predicate");
 var Axis_1 = __importDefault(require("./Axis"));
 function Eje(_instruccion, _ambito, _contexto) {
+    console.log(_contexto, 555555);
     var retorno = { cadena: Enum_1.Tipos.NONE, elementos: null };
     var _404 = { notFound: "No se encontraron elementos." };
-    var contexto = (_contexto.elementos) ? (_contexto.elementos) : null;
+    var contexto = (_contexto.elementos) ? (_contexto) : null;
     var expresion;
     if (_instruccion.expresion.expresion)
         expresion = Expresion_1.default(_instruccion.expresion.expresion, _ambito, contexto);
@@ -149,7 +150,8 @@ function getFromCurrent(_id, _contexto, _ambito, _condicion) {
         return { atributos: attributes, elementos: elements, cadena: Enum_1.Tipos.ATRIBUTOS };
     }
     // Selecciona el padre
-    else if (_id === "..") {
+    else if (_id === "..") { // Manejar el regreso de atributos a su padre como la etiqueta misma !
+        console.log(_contexto.atributos, 3333333);
         if (_contexto.atributos) {
             var _loop_1 = function (i) {
                 var attribute = _contexto.atributos[i];
@@ -160,7 +162,7 @@ function getFromCurrent(_id, _contexto, _ambito, _condicion) {
             for (var i = 0; i < _contexto.atributos.length; i++) {
                 _loop_1(i);
             }
-            return { elementos: elements };
+            return { elementos: elements, cadena: Enum_1.Tipos.ELEMENTOS };
         }
         var _loop_2 = function (i) {
             var element = _contexto[i];
@@ -208,10 +210,8 @@ function getFromCurrent(_id, _contexto, _ambito, _condicion) {
             }
         }
         if (_condicion) {
-            console.log(elements, 7777777);
             var filter = new Predicate_1.Predicate(_condicion, _ambito, elements);
             elements = filter.filterElements(elements);
-            console.log(elements, 888888);
         }
         return { elementos: elements, cadena: Enum_1.Tipos.ELEMENTOS };
     }
