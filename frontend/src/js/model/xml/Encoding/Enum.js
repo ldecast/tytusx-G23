@@ -3,8 +3,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.Codes = void 0;
 var Codes;
 (function (Codes) {
-    Codes[Codes["UTF8"] = 0] = "UTF8";
-    Codes[Codes["ASCII"] = 1] = "ASCII";
-    Codes[Codes["ISO8859_1"] = 2] = "ISO8859_1";
-    Codes[Codes["INVALID"] = 3] = "INVALID";
+    Codes["UTF8"] = "utf-8";
+    Codes["ASCII"] = "ascii";
+    Codes["ISO8859_1"] = "latin1";
+    Codes["INVALID"] = "utf-8";
 })(Codes = exports.Codes || (exports.Codes = {}));

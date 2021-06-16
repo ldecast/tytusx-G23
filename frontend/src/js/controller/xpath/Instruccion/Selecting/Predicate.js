@@ -140,7 +140,7 @@ var Predicate = /** @class */ (function () {
                             }
                         }
                     }
-                    if (element.childs && tmp.length === 0) { // Hace match con algún hijo
+                    if (element.childs) { // Hace match con algún hijo
                         for (var j = 0; j < element.childs.length; j++) {
                             var child = element.childs[j];
                             condition = this_1.verificarDesigualdad(expresion.desigualdad, child.id_open, e1, child.value, e2);
@@ -150,13 +150,15 @@ var Predicate = /** @class */ (function () {
                             }
                         }
                     }
-                    if (tmp.length === 0) { // Hace match con el elemento
-                        condition = this_1.verificarDesigualdad(expresion.desigualdad, element.id_open, e1, element.value, e2);
-                        if (condition)
-                            tmp.push(element);
-                    }
+                    // Hace match con el elemento
+                    condition = this_1.verificarDesigualdad(expresion.desigualdad, element.id_open, e1, element.value, e2);
+                    if (condition)
+                        tmp.push(element);
                 }
                 _resultado = tmp;
+            }
+            else if (expresion.tipo === Enum_1.Tipos.LOGICA_OR || expresion.tipo === Enum_1.Tipos.LOGICA_AND) {
+                _resultado = expresion.elementos;
             }
             else if (expresion.tipo === Enum_1.Tipos.EXCLUDE) {
                 var index = parseInt(expresion.valor) - 1;

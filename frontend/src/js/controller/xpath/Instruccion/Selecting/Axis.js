@@ -22,7 +22,7 @@ function SelectAxis(_instruccion, _ambito, _contexto) {
 }
 function getAxis(_axisname, _nodetest, _predicate, _contexto, _ambito) {
     if (_contexto)
-        return firstFiler(_axisname, _nodetest, _predicate, _contexto, _ambito);
+        return firstFiler(_axisname, _nodetest, _predicate, _contexto, _ambito); //Manejar Axis para // también
     else
         return { error: "Indstrucción no procesada.", tipo: "Semántico", origen: "Query", linea: 1, columna: 1 };
 }

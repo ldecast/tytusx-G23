@@ -26,6 +26,7 @@ function compile(req: any) {
 
         // Análisis de XML
         let xml_ast = parser_xml.parse(xml);
+        let encoding = xml_ast.encoding; // Encoding del documento XML
         if (xml_ast.errors.length > 0 || xml_ast.ast === null || xml_ast === true) {
             if (xml_ast.errors.length > 0) errors = xml_ast.errors;
             if (xml_ast.ast === null || xml_ast === true) {
@@ -50,7 +51,7 @@ function compile(req: any) {
         }
 
         let root: Element = new Element("[object XMLDocument]", [], "", cadena.ambito.tablaSimbolos, "0", "0", "[object XMLDocument]")
-        let output: any = { cadena: "", elementos: [root] };
+        let output: any = { cadena: "", elementos: [root], atributos: null };
         let xPath_parse = xPath_ast.ast; // AST que genera Jison
         let bloque = Bloque(xPath_parse, cadena.ambito, output); // Procesa la secuencia de accesos (instrucciones)
         if (bloque.error) {
@@ -61,7 +62,8 @@ function compile(req: any) {
         output = {
             arreglo_simbolos: simbolos,
             arreglo_errores: errors,
-            output: bloque
+            output: bloque,
+            encoding: encoding
         }
         errors = [];
         return output;
@@ -72,7 +74,8 @@ function compile(req: any) {
         let output = {
             arreglo_simbolos: [],
             arreglo_errores: errors,
-            output: (error.message) ? String(error.message) : String(error)
+            output: (error.message) ? String(error.message) : String(error),
+            encoding: "utf-8"
         }
         errors = [];
         return output;
