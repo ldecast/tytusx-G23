@@ -117,10 +117,40 @@ export class Predicate {
                 }
                 _resultado = tmp;
             }
-            else if (expresion.tipo === Tipos.RELACIONAL_IGUAL || expresion.tipo === Tipos.RELACIONAL_DIFERENTE) {
-                let flag: boolean = expresion.valor;
-                if (!flag)
-                    _resultado = [];
+            else if (expresion.tipo === Tipos.ELEMENTOS && expresion.e1 && expresion.e2) {
+                const e1 = expresion.e1;
+                const e2 = expresion.e2;
+                let condition: boolean = false;
+                let tmp = [];
+                for (let i = 0; i < this.contexto.length; i++) {
+                    const element = this.contexto[i];
+                    if (element.attributes) { // Hace match con un atributo
+                        for (let j = 0; j < element.attributes.length; j++) {
+                            const attribute = element.attributes[j];
+                            condition = this.verificarDesigualdad(expresion.desigualdad, attribute.id, e1, attribute.value, e2);
+                            if (condition) {
+                                tmp.push(element);
+                                break; // Sale del ciclo de atributos para pasar al siguiente elemento
+                            }
+                        }
+                    }
+                    if (element.childs && tmp.length === 0) { // Hace match con algún hijo
+                        for (let j = 0; j < element.childs.length; j++) {
+                            const child = element.childs[j];
+                            condition = this.verificarDesigualdad(expresion.desigualdad, child.id_open, e1, child.value, e2);
+                            if (condition) {
+                                tmp.push(element);
+                                break;
+                            }
+                        }
+                    }
+                    if (tmp.length === 0) { // Hace match con el elemento
+                        condition = this.verificarDesigualdad(expresion.desigualdad, element.id_open, e1, element.value, e2);
+                        if (condition)
+                            tmp.push(element);
+                    }
+                }
+                _resultado = tmp;
             }
             else if (expresion.tipo === Tipos.EXCLUDE) {
                 let index = parseInt(expresion.valor) - 1;
@@ -148,6 +178,25 @@ export class Predicate {
                 return _valor < _condicion;
             case Tipos.RELACIONAL_MENORIGUAL:
                 return _valor <= _condicion;
+            default:
+                return false;
+        }
+    }
+
+    verificarDesigualdad(_tipo: Tipos, v1: any, e1: any, v2: any, e2: any): boolean {
+        switch (_tipo) {
+            case Tipos.RELACIONAL_MAYOR:
+                return (v1 == e1 && v2 > e2);
+            case Tipos.RELACIONAL_MAYORIGUAL:
+                return (v1 == e1 && v2 >= e2);
+            case Tipos.RELACIONAL_MENOR:
+                return (v1 == e1 && v2 < e2);
+            case Tipos.RELACIONAL_MENORIGUAL:
+                return (v1 == e1 && v2 <= e2);
+            case Tipos.RELACIONAL_IGUAL:
+                return (v1 == e1 && v2 == e2);
+            case Tipos.RELACIONAL_DIFERENTE:
+                return (v1 == e1 && v2 != e2);
             default:
                 return false;
         }

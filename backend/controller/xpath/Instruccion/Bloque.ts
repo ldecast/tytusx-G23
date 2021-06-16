@@ -12,7 +12,6 @@ let output: Array<any> = [];
 function Bloque(_instruccion: Array<any>, _ambito: Ambito, _retorno: any) {
     let tmp: any;
     reset = _retorno;
-    // console.log(_instruccion, 888888);
     for (let i = 0; i < _instruccion.length; i++) {
         const camino = _instruccion[i]; // En caso de tener varios caminos
         for (let j = 0; j < camino.length; j++) {

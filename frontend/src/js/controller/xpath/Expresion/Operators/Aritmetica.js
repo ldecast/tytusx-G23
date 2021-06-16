@@ -1,7 +1,7 @@
 "use strict";
 var Enum_1 = require("../../../../model/xpath/Enum");
-function Aritmetica(_expresion, _ambito) {
-    var operators = init(_expresion.opIzq, _expresion.opDer, _ambito, _expresion.tipo);
+function Aritmetica(_expresion, _ambito, _contexto) {
+    var operators = init(_expresion.opIzq, _expresion.opDer, _ambito, _expresion.tipo, _contexto);
     if (operators.error)
         return operators;
     switch (operators.tipo) {
@@ -21,30 +21,30 @@ function Aritmetica(_expresion, _ambito) {
             return null;
     }
 }
-function init(_opIzq, _opDer, _ambito, _tipo) {
+function init(_opIzq, _opDer, _ambito, _tipo, _contexto) {
     var Expresion = require("../Expresion");
-    var op1 = Expresion(_opIzq, _ambito);
+    var op1 = Expresion(_opIzq, _ambito, _contexto);
     if (op1.error)
         return op1;
-    var op2 = Expresion(_opDer, _ambito);
+    var op2 = Expresion(_opDer, _ambito, _contexto);
     if (op2.error)
         return op2;
     var tipo = _tipo;
     if (op1.tipo === Enum_1.Tipos.FUNCION_LAST && op2.tipo === Enum_1.Tipos.NUMBER) {
-        op1 = _ambito.length;
+        op1 = _contexto.length;
         op2 = Number(op2.valor);
     }
     else if (op1.tipo === Enum_1.Tipos.NUMBER && op2.tipo === Enum_1.Tipos.FUNCION_LAST) {
         op1 = Number(op1.valor);
-        op2 = _ambito.length;
+        op2 = _contexto.length;
     }
     else if (op1.tipo === Enum_1.Tipos.FUNCION_POSITION && op2.tipo === Enum_1.Tipos.NUMBER) {
-        op1 = _ambito.length;
+        op1 = _contexto.length;
         op2 = Number(op2.valor);
     }
     else if (op1.tipo === Enum_1.Tipos.NUMBER && op2.tipo === Enum_1.Tipos.FUNCION_POSITION) {
         op1 = Number(op1.valor);
-        op2 = _ambito.length;
+        op2 = _contexto.length;
     }
     else if (op1.tipo === Enum_1.Tipos.NUMBER && op2.tipo === Enum_1.Tipos.NUMBER) {
         op1 = Number(op1.valor);

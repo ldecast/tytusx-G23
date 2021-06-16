@@ -39,15 +39,14 @@ function Eje(_instruccion: any, _ambito: Ambito, _contexto: any): any {
     }
     else if (expresion.tipo === Tipos.SELECT_AXIS) {
         root = Axis.GetAxis(expresion.axisname, expresion.nodetest, expresion.predicate, contexto, _ambito);
+        if (root.error) return root;
         if (root.atributos.error) return root.atributos;
-        if (root.elementos.error) return root.elementos;
-        // retorno.cadena = root.cadena;
     }
     else {
         return { error: "Expresión no válida.", tipo: "Semántico", origen: "Query", linea: _instruccion.linea, columna: _instruccion.columna };
     }
-    if (root.error) return root;
-    if (root.elementos.length === 0 || root.elementos.error || root === null) return _404;
+    if (root === null || root.error || root.elementos.length === 0) return _404;
+    if (root.elementos.error) return root.elementos;
     retorno = root;
     return retorno;
 }
@@ -56,7 +55,7 @@ function getSymbolFromRoot(_nodename: any, _contexto: Array<Element>, _ambito: A
     if (_contexto)
         return getFromCurrent(_nodename, _contexto, _ambito, _condicion);
     else
-        return getFromRoot(_nodename, _ambito, _condicion);
+        return { error: "Indstrucción no procesada.", tipo: "Semántico", origen: "Query", linea: 1, columna: 1 };
 }
 
 // Desde el ámbito actual
@@ -196,104 +195,6 @@ function getFromCurrent(_id: any, _contexto: any, _ambito: Ambito, _condicion: a
             elements = filter.filterElements(elements);
         }
         return { elementos: elements, cadena: Tipos.ELEMENTOS };
-    }
-}
-
-
-/*            //////                         */
-
-// Desde la raíz
-function getFromRoot(_id: any, _ambito: Ambito, _condicion: any): any {
-    let elements = Array<Element>();
-    let attributes = Array<Atributo>();
-    // Selecciona únicamente el texto contenido en el nodo y todos sus descendientes
-    if (_id === "text()") {
-        let text = Array<string>();
-        _ambito.tablaSimbolos.forEach(element => {
-            if (element.value) {
-                text.push(element.value);
-                elements.push(element);
-            }
-        });
-        if (_condicion) {
-            let filter = new Predicate(_condicion, _ambito, elements);
-            text = filter.filterElements(text);
-        }
-        return { texto: text, elementos: elements };
-    }
-    // Selecciona todos los hijos (elementos o texto)
-    else if (_id === "node()") {
-        let nodes = Array<any>();
-        _ambito.tablaSimbolos.forEach(element => {
-            if (element.childs)
-                // element.childs.forEach(child => {
-                nodes.push({ elementos: element });
-            // });
-            else if (element.value)
-                nodes.push({ textos: element.value });
-        });
-        if (_condicion) {
-            let filter = new Predicate(_condicion, _ambito, elements);
-            nodes = filter.filterElements(nodes);
-        }
-        return { tipo: Tipos.COMBINADO, nodos: nodes, elementos: _ambito.tablaSimbolos };
-    }
-    // Selecciona todos los hijos (elementos)
-    else if (_id === "*") {
-        _ambito.tablaSimbolos.forEach(element => {
-            elements.push(element);
-        });
-        if (_condicion) {
-            let filter = new Predicate(_condicion, _ambito, elements);
-            elements = filter.filterElements(elements);
-        }
-        return { elementos: elements };
-    }
-    // Selecciona los atributos
-    else if (_id.tipo === "@") {
-        let flag: boolean = false;
-        _ambito.tablaSimbolos.forEach(element => {
-            if (element.attributes)
-                element.attributes.forEach(attribute => {
-                    if ((_id.id === attribute.id) || (_id.id === "*")) {
-                        flag = true;
-                        attributes.push(attribute);
-                    }
-                });
-            if (flag) {
-                elements.push(element);
-                flag = false;
-            }
-        });
-        if (_condicion) {
-            let filter = new Predicate(_condicion, _ambito, elements);
-            attributes = filter.filterElements(attributes);
-            elements = filter.contexto;
-        }
-        return { atributos: attributes, elementos: elements };
-    }
-    // Selecciona el nodo actual
-    else if (_id === ".") {
-        _ambito.tablaSimbolos.forEach(element => {
-            elements.push(element);
-        });
-        if (_condicion) {
-            let filter = new Predicate(_condicion, _ambito, elements);
-            elements = filter.filterElements(elements);
-        }
-        return { elementos: elements };
-    }
-    // Búsqueda por id
-    else {
-        _ambito.tablaSimbolos.forEach(element => {
-            if (element.id_open === _id)
-                elements.push(element);
-        });
-        if (_condicion) {
-            let filter = new Predicate(_condicion, _ambito, elements);
-            elements = filter.filterElements(elements);
-        }
-        return { elementos: elements };
     }
 }
 

@@ -1,3 +1,4 @@
+import { Tipos } from "../../xpath/Enum";
 import { Atributo } from "../Atributo";
 import { Element } from "../Element";
 
@@ -130,17 +131,51 @@ export class Ambito {
         return _array;
     }
 
-    searchIndexElement(_element: Element, _currentNode: Element, _index: number) {
-        if (_element == _currentNode) {
-            return _index;
+    compareCurrent(_currentNode: Element, _array: Array<Element>, _axisname: Tipos) {
+        switch (_axisname) {
+            case Tipos.AXIS_ANCESTOR:
+            case Tipos.AXIS_ANCESTOR_OR_SELF:
+                return this.getBefore(this.tablaSimbolos[0], _currentNode, _array, true, false, false);
+            case Tipos.AXIS_PRECEDING:
+                return this.getBefore(this.tablaSimbolos[0], _currentNode, _array, false, true, false);
+            case Tipos.AXIS_PRECEDING_SIBLING:
+                return this.getBefore(this.tablaSimbolos[0], _currentNode, _array, false, true, true);
+            case Tipos.AXIS_FOLLOWING:
+                return this.getFollowings(this.tablaSimbolos[0], _currentNode, _array, false, false);
+            case Tipos.AXIS_FOLLOWING_SIBLING:
+                return this.getFollowings(this.tablaSimbolos[0], _currentNode, _array, false, true);
         }
+        return _array;
+    }
+
+    getBefore(_element: Element, _currentNode: Element, _array: Array<Element>, isAncestor: boolean, isPreceding: boolean, isSibling: boolean): any {
+        if (_element == _currentNode) return false;
         if (_element.childs) {
             for (let i = 0; i < _element.childs.length; i++) {
                 const child = _element.childs[i];
-                _index = this.searchIndexElement(child, _currentNode, _index);
+                if (isPreceding && isSibling) _array.push(child);
+                let a = this.getBefore(child, _currentNode, _array, isAncestor, isPreceding, isSibling);
+                if (a === false) return _array;
             }
+            if (isPreceding && !isSibling) _array.push(_element);
         }
-        return _index + 1;
+        if (isAncestor) _array.push(_element);
+        return _array;
+    }
+
+    getFollowings(_element: Element, _currentNode: Element, _array: Array<Element>, _found: boolean, isSibling: boolean): any {
+        if (_element == _currentNode) _found = true;
+        if (_element.childs) {
+            for (let i = 0; i < _element.childs.length; i++) {
+                const child = _element.childs[i];
+                this.getFollowings(child, _currentNode, _array, _found, isSibling);
+                return _array;
+            }
+            if (_found && !isSibling)
+                _array.push(_element);
+        }
+        if (_found && isSibling) _array.push(_element);
+        return _array;
     }
 
     searchFollowing(_element: Element, _currentNode: Element, _includeSibling: boolean, _array: Array<Element>): any {

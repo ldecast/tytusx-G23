@@ -12,22 +12,21 @@ function SelectAxis(_instruccion: any, _ambito: Ambito, _contexto: any): any {
     let expresion = Expresion(_instruccion, _ambito, contexto);
     if (expresion.error) return expresion;
     let root: any = getAxis(expresion.axisname, expresion.nodetest, expresion.predicate, contexto, _ambito);
-    if (root.error) return root;
+    if (root === null || root.error || root.elementos.length === 0) return _404;
     if (root.elementos.error) return root.elementos;
-    if (root.atributos.error) return root.atributos;
-    if (root.elementos.length === 0 || root.elementos.error || root === null) return _404;
     retorno = root;
     return retorno;
 }
 
 function getAxis(_axisname: Tipos, _nodetest: any, _predicate: any, _contexto: Array<Element>, _ambito: Ambito): any {
     if (_contexto)
-        return getFromCurrent(_axisname, _nodetest, _predicate, _contexto, _ambito);
+        return firstFiler(_axisname, _nodetest, _predicate, _contexto, _ambito);
     else
-        console.log(_nodetest, _contexto, "errax");
+        return { error: "Indstrucción no procesada.", tipo: "Semántico", origen: "Query", linea: 1, columna: 1 };
 }
 
-function getFromCurrent(_axisname: Tipos, _nodetest: any, _predicate: any, _contexto: Array<Element>, _ambito: Ambito): any {
+// Revisa el axisname y extrae los elementos
+function firstFiler(_axisname: Tipos, _nodetest: any, _predicate: any, _contexto: Array<Element>, _ambito: Ambito): any {
     let elements = Array<Element>();
     let attributes = Array<Atributo>();
     let cadena: Tipos = Tipos.ELEMENTOS;
@@ -36,18 +35,12 @@ function getFromCurrent(_axisname: Tipos, _nodetest: any, _predicate: any, _cont
     switch (_axisname) {
         case Tipos.AXIS_ANCESTOR: // Selects all ancestors (parent, grandparent, etc.) of the current node
         case Tipos.AXIS_ANCESTOR_OR_SELF: // Selects all ancestors (parent, grandparent, etc.) of the current node and the current node itself
-        case Tipos.AXIS_PRECEDING: // Selects all nodes that appear before the current node in the document, except ancestors, attribute nodes and namespace nodes
-            index = 0;
             for (let i = 0; i < _contexto.length; i++) {
                 const element = _contexto[i];
                 if (_axisname === Tipos.AXIS_ANCESTOR_OR_SELF) elements.push(element);
                 let dad = element.father;
                 if (dad) {
-                    index = _ambito.searchIndexElement(_ambito.tablaSimbolos[0], element, index); // -1 ?
-                    for (let j = 0; j < index; j++) {
-                        const r = _ambito.tablaSimbolos[j];
-                        elements.push(r);
-                    }
+                    elements = _ambito.compareCurrent(element, elements, _axisname);
                 }
             }
             break;
@@ -89,33 +82,17 @@ function getFromCurrent(_axisname: Tipos, _nodetest: any, _predicate: any, _cont
             }
             break;
         case Tipos.AXIS_FOLLOWING: // Selects everything in the document after the closing tag of the current node
-            index = 0;
-            for (let i = 0; i < _contexto.length; i++) {
-                const element = _contexto[i];
-                let dad = element.father;
-                if (dad) {
-                    index = _ambito.searchIndexElement(_ambito.tablaSimbolos[0], element, index); // -1 ?
-                    for (let j = index; j < _ambito.tablaSimbolos.length; j++) {
-                        const r = _ambito.tablaSimbolos[j];
-                        elements.push(r);
-                    }
-                }
-            }
+        case Tipos.AXIS_PRECEDING: // Selects all nodes that appear before the current node in the document
         case Tipos.AXIS_FOLLOWING_SIBLING: // Selects all siblings after the current node:
-            index = 0;
+        case Tipos.AXIS_PRECEDING_SIBLING: // Selects all siblings before the current node
             for (let i = 0; i < _contexto.length; i++) {
                 const element = _contexto[i];
                 let dad = element.father;
-                if (dad) {
-                    index = _ambito.searchIndexElement(_ambito.tablaSimbolos[0], element, index); // -1 ?
-                    for (let j = index; j < _ambito.tablaSimbolos.length; j++) {
-                        const r = _ambito.tablaSimbolos[j];
-                        if (r.childs) {
-                            r.childs.forEach(child => {
-                                elements.push(child);
-                            });
-                        }
-                    }
+                if (dad && (_axisname === Tipos.AXIS_PRECEDING || _axisname === Tipos.AXIS_PRECEDING_SIBLING)) {
+                    elements = _ambito.compareCurrent(element, elements, _axisname);
+                }
+                else if (_axisname === Tipos.AXIS_FOLLOWING || _axisname === Tipos.AXIS_FOLLOWING_SIBLING) {
+                    elements = _ambito.compareCurrent(element, elements, _axisname);
                 }
             }
             break;
@@ -136,24 +113,6 @@ function getFromCurrent(_axisname: Tipos, _nodetest: any, _predicate: any, _cont
                     });
             }
             break;
-        case Tipos.AXIS_PRECEDING_SIBLING: // Selects all siblings before the current node
-            index = 0;
-            for (let i = 0; i < _contexto.length; i++) {
-                const element = _contexto[i];
-                let dad = element.father;
-                if (dad) {
-                    index = _ambito.searchIndexElement(_ambito.tablaSimbolos[0], element, index); // -1 ?
-                    for (let j = 0; j < index; j++) {
-                        const r = _ambito.tablaSimbolos[j];
-                        if (r.childs) {
-                            r.childs.forEach(child => {
-                                elements.push(child);
-                            });
-                        }
-                    }
-                }
-            }
-            break;
         case Tipos.AXIS_SELF: // Selects the current node
             for (let i = 0; i < _contexto.length; i++) {
                 const element = _contexto[i];
@@ -163,26 +122,34 @@ function getFromCurrent(_axisname: Tipos, _nodetest: any, _predicate: any, _cont
         default:
             return { error: "Error: axisname no válido.", tipo: "Semántico", origen: "Query", linea: _nodetest.linea, columna: _nodetest.columna };
     }
-    console.log(elements, 55)
-    let elem_aux: Array<Element> = elements;
-    let attr_aux: Array<Atributo> = attributes;
+    return secondFilter(elements, attributes, _nodetest, _predicate, cadena, _ambito);
+}
+
+// Revisa el nodetest y busca hacer match
+function secondFilter(_elements: Array<Element>, _atributos: Array<Atributo>, _nodetest: any, _predicate: any, _cadena: Tipos, _ambito: Ambito) {
+    let elements = Array<Element>();
+    let attributes = Array<Atributo>();
+    let text = Array<string>();
     let valor = _nodetest.valor;
-    attributes = [];
-    elements = [];
     switch (_nodetest.tipo) {
         case Tipos.ELEMENTOS:
         case Tipos.ASTERISCO:
-            for (let i = 0; i < elem_aux.length; i++) {
-                const element = elem_aux[i];
-                console.log(attr_aux, 555, valor);
-                if (attr_aux.length > 0) {
+        case Tipos.FUNCION_TEXT:
+            for (let i = 0; i < _elements.length; i++) {
+                const element = _elements[i];
+                if (_nodetest.tipo === Tipos.FUNCION_TEXT && element.value) {
+                    text.push(element.value);
+                    elements.push(element);
+                    _cadena = Tipos.TEXTOS;
+                }
+                else if (_atributos.length > 0) {
                     if (element.attributes) {
                         for (let j = 0; j < element.attributes.length; j++) {
                             const attribute = element.attributes[j];
                             if (attribute.id == valor || valor === "*") {
                                 elements.push(element);
                                 attributes.push(attribute);
-                                break;
+                                break; // Sale del ciclo de atributos para pasar al siguiente elemento
                             }
                             if (attribute.value == valor) {
                                 elements.push(element);
@@ -193,9 +160,13 @@ function getFromCurrent(_axisname: Tipos, _nodetest: any, _predicate: any, _cont
                     }
                 }
                 else if (element.id_open == valor || valor == "*") {
+                    if (_nodetest.tipo === Tipos.FUNCION_TEXT)
+                        text.push(element.value);
                     elements.push(element);
                 }
                 else if (element.value == valor || valor == "*") {
+                    if (_nodetest.tipo === Tipos.FUNCION_TEXT)
+                        text.push(element.value);
                     elements.push(element);
                 }
             }
@@ -203,13 +174,16 @@ function getFromCurrent(_axisname: Tipos, _nodetest: any, _predicate: any, _cont
         default:
             return { error: "Error: nodetest no válido.", tipo: "Semántico", origen: "Query", linea: _nodetest.linea, columna: _nodetest.columna };
     }
+    if (_predicate)
+        elements = thirdFilter(elements, attributes, _predicate, _ambito);
+    return { elementos: elements, atributos: attributes, texto: text, cadena: _cadena };
+}
 
-    if (_predicate) {
-        let filter = new Predicate(_predicate, _ambito, elements);
-        elements = filter.filterElements(elements);
-    }
-    console.log(elements, 111)
-    return { elementos: elements, atributos: attributes, cadena: cadena };
+// En caso de tener algún predicado
+function thirdFilter(_elements: Array<Element>, _atributos: Array<Atributo>, _predicate: any, _ambito: Ambito) {
+    let filter = new Predicate(_predicate, _ambito, _elements);
+    _elements = filter.filterElements(_elements);
+    return _elements;
 }
 
 export =  { SA: SelectAxis, GetAxis: getAxis };

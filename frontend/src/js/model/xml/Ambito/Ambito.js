@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Ambito = void 0;
+var Enum_1 = require("../../xpath/Enum");
 var Ambito = /** @class */ (function () {
     function Ambito(_anterior, _tipo) {
         this.anterior = _anterior;
@@ -121,17 +122,56 @@ var Ambito = /** @class */ (function () {
         }
         return _array;
     };
-    Ambito.prototype.searchIndexElement = function (_element, _currentNode, _index) {
-        if (_element == _currentNode) {
-            return _index;
+    Ambito.prototype.compareCurrent = function (_currentNode, _array, _axisname) {
+        switch (_axisname) {
+            case Enum_1.Tipos.AXIS_ANCESTOR:
+            case Enum_1.Tipos.AXIS_ANCESTOR_OR_SELF:
+                return this.getBefore(this.tablaSimbolos[0], _currentNode, _array, true, false, false);
+            case Enum_1.Tipos.AXIS_PRECEDING:
+                return this.getBefore(this.tablaSimbolos[0], _currentNode, _array, false, true, false);
+            case Enum_1.Tipos.AXIS_PRECEDING_SIBLING:
+                return this.getBefore(this.tablaSimbolos[0], _currentNode, _array, false, true, true);
+            case Enum_1.Tipos.AXIS_FOLLOWING:
+                return this.getFollowings(this.tablaSimbolos[0], _currentNode, _array, false, false);
+            case Enum_1.Tipos.AXIS_FOLLOWING_SIBLING:
+                return this.getFollowings(this.tablaSimbolos[0], _currentNode, _array, false, true);
         }
+        return _array;
+    };
+    Ambito.prototype.getBefore = function (_element, _currentNode, _array, isAncestor, isPreceding, isSibling) {
+        if (_element == _currentNode)
+            return false;
         if (_element.childs) {
             for (var i = 0; i < _element.childs.length; i++) {
                 var child = _element.childs[i];
-                _index = this.searchIndexElement(child, _currentNode, _index);
+                if (isPreceding && isSibling)
+                    _array.push(child);
+                var a = this.getBefore(child, _currentNode, _array, isAncestor, isPreceding, isSibling);
+                if (a === false)
+                    return _array;
             }
+            if (isPreceding && !isSibling)
+                _array.push(_element);
         }
-        return _index + 1;
+        if (isAncestor)
+            _array.push(_element);
+        return _array;
+    };
+    Ambito.prototype.getFollowings = function (_element, _currentNode, _array, _found, isSibling) {
+        if (_element == _currentNode)
+            _found = true;
+        if (_element.childs) {
+            for (var i = 0; i < _element.childs.length; i++) {
+                var child = _element.childs[i];
+                this.getFollowings(child, _currentNode, _array, _found, isSibling);
+                return _array;
+            }
+            if (_found && !isSibling)
+                _array.push(_element);
+        }
+        if (_found && isSibling)
+            _array.push(_element);
+        return _array;
     };
     Ambito.prototype.searchFollowing = function (_element, _currentNode, _includeSibling, _array) {
         if (_element == _currentNode) { // for hasta que se acaben los elementos
