@@ -48,18 +48,18 @@ function DobleEje(_instruccion, _ambito, _contexto) {
     }
     else if (expresion.tipo === Enum_1.Tipos.SELECT_AXIS) {
         root = Axis_1.default.GetAxis(expresion.axisname, expresion.nodetest, expresion.predicate, contexto, _ambito);
+        if (root.error)
+            return root;
         if (root.atributos.error)
             return root.atributos;
-        if (root.elementos.error)
-            return root.elementos;
     }
     else {
         return { error: "Expresión no válida.", tipo: "Semántico", origen: "Query", linea: _instruccion.linea, columna: _instruccion.columna };
     }
-    if (root.error)
-        return root;
-    if (root.elementos.length === 0 || root.elementos.error || root === null)
+    if (root === null || root.error || root.elementos.length === 0)
         return _404;
+    if (root.elementos.error)
+        return root.elementos;
     retorno = root;
     return retorno;
 }
@@ -67,7 +67,7 @@ function getAllSymbolFromCurrent(_nodename, _contexto, _ambito, _condicion) {
     if (_contexto)
         return getFromCurrent(_nodename, _contexto, _ambito, _condicion);
     else
-        return getFromRoot(_nodename, _ambito, _condicion);
+        return { error: "Indstrucción no procesada.", tipo: "Semántico", origen: "Query", linea: 1, columna: 1 };
 }
 function getFromCurrent(_id, _contexto, _ambito, _condicion) {
     var elements = Array();
@@ -183,70 +183,6 @@ function getFromCurrent(_id, _contexto, _ambito, _condicion) {
             elements = filter.filterElements(elements);
         }
         return { elementos: elements, cadena: Enum_1.Tipos.ELEMENTOS };
-    }
-}
-function getFromRoot(_id, _ambito, _condicion) {
-    var elements = Array();
-    var attributes = Array();
-    // Selecciona únicamente el texto contenido en el nodo y todos sus descendientes
-    if (_id === "text()") {
-        var text_1 = Array();
-        _ambito.tablaSimbolos.forEach(function (element) {
-            text_1 = _ambito.searchAnyText(element, text_1);
-            elements.push(element);
-        });
-        if (_condicion) {
-            var filter = new Predicate_1.Predicate(_condicion, _ambito, elements);
-            text_1 = filter.filterElements(text_1);
-            elements = filter.contexto;
-        }
-        return { texto: text_1, elementos: elements };
-    }
-    // Selecciona todos los descencientes (elementos y/o texto)
-    else if (_id === "node()") {
-        var nodes_1 = Array();
-        _ambito.tablaSimbolos.forEach(function (element) {
-            nodes_1 = _ambito.nodesFunction(element, nodes_1);
-            elements.push(element);
-        });
-        if (_condicion) {
-            var filter = new Predicate_1.Predicate(_condicion, _ambito, elements);
-            nodes_1 = filter.filterElements(nodes_1);
-            elements = filter.contexto;
-        }
-        return { tipo: Enum_1.Tipos.COMBINADO, nodos: nodes_1, elementos: elements };
-    }
-    // Selecciona todos los atributos a partir de la raíz
-    else if (_id.tipo === "@") {
-        var a_1 = { atributos: attributes, elementos: elements };
-        _ambito.tablaSimbolos.forEach(function (element) {
-            if (_id.id === "*")
-                a_1 = _ambito.searchAnyAttributes(element, attributes, elements);
-            else
-                a_1 = _ambito.searchAttributesFromCurrent(element, _id.id, attributes, elements);
-        });
-        if (_condicion) {
-            var filter = new Predicate_1.Predicate(_condicion, _ambito, a_1.elementos);
-            a_1.atributos = filter.filterElements(a_1.atributos);
-            a_1.elementos = filter.contexto;
-        }
-        return a_1;
-    }
-    // Selecciona todos los descendientes con el id o si es un *
-    else {
-        _ambito.tablaSimbolos.forEach(function (element) {
-            if (element.id_open === _id || _id === "*")
-                elements.push(element);
-            if (element.childs)
-                element.childs.forEach(function (child) {
-                    elements = _ambito.searchNodes(_id, child, elements);
-                });
-        });
-        if (_condicion) {
-            var filter = new Predicate_1.Predicate(_condicion, _ambito, elements);
-            elements = filter.filterElements(elements);
-        }
-        return elements;
     }
 }
 module.exports = DobleEje;

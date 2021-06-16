@@ -727,38 +727,38 @@ _handle_error:
 	function printstrack(obj, lines){
 	return;
 
-        if(Array.isArray(obj)){ //IS ARRAY
-            str = ""
-            for(let i = 0; i < lines; i++){str = str + "- ";}
-            obj.forEach((value)=>{
-                if(typeof value === 'string' ){
-                     str = ""
-                     for(let i = 0; i < lines; i++){str = str + "- ";}
-                     // console.log(str + value);
-                }else if(Array.isArray(value)){console.log("ERROR 5");}else{
-                    str = ""
-                    for(let i = 0; i < lines; i++){ str = str + "- ";}
-                    for(let key in value){
-                       // console.log(`${str}${key}`);
-                       printstrack(value[key], lines + 1);
-                    }
-                }
+        // if(Array.isArray(obj)){ //IS ARRAY
+        //     str = ""
+        //     for(let i = 0; i < lines; i++){str = str + "- ";}
+        //     obj.forEach((value)=>{
+        //         if(typeof value === 'string' ){
+        //              str = ""
+        //              for(let i = 0; i < lines; i++){str = str + "- ";}
+        //              // console.log(str + value);
+        //         }else if(Array.isArray(value)){console.log("ERROR 5");}else{
+        //             str = ""
+        //             for(let i = 0; i < lines; i++){ str = str + "- ";}
+        //             for(let key in value){
+        //                // console.log(`${str}${key}`);
+        //                printstrack(value[key], lines + 1);
+        //             }
+        //         }
 
-                //printstrack(value, lines +1);
-            });
-        }else if(typeof obj === 'string' ){ // IS STRING
-            str = ""
-            for(let i = 0; i < lines; i++){str = str + "- ";}
-            // console.log(str + obj);
-        }else{// IS OBJECT
-            str = ""
-            for(let i = 0; i < lines; i++){ str = str + "- ";}
-            for(let key in obj){
-                // console.log(`${str}Key: ${key}`);
-                //console.log(obj[key]);
-                printstrack(obj[key], lines + 1);
-            }
-        }
+        //         //printstrack(value, lines +1);
+        //     });
+        // }else if(typeof obj === 'string' ){ // IS STRING
+        //     str = ""
+        //     for(let i = 0; i < lines; i++){str = str + "- ";}
+        //     // console.log(str + obj);
+        // }else{// IS OBJECT
+        //     str = ""
+        //     for(let i = 0; i < lines; i++){ str = str + "- ";}
+        //     for(let key in obj){
+        //         // console.log(`${str}Key: ${key}`);
+        //         //console.log(obj[key]);
+        //         printstrack(obj[key], lines + 1);
+        //     }
+        // }
 	}
 
 

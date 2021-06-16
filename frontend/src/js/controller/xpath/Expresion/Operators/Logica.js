@@ -1,7 +1,7 @@
 "use strict";
 var Enum_1 = require("../../../../model/xpath/Enum");
-function Logica(_expresion, _contexto) {
-    var operators = init(_expresion.opIzq, _expresion.opDer, _contexto, _expresion.tipo);
+function Logica(_expresion, _ambito, _contexto) {
+    var operators = init(_expresion.opIzq, _expresion.opDer, _ambito, _contexto, _expresion.tipo);
     if (operators.error)
         return operators;
     switch (operators.tipo) {
@@ -13,15 +13,16 @@ function Logica(_expresion, _contexto) {
             return null;
     }
 }
-function init(_opIzq, _opDer, _contexto, _tipo) {
+function init(_opIzq, _opDer, _ambito, _contexto, _tipo) {
     var Expresion = require("../Expresion");
-    var op1 = Expresion(_opIzq, _contexto);
+    var op1 = Expresion(_opIzq, _ambito, _contexto);
     if (op1.error)
         return op1;
-    var op2 = Expresion(_opDer, _contexto);
+    var op2 = Expresion(_opDer, _ambito, _contexto);
     if (op2.error)
         return op2;
     var tipo = _tipo;
+    console.log(op1, 888, op2);
     // else return { error: "Relación lógica no aceptable.", tipo: "Semántico", origen: "Query", linea: _opIzq.linea, columna: _opIzq.columna }
     return { op1: op1, op2: op2, tipo: tipo };
 }

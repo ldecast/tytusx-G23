@@ -39,14 +39,14 @@ function DobleEje(_instruccion: any, _ambito: Ambito, _contexto: any): any {
     }
     else if (expresion.tipo === Tipos.SELECT_AXIS) {
         root = Axis.GetAxis(expresion.axisname, expresion.nodetest, expresion.predicate, contexto, _ambito);
+        if (root.error) return root;
         if (root.atributos.error) return root.atributos;
-        if (root.elementos.error) return root.elementos;
     }
     else {
         return { error: "Expresión no válida.", tipo: "Semántico", origen: "Query", linea: _instruccion.linea, columna: _instruccion.columna };
     }
-    if (root.error) return root;
-    if (root.elementos.length === 0 || root.elementos.error || root === null) return _404;
+    if (root === null || root.error || root.elementos.length === 0) return _404;
+    if (root.elementos.error) return root.elementos;
     retorno = root;
     return retorno;
 }
@@ -55,7 +55,7 @@ function getAllSymbolFromCurrent(_nodename: any, _contexto: Array<Element>, _amb
     if (_contexto)
         return getFromCurrent(_nodename, _contexto, _ambito, _condicion);
     else
-        return getFromRoot(_nodename, _ambito, _condicion);
+        return { error: "Indstrucción no procesada.", tipo: "Semántico", origen: "Query", linea: 1, columna: 1 };
 }
 
 function getFromCurrent(_id: any, _contexto: any, _ambito: Ambito, _condicion: any): any {
@@ -166,71 +166,6 @@ function getFromCurrent(_id: any, _contexto: any, _ambito: Ambito, _condicion: a
             elements = filter.filterElements(elements);
         }
         return { elementos: elements, cadena: Tipos.ELEMENTOS };
-    }
-}
-
-function getFromRoot(_id: any, _ambito: Ambito, _condicion: any): any {
-    let elements = Array<Element>();
-    let attributes = Array<Atributo>();
-    // Selecciona únicamente el texto contenido en el nodo y todos sus descendientes
-    if (_id === "text()") {
-        let text = Array<string>();
-        _ambito.tablaSimbolos.forEach(element => {
-            text = _ambito.searchAnyText(element, text);
-            elements.push(element);
-        });
-        if (_condicion) {
-            let filter = new Predicate(_condicion, _ambito, elements);
-            text = filter.filterElements(text);
-            elements = filter.contexto;
-        }
-        return { texto: text, elementos: elements };
-    }
-    // Selecciona todos los descencientes (elementos y/o texto)
-    else if (_id === "node()") {
-        let nodes = Array<any>();
-        _ambito.tablaSimbolos.forEach(element => {
-            nodes = _ambito.nodesFunction(element, nodes);
-            elements.push(element);
-        });
-        if (_condicion) {
-            let filter = new Predicate(_condicion, _ambito, elements);
-            nodes = filter.filterElements(nodes);
-            elements = filter.contexto;
-        }
-        return { tipo: Tipos.COMBINADO, nodos: nodes, elementos: elements };
-    }
-    // Selecciona todos los atributos a partir de la raíz
-    else if (_id.tipo === "@") {
-        let a = { atributos: attributes, elementos: elements };
-        _ambito.tablaSimbolos.forEach(element => {
-            if (_id.id === "*")
-                a = _ambito.searchAnyAttributes(element, attributes, elements);
-            else
-                a = _ambito.searchAttributesFromCurrent(element, _id.id, attributes, elements);
-        });
-        if (_condicion) {
-            let filter = new Predicate(_condicion, _ambito, a.elementos);
-            a.atributos = filter.filterElements(a.atributos);
-            a.elementos = filter.contexto;
-        }
-        return a;
-    }
-    // Selecciona todos los descendientes con el id o si es un *
-    else {
-        _ambito.tablaSimbolos.forEach(element => {
-            if (element.id_open === _id || _id === "*")
-                elements.push(element);
-            if (element.childs)
-                element.childs.forEach(child => {
-                    elements = _ambito.searchNodes(_id, child, elements);
-                });
-        });
-        if (_condicion) {
-            let filter = new Predicate(_condicion, _ambito, elements);
-            elements = filter.filterElements(elements);
-        }
-        return elements;
     }
 }
 

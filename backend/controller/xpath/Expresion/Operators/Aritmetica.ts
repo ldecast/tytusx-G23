@@ -1,7 +1,8 @@
+import { Ambito } from "../../../../model/xml/Ambito/Ambito";
 import { Tipos } from "../../../../model/xpath/Enum";
 
-function Aritmetica(_expresion: any, _ambito: Array<any>) {
-    let operators = init(_expresion.opIzq, _expresion.opDer, _ambito, _expresion.tipo);
+function Aritmetica(_expresion: any, _ambito: Ambito, _contexto: Array<any>) {
+    let operators = init(_expresion.opIzq, _expresion.opDer, _ambito, _expresion.tipo, _contexto);
     if (operators.error) return operators;
     switch (operators.tipo) {
         case Tipos.OPERACION_SUMA:
@@ -21,28 +22,28 @@ function Aritmetica(_expresion: any, _ambito: Array<any>) {
     }
 }
 
-function init(_opIzq: any, _opDer: any, _ambito: Array<any>, _tipo: Tipos) {
+function init(_opIzq: any, _opDer: any, _ambito: Ambito, _tipo: Tipos, _contexto: Array<any>) {
     const Expresion = require("../Expresion");
-    let op1 = Expresion(_opIzq, _ambito);
+    let op1 = Expresion(_opIzq, _ambito, _contexto);
     if (op1.error) return op1;
-    let op2 = Expresion(_opDer, _ambito);
+    let op2 = Expresion(_opDer, _ambito, _contexto);
     if (op2.error) return op2;
     let tipo: Tipos = _tipo;
     if (op1.tipo === Tipos.FUNCION_LAST && op2.tipo === Tipos.NUMBER) {
-        op1 = _ambito.length;
+        op1 = _contexto.length;
         op2 = Number(op2.valor);
     }
     else if (op1.tipo === Tipos.NUMBER && op2.tipo === Tipos.FUNCION_LAST) {
         op1 = Number(op1.valor);
-        op2 = _ambito.length;
+        op2 = _contexto.length;
     }
     else if (op1.tipo === Tipos.FUNCION_POSITION && op2.tipo === Tipos.NUMBER) {
-        op1 = _ambito.length;
+        op1 = _contexto.length;
         op2 = Number(op2.valor);
     }
     else if (op1.tipo === Tipos.NUMBER && op2.tipo === Tipos.FUNCION_POSITION) {
         op1 = Number(op1.valor);
-        op2 = _ambito.length;
+        op2 = _contexto.length;
     }
     else if (op1.tipo === Tipos.NUMBER && op2.tipo === Tipos.NUMBER) {
         op1 = Number(op1.valor);

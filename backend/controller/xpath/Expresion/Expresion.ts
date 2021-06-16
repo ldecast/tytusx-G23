@@ -1,9 +1,10 @@
 import { Ambito } from "../../../model/xml/Ambito/Ambito";
 import { Tipos } from "../../../model/xpath/Enum";
+import { Element } from "../../../model/xml/Element"
 
-function Expresion(_expresion: any, _ambito: Ambito, _contexto: any): any {
+function Expresion(_expresion: any, _ambito: Ambito, _contexto: Array<Element>): any {
     let tipo: Tipos = _expresion.tipo;
-    // console.log(_expresion, 1111111)
+    // console.log(_expresion, 1111111) // Agregar el caso de que sea una instrucción y abrir un bloque
     if (tipo === Tipos.EXPRESION) {
         return Expresion(_expresion.expresion, _ambito, _contexto);
     }
@@ -45,17 +46,17 @@ function Expresion(_expresion: any, _ambito: Ambito, _contexto: any): any {
     else if (tipo === Tipos.OPERACION_SUMA || tipo === Tipos.OPERACION_RESTA || tipo === Tipos.OPERACION_MULTIPLICACION
         || tipo === Tipos.OPERACION_DIVISION || tipo === Tipos.OPERACION_MODULO || tipo === Tipos.OPERACION_NEGACION_UNARIA) {
         const Aritmetica = require("./Operators/Aritmetica");
-        return Aritmetica(_expresion, _contexto);
+        return Aritmetica(_expresion, _ambito, _contexto);
     }
     else if (tipo === Tipos.RELACIONAL_MAYOR || tipo === Tipos.RELACIONAL_MAYORIGUAL
         || tipo === Tipos.RELACIONAL_MENOR || tipo === Tipos.RELACIONAL_MENORIGUAL
         || tipo === Tipos.RELACIONAL_IGUAL || tipo === Tipos.RELACIONAL_DIFERENTE) {
         const Relacional = require("./Operators/Relacional");
-        return Relacional(_expresion, _contexto);
+        return Relacional(_expresion, _ambito, _contexto);
     }
     else if (tipo === Tipos.LOGICA_AND || tipo === Tipos.LOGICA_OR) {
         const Logica = require("./Operators/Logica");
-        return Logica(_expresion, _contexto);
+        return Logica(_expresion, _ambito, _contexto);
     }
     else {
         console.log(_expresion, "SSSSSSSS")

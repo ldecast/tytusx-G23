@@ -11,7 +11,6 @@ var output = [];
 function Bloque(_instruccion, _ambito, _retorno) {
     var tmp;
     reset = _retorno;
-    // console.log(_instruccion, 888888);
     for (var i = 0; i < _instruccion.length; i++) {
         var camino = _instruccion[i]; // En caso de tener varios caminos
         for (var j = 0; j < camino.length; j++) {
