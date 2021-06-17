@@ -37,6 +37,8 @@ function and(_opIzq, _opDer, _contexto) {
     var op2 = _opDer;
     var context1 = filterElements(op1.e1, op1.e2, op1.desigualdad, _contexto);
     var context2 = filterElements(op2.e1, op2.e2, op2.desigualdad, _contexto);
+    // console.log(op1, "AA1", context1)
+    // console.log(context2, "AA2")
     var tmp = [];
     for (var i = 0; i < context1.length; i++) {
         var element1 = context1[i];
@@ -59,6 +61,7 @@ function or(_opIzq, _opDer, _contexto) {
     return { tipo: Enum_1.Tipos.LOGICA_OR, elementos: tmp };
 }
 function filterElements(e1, e2, desigualdad, _contexto) {
+    console.log(_contexto, "SS");
     var condition = false;
     var tmp = [];
     for (var i = 0; i < _contexto.length; i++) {
@@ -73,21 +76,20 @@ function filterElements(e1, e2, desigualdad, _contexto) {
                 }
             }
         }
-        if (element.childs && tmp.length === 0) { // Hace match con algún hijo
+        if (element.childs) { // Hace match con algún hijo
             for (var j = 0; j < element.childs.length; j++) {
                 var child = element.childs[j];
                 condition = verificarDesigualdad(desigualdad, child.id_open, e1, child.value, e2);
+                console.log(desigualdad, child.id_open, e1, child.value, e2);
                 if (condition) {
                     tmp.push(element);
                     break;
                 }
             }
         }
-        if (tmp.length === 0) { // Hace match con el elemento
-            condition = verificarDesigualdad(desigualdad, element.id_open, e1, element.value, e2);
-            if (condition)
-                tmp.push(element);
-        }
+        condition = verificarDesigualdad(desigualdad, element.id_open, e1, element.value, e2); // Hace match con el elemento
+        if (condition)
+            tmp.push(element);
     }
     return tmp;
 }

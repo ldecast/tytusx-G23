@@ -108,8 +108,8 @@ case 2:
                                             prod_1 = grammar_stack.pop();
                                             grammar_stack.push({'INI -> XML_DECLARATION  EOF {	errors.add(new Error()); ﹩﹩ = null;}': [prod_1, 'EOF' ]});
                                             grammar_report =  getGrammarReport(grammar_stack);
-
-                                            ast = { ast: null, encoding: null,  errors: errors, cst: null, grammar_report: grammar_report };
+                                            encoding = new Encoding($$[$0-1]);
+                                            ast = { ast: null, encoding: encoding,  errors: errors, cst: null, grammar_report: grammar_report };
                                             errors = [];
                                             return ast;
                                             
@@ -298,7 +298,7 @@ if($$[$0-3] != null){$$[$0-3].Close = $$[$0-1]; this.$ = $$[$0-3];
 break;
 case 24:
 this.$ =null;
-                                                                                errors.push({ tipo: "Sintáctico", error: "Falta etiquta de cierre \">\". ", origen: "XML", linea: _$[$0].first_line, columna: _$[$0].first_column+1 });
+                                                                                errors.push({ tipo: "Sintáctico", error: "Falta etiqueta de cierre \">\". ", origen: "XML", linea: _$[$0].first_line, columna: _$[$0].first_column+1 });
 
                                                                                 prod_1 = grammar_stack.pop();
 	                                                                            grammar_stack.push({'XML -> XML_OPEN tk_open_end_tag tk_tag_name {errors.add(new Error()); ﹩﹩ = null;}':[prod_1, 'Token: tk_open_end_tag\t Lexema: ' + '&lt;/', 'Token: tk_tag_name\t Lexema: '  + $$[$0]]});
@@ -314,7 +314,7 @@ this.$ =null;
 break;
 case 26:
 this.$ =null;
-                                                                                errors.push({ tipo: "Sintáctico", error: "Falta etiquta de cierre \">\". ", origen: "XML", linea: _$[$0].first_line, columna: _$[$0].first_column+1 });
+                                                                                errors.push({ tipo: "Sintáctico", error: "Falta etiqueta de cierre \">\". ", origen: "XML", linea: _$[$0].first_line, columna: _$[$0].first_column+1 });
 
                                                                                 prod_1 = grammar_stack.pop();
 	                                                                            grammar_stack.push({'XML -> XML_OPEN tk_content tk_open_end_tag tk_tag_name {errors.add(new Error()); ﹩﹩ = null;}':[prod_1, 'Token: tk_content\t Lexema: ' + $$[$0-2], 'Token: tk_open_end_tag\t Lexema: ' + '&lt;/', 'Token: tk_tag_name\t Lexema: ' + $$[$0]]});
@@ -339,7 +339,7 @@ this.$ =null;
 break;
 case 29:
 this.$ =null;
-	                                                                            errors.push({ tipo: "Sintáctico", error: "Falta etiquta de cierre \">\". ", origen: "XML", linea: _$[$0].first_line, columna: _$[$0].first_column+1 });
+	                                                                            errors.push({ tipo: "Sintáctico", error: "Falta etiqueta de cierre \">\". ", origen: "XML", linea: _$[$0].first_line, columna: _$[$0].first_column+1 });
 
                                                                                 prod_1 = grammar_stack.pop();
                                                                                 prod_2 = grammar_stack.pop();
