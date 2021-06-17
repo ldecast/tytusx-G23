@@ -152,7 +152,7 @@ var Ambito = /** @class */ (function () {
         return _array;
     };
     Ambito.prototype.searchAncestors = function (_element, _currentNode, _array) {
-        if (_element == _currentNode) { // for hasta que se acaben los elementos
+        if (_element == _currentNode) {
             return { found: _array };
         }
         if (_element.childs) {
