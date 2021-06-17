@@ -19,8 +19,8 @@ function compile(req: any) {
                 parser_xPath = require('../analyzers/xpath_up');
                 break;
             case 2:
-                parser_xml = require('../analyzers/xml_down');
-                parser_xPath = require('../analyzers/xpath_down');
+                parser_xml = require('../analyzers/xml_up');
+                parser_xPath = require('../analyzers/xpath_up');
                 break;
         }
 

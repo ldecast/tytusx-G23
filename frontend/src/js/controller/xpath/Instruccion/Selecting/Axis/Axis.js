@@ -13,7 +13,7 @@ function SelectAxis(_instruccion, _ambito, _contexto) {
     if (expresion.error)
         return expresion;
     var root = getAxis(expresion.axisname, expresion.nodetest, expresion.predicate, contexto, _ambito, false);
-    if (root === null || root.error || root.elementos.error || root.elementos.length === 0)
+    if (root === null || root.error || root.elementos.error || (root.elementos.length === 0 && root.atributos.length === 0))
         return _404;
     return root;
 }
@@ -130,7 +130,6 @@ function firstFiler(_axisname, _nodetest, _predicate, _contexto, _ambito, _isDou
         default:
             return { error: "Error: axisname no válido.", tipo: "Semántico", origen: "Query", linea: _nodetest.linea, columna: _nodetest.columna };
     }
-    console.log(attributes, 9999, elements);
     // return { elementos: elements, atributos: attributes, cadena: cadena };
     return secondFilter(elements, attributes, _nodetest, _predicate, cadena, _ambito, _isDoubleBar);
 }
@@ -175,7 +174,7 @@ function secondFilter(_elements, _atributos, _nodetest, _predicate, _cadena, _am
                 if (x.elementos.length > 0 || x.texto.length > 0) {
                     elements.concat(x.elementos);
                     text.concat(x.texto);
-                    break;
+                    continue;
                 }
                 x = Funciones_1.default.f4(element, elements, text, valor, _nodetest.tipo, _isDoubleBar);
                 if (x.elementos.length > 0 || x.texto.length > 0) {

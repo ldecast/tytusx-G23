@@ -157,7 +157,7 @@ export class Ambito {
     }
 
     searchAncestors(_element: Element, _currentNode: Element, _array: Array<Element>): any {
-        if (_element == _currentNode) { // for hasta que se acaben los elementos
+        if (_element == _currentNode) {
             return { found: _array };
         }
         if (_element.childs) {

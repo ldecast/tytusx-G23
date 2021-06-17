@@ -21,8 +21,8 @@ function compile(req) {
                 parser_xPath = require('../analyzers/xpath_up');
                 break;
             case 2:
-                parser_xml = require('../analyzers/xml_down');
-                parser_xPath = require('../analyzers/xpath_down');
+                parser_xml = require('../analyzers/xml_up');
+                parser_xPath = require('../analyzers/xpath_up');
                 break;
         }
         // Análisis de XML
@@ -76,7 +76,7 @@ function compile(req) {
         var output = {
             arreglo_simbolos: [],
             arreglo_errores: errors,
-            output: (error.message) ? String(error.message) : String(error),
+            output: (error.message) ? ("Error sintáctico:\n" + String(error.message)) : String(error),
             encoding: "utf-8"
         };
         errors = [];
