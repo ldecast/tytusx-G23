@@ -145,13 +145,9 @@ INI: XML_DECLARATION ROOT EOF               {/*$1[0].printTest(0);console.log($1
                                             grammar_stack.push({'INI-> XML_DECLARATION ROOT EOF': [prod_2, prod_1, 'EOF' ]});
                                             printstrack(grammar_stack, 0); //TODO: Delete is just for testing purposes
                                             // console.log(printHtml(grammar_stack));
-
                                             if($1!= null){
                                                 encoding = new Encoding($1);
-                                                if (encoding.encoding === encoding.codes.INVALID ) {
-                                                    errors.push({ tipo: "Léxico", error: "La codificación del XML no es válida.", origen: "XML", linea: this._$.first_line, columna: this._$.first_column+1 }); return { ast: null, errors: errors };
-                                                }
-                                                ast = { ast: $2, encoding: encoding.encoding, errors: errors, cst:"<p>TEST CST </p>", grammar_report: "<p>grammar report test</p>"};
+                                                ast = { ast: $2, encoding: encoding, errors: errors, cst:"<p>TEST CST </p>", grammar_report: "<p>grammar report test</p>"};
                                             } else{
                                                 ast = { ast: $2, encoding: null, cst: null, grammar_report: null, errors: errors };
                                             }

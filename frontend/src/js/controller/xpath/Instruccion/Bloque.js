@@ -5,7 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 var Enum_1 = require("../../../model/xpath/Enum");
 var DobleEje_1 = __importDefault(require("./Selecting/DobleEje"));
 var Eje_1 = __importDefault(require("./Selecting/Eje"));
-var Axis_1 = __importDefault(require("./Selecting/Axis"));
+var Axis_1 = __importDefault(require("./Selecting/Axis/Axis"));
 var reset;
 var output = [];
 function Bloque(_instruccion, _ambito, _retorno) {
