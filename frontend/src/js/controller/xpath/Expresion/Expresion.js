@@ -61,7 +61,7 @@ function Expresion(_expresion, _ambito, _contexto) {
         console.log(_expresion, "SSSSSSSS");
         // const Bloque = require("../Instruccion/Bloque");
         // return Bloque([_expresion], _ambito, _contexto);
-        return { error: "Error: Expresión no procesada.", tipo: "Semántico", origen: "Query", linea: _expresion.linea, columna: _expresion.columna };
+        // return { error: "Error: Expresión no procesada.", tipo: "Semántico", origen: "Query", linea: _expresion.linea, columna: _expresion.columna };
     }
 }
 module.exports = Expresion;

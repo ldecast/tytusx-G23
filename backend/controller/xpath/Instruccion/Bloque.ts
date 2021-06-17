@@ -4,7 +4,7 @@ import { Atributo } from "../../../model/xml/Atributo";
 import { Tipos } from "../../../model/xpath/Enum";
 import DobleEje from "./Selecting/DobleEje";
 import Eje from "./Selecting/Eje";
-import Axis from "./Selecting/Axis";
+import Axis from "./Selecting/Axis/Axis";
 
 let reset: any;
 let output: Array<any> = [];

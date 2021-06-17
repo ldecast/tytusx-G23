@@ -182,6 +182,131 @@ var Predicate = /** @class */ (function () {
         this.contexto = _resultado;
         return this.contexto;
     };
+    Predicate.prototype.filterAttributes = function (_resultado) {
+        var _this = this;
+        var expresion;
+        var _loop_2 = function (i) {
+            var e = this_2.predicado[i]; // En caso de tener varios predicados seguidos
+            console.log(e, "Predicado");
+            expresion = Expresion_1.default(e.condicion, this_2.ambito, this_2.contexto);
+            console.log(expresion, "Expresion predicado");
+            if (expresion.error)
+                return { value: expresion };
+            if (expresion.tipo === Enum_1.Tipos.NUMBER) {
+                var index = parseInt(expresion.valor) - 1;
+                if (index < 0 || index >= _resultado.length)
+                    _resultado = [];
+                else
+                    _resultado = [_resultado[index]];
+            }
+            else if (expresion.tipo === Enum_1.Tipos.ATRIBUTOS) {
+                var tmp_2 = [];
+                this_2.contexto = [];
+                _resultado.forEach(function (attribute) {
+                    if (expresion.atributo) { // Es una comparación
+                        if (expresion.desigualdad) { // (<,<=,>,>=)
+                            if (expresion.atributo == attribute.id && _this.operarDesigualdad(expresion.desigualdad, expresion.condicion, attribute.value)) {
+                                tmp_2.push(attribute);
+                            }
+                        }
+                        else if (expresion.exclude) { // (!=)
+                            if (expresion.atributo == attribute.id && expresion.condicion != attribute.value) {
+                                tmp_2.push(attribute);
+                            }
+                        }
+                        else if (expresion.atributo == attribute.id && expresion.condicion == attribute.value) { // (==)
+                            tmp_2.push(attribute);
+                        }
+                    }
+                    else if (expresion.valor == attribute.id || expresion.valor == "*") { // No compara valor, sólo apila
+                        tmp_2.push(attribute);
+                    }
+                });
+                _resultado = tmp_2;
+                return { value: _resultado };
+            }
+            else if (expresion.tipo === Enum_1.Tipos.FUNCION_TEXT) {
+                var tmp = [];
+                for (var i_7 = 0; i_7 < _resultado.length; i_7++) {
+                    var attribute = _resultado[i_7];
+                    var text = attribute.value;
+                    if (expresion.exclude) {
+                        if (text != expresion.condicion) // text() != 'x'
+                            tmp.push(attribute);
+                    }
+                    else if (text == expresion.condicion) // text() == 'x'
+                        tmp.push(attribute);
+                }
+                return { value: tmp };
+            }
+            else if (expresion.tipo === Enum_1.Tipos.FUNCION_LAST) {
+                var index = _resultado.length - 1;
+                _resultado = [_resultado[index]];
+            }
+            else if (expresion.tipo === Enum_1.Tipos.RELACIONAL_MENORIGUAL || expresion.tipo === Enum_1.Tipos.RELACIONAL_MENOR) {
+                var index = parseInt(expresion.valor) - 1;
+                if (index >= _resultado.length)
+                    index = _resultado.length - 1;
+                var tmp = [];
+                for (var i_8 = index; i_8 <= _resultado.length && i_8 >= 0; i_8--) {
+                    var attribute = _resultado[i_8];
+                    tmp.push(attribute);
+                }
+                _resultado = tmp;
+            }
+            else if (expresion.tipo === Enum_1.Tipos.RELACIONAL_MAYORIGUAL || expresion.tipo === Enum_1.Tipos.RELACIONAL_MAYOR) {
+                var index = parseInt(expresion.valor) - 1;
+                if (index >= _resultado.length) {
+                    _resultado = [];
+                    return { value: _resultado };
+                }
+                if (index <= 0)
+                    index = 0;
+                var tmp = [];
+                for (var i_9 = index; i_9 < _resultado.length; i_9++) {
+                    var attribute = _resultado[i_9];
+                    tmp.push(attribute);
+                }
+                _resultado = tmp;
+            }
+            else if (expresion.tipo === Enum_1.Tipos.ELEMENTOS && expresion.e1 && expresion.e2) {
+                var e1 = expresion.e1;
+                var e2 = expresion.e2;
+                var condition = false;
+                var tmp = [];
+                for (var i_10 = 0; i_10 < _resultado.length; i_10++) {
+                    var attribute = _resultado[i_10]; // Hace match con un atributo
+                    condition = this_2.verificarDesigualdad(expresion.desigualdad, attribute.id, e1, attribute.value, e2);
+                    if (condition) {
+                        tmp.push(attribute);
+                    }
+                }
+                _resultado = tmp;
+            }
+            else if (expresion.tipo === Enum_1.Tipos.LOGICA_OR || expresion.tipo === Enum_1.Tipos.LOGICA_AND) {
+                _resultado = expresion.elementos;
+            }
+            else if (expresion.tipo === Enum_1.Tipos.EXCLUDE) {
+                var index = parseInt(expresion.valor) - 1;
+                if (index >= 0 && index < _resultado.length) {
+                    var tmp = [];
+                    for (var i_11 = 0; i_11 < _resultado.length; i_11++) {
+                        var attribute = _resultado[i_11];
+                        if (i_11 != index)
+                            tmp.push(attribute);
+                    }
+                    _resultado = tmp;
+                }
+            }
+        };
+        var this_2 = this;
+        for (var i = 0; i < this.predicado.length; i++) {
+            var state_2 = _loop_2(i);
+            if (typeof state_2 === "object")
+                return state_2.value;
+        }
+        return _resultado;
+    };
     Predicate.prototype.operarDesigualdad = function (_tipo, _condicion, _valor) {
         switch (_tipo) {
             case Enum_1.Tipos.RELACIONAL_MAYOR:

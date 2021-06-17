@@ -63,19 +63,19 @@ export class Ambito {
         return _elements;
     }
 
-    searchAnyAttributes(_element: Element, _array: Array<Atributo>, _elements: Array<Element>) {
+    searchAnyAttributes(_id: string, _element: Element, _array: Array<Atributo>) {
         if (_element.attributes) {
             _element.attributes.forEach(attribute => {
-                _array.push(attribute);
+                if (attribute.id === _id || _id === "*")
+                    _array.push(attribute);
             });
-            _elements.push(_element);
         }
         if (_element.childs) {
             _element.childs.forEach(child => {
-                _array = this.searchAnyAttributes(child, _array, _elements).atributos;
+                _array = this.searchAnyAttributes(_id, child, _array,);
             });
         }
-        return { atributos: _array, elementos: _elements };
+        return _array;
     }
 
     searchAnyText(_element: Element, _array: Array<string>) {
@@ -88,28 +88,6 @@ export class Ambito {
             _array.push(_element.value);
         }
         return _array
-    }
-
-    searchAttributesFromCurrent(_element: Element, _id: string, _array: Array<Atributo>, _elements: Array<Element>) {
-        let flag: boolean = false;
-        if (_element.attributes) {
-            _element.attributes.forEach(attribute => {
-                if (attribute.id === _id) {
-                    _array.push(attribute);
-                    flag = true;
-                }
-            });
-            if (flag) {
-                _elements.push(_element);
-                flag = false;
-            }
-        }
-        if (_element.childs) {
-            _element.childs.forEach(child => {
-                _array = this.searchAttributesFromCurrent(child, _id, _array, _elements).atributos;
-            });
-        }
-        return { atributos: _array, elementos: _elements };
     }
 
     searchSingleNode(_nodename: string, _element: Element, _array: Array<Element>): Array<Element> {

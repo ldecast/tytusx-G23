@@ -55,20 +55,20 @@ var Ambito = /** @class */ (function () {
         }
         return _elements;
     };
-    Ambito.prototype.searchAnyAttributes = function (_element, _array, _elements) {
+    Ambito.prototype.searchAnyAttributes = function (_id, _element, _array) {
         var _this = this;
         if (_element.attributes) {
             _element.attributes.forEach(function (attribute) {
-                _array.push(attribute);
+                if (attribute.id === _id || _id === "*")
+                    _array.push(attribute);
             });
-            _elements.push(_element);
         }
         if (_element.childs) {
             _element.childs.forEach(function (child) {
-                _array = _this.searchAnyAttributes(child, _array, _elements).atributos;
+                _array = _this.searchAnyAttributes(_id, child, _array);
             });
         }
-        return { atributos: _array, elementos: _elements };
+        return _array;
     };
     Ambito.prototype.searchAnyText = function (_element, _array) {
         var _this = this;
@@ -81,28 +81,6 @@ var Ambito = /** @class */ (function () {
             _array.push(_element.value);
         }
         return _array;
-    };
-    Ambito.prototype.searchAttributesFromCurrent = function (_element, _id, _array, _elements) {
-        var _this = this;
-        var flag = false;
-        if (_element.attributes) {
-            _element.attributes.forEach(function (attribute) {
-                if (attribute.id === _id) {
-                    _array.push(attribute);
-                    flag = true;
-                }
-            });
-            if (flag) {
-                _elements.push(_element);
-                flag = false;
-            }
-        }
-        if (_element.childs) {
-            _element.childs.forEach(function (child) {
-                _array = _this.searchAttributesFromCurrent(child, _id, _array, _elements).atributos;
-            });
-        }
-        return { atributos: _array, elementos: _elements };
     };
     Ambito.prototype.searchSingleNode = function (_nodename, _element, _array) {
         if (_nodename === _element.id_open) {

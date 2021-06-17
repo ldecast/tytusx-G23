@@ -28,6 +28,9 @@ function compile(req) {
         // Análisis de XML
         var xml_ast = parser_xml.parse(xml);
         var encoding = xml_ast.encoding; // Encoding del documento XML
+        if (encoding.encoding === encoding.codes.INVALID) {
+            errors.push({ tipo: "Léxico", error: "La codificación del XML no es válida.", origen: "XML", linea: "1", columna: "1" });
+        }
         if (xml_ast.errors.length > 0 || xml_ast.ast === null || xml_ast === true) {
             if (xml_ast.errors.length > 0)
                 errors = xml_ast.errors;
