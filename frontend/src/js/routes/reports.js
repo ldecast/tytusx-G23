@@ -19,14 +19,13 @@ function generateReport(req) {
                 parser_xPath = require('../analyzers/xpath_down');
                 break;
         }
-        // Puede ser uno de los tres descritos
         switch (report) {
             case "XML-CST":
                 return CST_xml(parser_xml, xml);
             case "XML-GRAMMAR":
                 return GrammarReport_xml(parser_xml, xml);
             case "XPATH-AST":
-                return AST_xml(parser_xml, xml);
+                return AST_xml(parser_xml, xml); // Se dejó el del xml
             default:
                 return { output: "Algo salió mal." };
         }
