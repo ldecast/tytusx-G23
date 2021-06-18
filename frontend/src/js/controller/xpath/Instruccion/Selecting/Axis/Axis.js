@@ -180,7 +180,7 @@ function secondFilter(_elements, _atributos, _nodetest, _predicate, _cadena, _am
                 if (x.elementos.length > 0 || x.texto.length > 0) {
                     elements.concat(x.elementos);
                     text.concat(x.texto);
-                    continue;
+                    break; //continue;
                 }
             }
             break;
