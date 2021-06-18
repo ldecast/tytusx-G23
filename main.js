@@ -4644,10 +4644,12 @@ case 20:
 if($$[$0-4] != null){  $$[$0-4].Children = $$[$0-3]; $$[$0-4].Close = $$[$0-1]; this.$ = $$[$0-4];
                                                                                 let hasConflict = $$[$0-4].verificateNames();
                                                                                 if(hasConflict === "") {
-																					$$[$0-4].childs.forEach(child => {
-																					child.Father = {id: $$[$0-4].id_open, line: $$[$0-4].line, column: $$[$0-4].column};
-																					});
-																					this.$ = $$[$0-4];
+                                                                                    if($$[$0-4].childs){
+                                                                                        $$[$0-4].childs.forEach(child => {
+                                                                                        child.Father = {id: $$[$0-4].id_open, line: $$[$0-4].line, column: $$[$0-4].column};
+                                                                                        });
+                                                                                        this.$ = $$[$0-4];
+                                                                                    }
 																				}
                                                                                 else {
 																					errors.push({ tipo: "Semántico", error: hasConflict, origen: "XML", linea: _$[$0-1].first_line, columna: _$[$0-1].first_column+1 });
@@ -6491,11 +6493,13 @@ module.exports = { compile: compile };
 var Ambito_1 = __webpack_require__(/*! ./Ambito */ "QFP7");
 function exec(_expresiones, _ambito) {
     _expresiones.forEach(function (element) {
-        if (element.childs) {
-            var nuevoAmbito = new Ambito_1.Ambito(_ambito, "hijo");
-            exec(element.childs, nuevoAmbito);
+        if (element) {
+            if (element.childs) {
+                var nuevoAmbito = new Ambito_1.Ambito(_ambito, "hijo");
+                exec(element.childs, nuevoAmbito);
+            }
+            _ambito.addSimbolo(element);
         }
-        _ambito.addSimbolo(element);
     });
 }
 module.exports = { exec: exec };
@@ -6532,14 +6536,13 @@ function generateReport(req) {
                 parser_xPath = __webpack_require__(/*! ../analyzers/xpath_down */ "jiUV");
                 break;
         }
-        // Puede ser uno de los tres descritos
         switch (report) {
             case "XML-CST":
                 return CST_xml(parser_xml, xml);
             case "XML-GRAMMAR":
                 return GrammarReport_xml(parser_xml, xml);
             case "XPATH-AST":
-                return AST_xml(parser_xml, xml);
+                return AST_xml(parser_xml, xml); // Se dejó el del xml
             default:
                 return { output: "Algo salió mal." };
         }
@@ -8490,10 +8493,12 @@ case 20:
 if($$[$0-4] != null){  $$[$0-4].Children = $$[$0-3]; $$[$0-4].Close = $$[$0-1]; this.$ = $$[$0-4];
                                                                                 let hasConflict = $$[$0-4].verificateNames();
                                                                                 if(hasConflict === "") {
-																					$$[$0-4].childs.forEach(child => {
-																					child.Father = {id: $$[$0-4].id_open, line: $$[$0-4].line, column: $$[$0-4].column};
-																					});
-																					this.$ = $$[$0-4];
+                                                                                    if($$[$0-4].childs){
+                                                                                        $$[$0-4].childs.forEach(child => {
+                                                                                        child.Father = {id: $$[$0-4].id_open, line: $$[$0-4].line, column: $$[$0-4].column};
+                                                                                        });
+                                                                                        this.$ = $$[$0-4];
+                                                                                    }
 																				}
                                                                                  else {
 																					errors.push({ tipo: "Semántico", error: hasConflict, origen: "XML", linea: _$[$0-1].first_line, columna: _$[$0-1].first_column+1 });
