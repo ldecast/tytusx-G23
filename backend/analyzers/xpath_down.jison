@@ -1,7 +1,6 @@
 %{
 	var attribute = '';
 	var errors = [];
-<<<<<<< HEAD
 	let re = /[^\n\t\r ]+/g
 	//let ast = null;
 	let grammar_stack = [];
@@ -299,10 +298,6 @@
 	function printstrack(obj, lines){
 	return;
 
-=======
-	let grammar_stack = [];
-	function printstrack(obj, lines){
->>>>>>> master
         if(Array.isArray(obj)){ //IS ARRAY
             str = ""
             for(let i = 0; i < lines; i++){str = str + "- ";}
@@ -336,7 +331,6 @@
             }
         }
 	}
-<<<<<<< HEAD
 
     function getCST(obj){
         let str = `
@@ -537,8 +531,6 @@
         }
         return str;
     }
-=======
->>>>>>> master
 %}
 %lex
 
@@ -623,19 +615,11 @@
 
 
 <<EOF>>               	return 'EOF'
-<<<<<<< HEAD
-=======
-[^></]+					return 'anything'
->>>>>>> master
 .                     	{ errors.push({ tipo: "Léxico", error: yytext, origen: "XPath", linea: yylloc.first_line, columna: yylloc.first_column+1 }); return 'INVALID'; }
 
 /* operator associations and precedence */
 /lex
-<<<<<<< HEAD
 %left 'tk_or' 'tk_line' 'tk_2line'
-=======
-%left 'tk_or' 'tk_line'
->>>>>>> master
 %left 'tk_and'
 %left 'tk_equal' 'tk_diferent' 'tk_menor' 'tk_menorigual' 'tk_mayor' 'tk_mayorigual'
 %left 'tk_mas' 'tk_menos'
@@ -665,16 +649,11 @@ XPATH_U: XPATH XPATH_Up {
 XPATH_Up: tk_line XPATH XPATH_Up {
 		prod_1 = grammar_stack.pop();
 		prod_2 = grammar_stack.pop();
-<<<<<<< HEAD
 		grammar_stack.push({'XPATH_Up -: tk_line XPATH XPATH_Up ':['token: tk_line\t Lexema: ' + $1, prod_2, prod_1]});}
         | tk_2line XPATH XPATH_Up {
             prod_1 = grammar_stack.pop();
             prod_2 = grammar_stack.pop();
             grammar_stack.push({'XPATH_Up -: tk_2line XPATH XPATH_Up ':['token: tk_2line\t Lexema: ' + $1, prod_2, prod_1]});}
-=======
-		grammar_stack.push({'XPATH_Up -: tk_line XPATH XPATH_Up ':['token: tk_line\t Lexema: ' + $1, prod_2, prod_1]});
-}
->>>>>>> master
 		| { grammar_stack.push({'XPATH_Up -: Empty': ['EMPTY']}); }
 ;
 
