@@ -96,7 +96,7 @@ case 1:
                                                 encoding = new Encoding($$[$0-2]);
                                                 ast = { ast: $$[$0-1], encoding: encoding, errors: errors, cst: cst, grammar_report: grammar_report};
                                             } else{
-                                                errors.push({ tipo: "Sintáctico", error: "La codificación del XML no es válida.", origen: "XML", linea: this._$.first_line, columna: this._$.first_column+1 }); return { ast: null, errors: errors };
+                                                errors.push({ tipo: "Sintáctico", error: "La codificación del XML no es válida.", origen: "XML", linea: this._$.first_line, columna: this._$.first_column+1 });
                                                 ast = { ast: $$[$0-1], encoding: null,  errors: errors, cst: cst, grammar_report: grammar_report};
                                             }
                                             errors = [];
@@ -685,7 +685,6 @@ _handle_error:
 	var attribute = '';
 	var errors = [];
 	let re = /[^\n\t\r ]+/g
-	//let ast = null;
 	let grammar_stack = [];
 
 
@@ -1228,7 +1227,6 @@ _handle_error:
             });
         }else if(typeof obj === 'string' ){ // IS STRING
             return "";
-            console.log("ERROR**************************");
         }else{// IS OBJECT
             for(let key in obj){
 
@@ -1245,48 +1243,6 @@ _handle_error:
         }
         return str;
     }
-
-
-
-//just for testing purposes
-	function printstrack(obj, lines){
-	return;
-
-        if(Array.isArray(obj)){ //IS ARRAY
-            str = ""
-            for(let i = 0; i < lines; i++){str = str + "- ";}
-            obj.forEach((value)=>{
-                if(typeof value === 'string' ){
-                     str = ""
-                     for(let i = 0; i < lines; i++){str = str + "- ";}
-                     console.log(str + value);
-                }else if(Array.isArray(value)){console.log("ERROR 5");}else{
-                    str = ""
-                    for(let i = 0; i < lines; i++){ str = str + "- ";}
-                    for(let key in value){
-                       console.log(`${str}${key}`);
-                       printstrack(value[key], lines + 1);
-                    }
-                }
-
-                //printstrack(value, lines +1);
-            });
-        }else if(typeof obj === 'string' ){ // IS STRING
-            str = ""
-            for(let i = 0; i < lines; i++){str = str + "- ";}
-            console.log(str + obj);
-        }else{// IS OBJECT
-            str = ""
-            for(let i = 0; i < lines; i++){ str = str + "- ";}
-            for(let key in obj){
-                console.log(`${str}Key: ${key}`);
-                //console.log(obj[key]);
-                printstrack(obj[key], lines + 1);
-            }
-        }
-	}
-
-
 
 
     function getCST(obj){
@@ -1417,7 +1373,6 @@ _handle_error:
                     border-color: #e9453f;
                 }
 
-                /*# sourceMappingURL=sytle_.css.map */
 
 
             </style>
@@ -1476,7 +1431,6 @@ _handle_error:
             });
         }else if(typeof obj === 'string' ){ // IS STRING
             return "";
-            console.log("ERROR**************************");
         }else{// IS OBJECT
             for(let key in obj){
                 const words = key.split('->');
@@ -1491,9 +1445,6 @@ _handle_error:
         }
         return str;
     }
-
-
-
 
 
 
@@ -1864,12 +1815,11 @@ case 15:
 break;
 case 16:return 6
 break;
-case 17:this.popState(); return 12;
+case 17: this.popState(); return 12; 
 break;
-case 18: this.popState(); return 21
+case 18: this.popState(); return 21 
 break;
-case 19:  this.popState();
-                                    return 23;
+case 19: this.popState(); return 23; 
 break;
 case 20: errors.push({ tipo: "Léxico", error: yy_.yytext, origen: "XML", linea: yy_.yylloc.first_line, columna: yy_.yylloc.first_column+1 }); return 'INVALID'; 
 break;

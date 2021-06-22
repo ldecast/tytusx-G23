@@ -65,4 +65,17 @@ var Tipos;
     Tipos["AXIS_SELF"] = "AXIS_SELF";
     // Default
     Tipos["NONE"] = "NONE";
+    // Fase 2
+    Tipos["LET_CLAUSE"] = "LET_CLAUSE";
+    Tipos["FOR_LOOP"] = "FOR_LOOP";
+    Tipos["AT_KEYWORD"] = "AT_KEYWORD";
+    Tipos["WHERE_CONDITION"] = "WHERE_CONDITION";
+    Tipos["ORDER_BY_CLAUSE"] = "ORDER_BY_CLAUSE";
+    Tipos["RETURN_STATEMENT"] = "RETURN_STATEMENT";
+    Tipos["DECLARACION"] = "DECLARACION";
+    Tipos["INTERVALO"] = "INTERVALO";
+    Tipos["VALORES"] = "VALORES";
+    Tipos["CONTENIDO"] = "CONTENIDO";
+    Tipos["INYECCION"] = "INYECCION";
+    Tipos["HTML"] = "HTML";
 })(Tipos = exports.Tipos || (exports.Tipos = {}));

@@ -8,19 +8,19 @@ function compile(req: any) {
     try {
         // Datos de la petición desde Angular
         let xml = req.xml;
-        let xPath = req.query;
+        let xQuery = req.query;
         let grammar_selected = req.grammar;
 
         // Gramáticas a usarse según la selección: 1=ascendente, 2=descendente
-        let parser_xml, parser_xPath;
+        let parser_xml, parser_xQuery;
         switch (grammar_selected) {
             case 1:
                 parser_xml = require('../analyzers/xml_up');
-                parser_xPath = require('../analyzers/xpath_up');
+                parser_xQuery = require('../analyzers/xquery');
                 break;
             case 2:
                 parser_xml = require('../analyzers/xml_up');
-                parser_xPath = require('../analyzers/xpath_up');
+                parser_xQuery = require('../analyzers/xquery');
                 break;
         }
 
@@ -43,20 +43,21 @@ function compile(req: any) {
         let cadena = new Global(xml_parse, global); // Llena la tabla de símbolos
         let simbolos = cadena.ambito.getArraySymbols(); // Arreglo con los símbolos
 
-        // Análisis de XPath
-        let xPath_ast = parser_xPath.parse(xPath);
-        if (xPath_ast.errors.length > 0 || xPath_ast.ast === null || xPath_ast === true) {
-            if (xPath_ast.errors.length > 0) errors = xPath_ast.errors;
-            if (xPath_ast.ast === null || xPath_ast === true) {
-                errors.push({ tipo: "Sintáctico", error: "Sintaxis errónea de la consulta digitada.", origen: "XPath", linea: "1", columna: "1" });
+        // Análisis de xQuery
+        let xQuery_ast = parser_xQuery.parse(xQuery);
+        // console.log(xQuery_ast.ast, "ast");
+        if (xQuery_ast.errors.length > 0 || xQuery_ast.ast === null || xQuery_ast === true) {
+            if (xQuery_ast.errors.length > 0) errors = xQuery_ast.errors;
+            if (xQuery_ast.ast === null || xQuery_ast === true) {
+                errors.push({ tipo: "Sintáctico", error: "Sintaxis errónea de la consulta digitada.", origen: "XQuery", linea: "1", columna: "1" });
                 return { output: "La consulta contiene errores para analizar.\nIntente de nuevo.", arreglo_errores: errors };
             }
         }
 
         let root: Element = new Element("[object XMLDocument]", [], "", cadena.ambito.tablaSimbolos, "0", "0", "[object XMLDocument]")
         let output: any = { cadena: "", elementos: [root], atributos: null };
-        let xPath_parse = xPath_ast.ast; // AST que genera Jison
-        let bloque = Bloque(xPath_parse, cadena.ambito, output); // Procesa la secuencia de accesos (instrucciones)
+        let xQuery_parse = xQuery_ast.ast; // AST que genera Jison
+        let bloque = Bloque(xQuery_parse, cadena.ambito, output); // Procesa las instrucciones
         if (bloque.error) {
             errors.push(bloque);
             return { arreglo_errores: errors, output: bloque.error }
@@ -65,8 +66,9 @@ function compile(req: any) {
         output = {
             arreglo_simbolos: simbolos,
             arreglo_errores: errors,
-            output: bloque,
-            encoding: encoding
+            output: bloque.cadena,
+            encoding: encoding,
+            codigo3d: bloque.codigo3d
         }
         errors = [];
         return output;
