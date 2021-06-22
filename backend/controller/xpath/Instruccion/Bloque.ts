@@ -5,43 +5,40 @@ import { Tipos } from "../../../model/xpath/Enum";
 import DobleEje from "./Selecting/DobleEje";
 import Eje from "./Selecting/Eje";
 import Axis from "./Selecting/Axis/Axis";
+import ForLoop from "../../xquery/For";
 
 let reset: any;
 let output: Array<any> = [];
-
+// doc(.xml) debería retornar el xml ya montado en la tabla de símbolos para arrancar el bloque
 function Bloque(_instruccion: Array<any>, _ambito: Ambito, _retorno: any) {
     let tmp: any;
     reset = _retorno;
     for (let i = 0; i < _instruccion.length; i++) {
-        const camino = _instruccion[i]; // En caso de tener varios caminos
-        for (let j = 0; j < camino.length; j++) {
-            const instr = camino[j];
-            if (instr.tipo === Tipos.SELECT_FROM_ROOT) {
-                tmp = Eje(instr, _ambito, _retorno);
-                if (tmp.notFound) { _retorno = reset; break; }
-                if (tmp.error) return tmp;
-                _retorno = tmp;
-            }
-            else if (instr.tipo === Tipos.SELECT_FROM_CURRENT) {
-                tmp = DobleEje(instr, _ambito, _retorno);
-                if (tmp.notFound) { _retorno = reset; break; }
-                if (tmp.error) return tmp;
-                _retorno = tmp;
-            }
-            else if (instr.tipo === Tipos.SELECT_AXIS) {
-                tmp = Axis.SA(instr, _ambito, _retorno);
-                if (tmp.notFound) { _retorno = reset; break; }
-                if (tmp.error) return tmp;
-                _retorno = tmp;
-            }
-            else {
-                return { error: "Error: Instrucción no procesada.", tipo: "Semántico", origen: "Query", linea: instr.linea, columna: instr.columna };
-            }
+        const instr = _instruccion[i]; // En caso de tener varios caminos
+        if (instr.tipo === Tipos.FOR_LOOP) {
+            tmp = ForLoop(instr, _ambito, _retorno);
         }
+        else if (instr.tipo === Tipos.SELECT_FROM_ROOT) {
+            tmp = Eje(instr, _ambito, _retorno);
+        }
+        else if (instr.tipo === Tipos.SELECT_FROM_CURRENT) {
+            tmp = DobleEje(instr, _ambito, _retorno);
+        }
+        else if (instr.tipo === Tipos.SELECT_AXIS) {
+            tmp = Axis.SA(instr, _ambito, _retorno);
+        }
+        else {
+            return { error: "Error: Instrucción no procesada.", tipo: "Semántico", origen: "Query", linea: instr.linea, columna: instr.columna };
+        }
+        if (tmp.notFound) { _retorno = reset; break; }
+        if (tmp.error) return tmp;
+        _retorno = tmp;
         output.push(_retorno);
         _retorno = reset;
     }
-    return writeOutput();
+    let cadena = writeOutput();
+    let codigo3d = ""; // Método que devuelve código tres direcciones
+    return { cadena: cadena, codigo3d: codigo3d };
 }
 
 function writeOutput() {
