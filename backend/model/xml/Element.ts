@@ -1,6 +1,7 @@
 import { Atributo } from "./Atributo";
 
 export class Element {
+    [x: string]: any;
 
     id_open: string;
     id_close: string;

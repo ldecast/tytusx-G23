@@ -12,12 +12,12 @@ let output: Array<any> = [];
 
 function Bloque(_instruccion: Array<any>, _ambito: Ambito, _retorno: any) {
     output = [];
-    let tmp: any;
     reset = _retorno;
-    // console.log(_instruccion,272727272727)
-    for (let i = 0; i < _instruccion.length; i++) {
-        const instr = _instruccion[i]; // En caso de tener varios caminos
-        // console.log(_retorno, 33)
+    let tmp: any;
+    let i;
+    // console.log(_retorno, 272727272727)
+    for (i = 0; i < _instruccion.length; i++) {
+        const instr = _instruccion[i];
         if (instr.tipo === Tipos.FOR_LOOP) {
             tmp = ForLoop(instr, _ambito, _retorno);
             return { cadena: tmp, codigo3d: "codigo3d" };
@@ -32,9 +32,7 @@ function Bloque(_instruccion: Array<any>, _ambito: Ambito, _retorno: any) {
             tmp = Axis.SA(instr, _ambito, _retorno);
         }
         else if (instr.tipo === Tipos.EXPRESION) {
-            const Expresion = require('../Expresion/Expresion');
-            // console.log("AAAAAAAA")
-            return Expresion(instr.expresion, _ambito, _retorno);
+            continue;
         }
         else {
             return { error: "Error: Instrucción no procesada.", tipo: "Semántico", origen: "Query", linea: instr.linea, columna: instr.columna };
@@ -43,7 +41,8 @@ function Bloque(_instruccion: Array<any>, _ambito: Ambito, _retorno: any) {
         if (tmp.error) return tmp;
         _retorno = tmp;
     }
-    output.push(_retorno);
+    if (i > 0)
+        output.push(_retorno);
     let cadena = writeOutput();
     let codigo3d = ""; // Método que devuelve código tres direcciones
     return { cadena: cadena, codigo3d: codigo3d };
@@ -52,12 +51,6 @@ function Bloque(_instruccion: Array<any>, _ambito: Ambito, _retorno: any) {
 function getIterators(_instruccion: Array<any>, _ambito: Ambito, _retorno: any) {
     Bloque(_instruccion, _ambito, _retorno);
     return output;
-    let aux: Array<Element> = [];
-    output.forEach(element => {
-        if (element.elementos)
-            aux.push(element.elementos);
-    });
-    return aux;
 }
 
 function writeOutput() {
