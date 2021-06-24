@@ -22,7 +22,7 @@ function init(_opIzq: any, _opDer: any, _ambito: Ambito, _contexto: Array<any>, 
     let op2 = Expresion(_opDer, _ambito, _contexto);
     if (op2.error) return op2;
     let tipo: Tipos = _tipo;
-    console.log(op1, 888, op2)
+    // console.log(op1, 888, op2)
     if (op1.tipo === Tipos.ELEMENTOS && op2.tipo === Tipos.ELEMENTOS) {
         return { op1: op1, op2: op2, tipo: tipo };
     }
@@ -79,7 +79,7 @@ function filterElements(e1: any, e2: any, desigualdad: Tipos, _contexto: Array<E
             for (let j = 0; j < element.childs.length; j++) {
                 const child = element.childs[j];
                 condition = verificarDesigualdad(desigualdad, child.id_open, e1, child.value, e2);
-                console.log(desigualdad, child.id_open, e1, child.value, e2);
+                // console.log(desigualdad, child.id_open, e1, child.value, e2);
                 if (condition) {
                     tmp.push(element);
                     break;

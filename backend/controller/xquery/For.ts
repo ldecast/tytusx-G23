@@ -5,41 +5,58 @@ import Expresion from "../xpath/Expresion/Expresion";
 import Bloque from "../xpath/Instruccion/Bloque";
 import { Tipos } from "../../model/xpath/Enum";
 import { Variable } from "../../model/xml/Ambito/Variable";
+import returnQuery from "./Return";
+import WhereClause from "./Where";
 
 
-function ForLoop(_instruccion: any, _ambito: Ambito, _contexto: Array<Element>) {
+function ForLoop(_instruccion: any, _ambito: Ambito, _contexto: any) {
     // var retorno = { elementos: Array<Element>(), atributos: Array<Atributo>(), texto: Array<string>(), cadena: Tipos.NONE };
-    console.log(_instruccion, 'instrucciones For')
+    // console.log(_instruccion, 'instrucciones For')
 
+    let contexto: any = (_contexto.elementos) ? (_contexto.elementos) : null;
     // Procesar las variables de entrada
     let declaracion = _instruccion.cuerpo;
-    console.log(declaracion, 444)
+    // console.log(declaracion, 444)
     let iterators: any = [];
     declaracion.forEach((_iterators: any) => {
+        // console.log(_iterators, 2221)
         let id = Expresion(_iterators.variable, _ambito, _contexto);
         let it = Expresion(_iterators.iterators, _ambito, _contexto);
-        if (!id.err && !it.err)
-            iterators.push({ id: id.valor, iterators: it }); // { id: iterators? }
+        if (!id.error && !it.error)
+            iterators.push({ id: id.valor, iterators: it });
     });
-
-    let cadena = "<test>$x</test>";
-    let exit = "";
-    for (let i = 0; i < iterators.length; i++) {
-        const iterator = iterators[i];
-        for (let j = 0; j < iterator.iterators.length; j++) {
-            const element = iterator.iterators[j];
-            exit += (cadena.replace(iterator.id, element) + '\n');
+    // console.log(iterators[0].iterators, 6666665) <-- es el contexto []
+    for (let i = 0; i < _instruccion.instrucciones.length; i++) {
+        const instr = _instruccion.instrucciones[i];
+        // if (instr.tipo === Tipos.WHERE_CONDITION) {
+        //     _contexto = WhereClause(instr, _ambito, _contexto);
+        // }
+        if (instr.tipo === Tipos.RETURN_STATEMENT) {
+            return returnQuery(instr.expresion[0], _ambito, iterators, contexto);
         }
     }
-    console.log(exit);
-    // for (let i = 0; i < iterators.length; i++) {
-    //     const variable = _instruccion.variables[i];
-    //     const entorno = _instruccion.iterators[i];
-    //     let variable_exp = Expresion(variable, _ambito, _contexto);
-    //     let contexto_exp = Expresion(entorno, _ambito, _contexto);
-    //     let newVar = new Variable(variable_exp, contexto_exp);
-    //     _ambito.addVariable(newVar); // Agregar las variables con su entorno asociado
-    // }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     if (_instruccion.where) {
         // Filtrar los elementos de cada variable

@@ -70,7 +70,6 @@ function firstFiler(_axisname: Tipos, _nodetest: any, _predicate: any, _contexto
             break;
         case Tipos.AXIS_DESCENDANT: // Selects all descendants (children, grandchildren, etc.) of the current node
         case Tipos.AXIS_DESCENDANT_OR_SELF: // Selects all descendants (children, grandchildren, etc.) of the current node and the current node itself
-            console.log(_contexto.elementos, 8989)
             for (let i = 0; i < _contexto.elementos.length; i++) {
                 const element: Element = _contexto.elementos[i];
                 if (_axisname === Tipos.AXIS_DESCENDANT_OR_SELF) {

@@ -104,7 +104,7 @@ element_content                     ([^<>&\"{}] | '&lt;' | '&gt;' | '&amp;' | '&
 <string_singleq>[']	            { yytext = attribute; this.popState(); return 'tk_string_s'; }
 
 <content>"<!--"([^-]|\-[^-])*"-->"	    /* MultiLineComment*/
-<content>{element_content}       { if(yytext.match(re)) {console.log(yytext); return 'tk_content';} }
+<content>{element_content}       { if(yytext.match(re)) { return 'tk_content';} }
 <content>"{"                     { this.popState(); return 'tk_labre'; }
 <content>"<"                     { this.popState(); return 'tk_menor'; }
 <content><<EOF>>               	 return 'EOF'
@@ -136,7 +136,7 @@ element_content                     ([^<>&\"{}] | '&lt;' | '&gt;' | '&amp;' | '&
 %left 'tk_div' 'tk_mod' 'tk_asterisco'
 %left umenos
 %left 'tk_ParA'
-%left 'tk_bar' tk_2bar
+%left 'tk_bar' 'tk_2bar'
 
 
 %start ini
@@ -228,6 +228,7 @@ HTML: tk_menor tk_id ATTRIBUTE_LIST tk_mayor CONTENT_LL tk_menor tk_bar tk_id tk
 
 CONTENT_LL: CONTENT_LL CONTENT_TAG { $1.push($2); $$=$1; }
         | CONTENT_TAG { $$=[$1]; }
+        | HTML
 ;
 
 CONTENT_TAG: tk_content { $$ = queryBuilder.nuevoContenido($1, this._$.first_line, this._$.first_column+1); }
@@ -346,9 +347,9 @@ E:	E tk_menorigual E { $$=builder.newOperation($1, $3, Tipos.RELACIONAL_MENORIGU
 						prod_1 = grammar_stack.pop();
 						prod_2 = grammar_stack.pop();
 						grammar_stack.push({'E -> E tk_diferent E {SS=builder.newOperation(Param)}': [prod_2, 'token: tk_diferent\t Lexema: ' + $2, prod_1]}); }	
-    | E tk_bar E
-    | E tk_2bar E
-    | EXP_PR
+    // | tk_bar E { $$=builder.newAxis($2, this._$.first_line, this._$.first_column+1); }
+    // | tk_2bar E { $$=builder.newDoubleAxis($2, this._$.first_line, this._$.first_column+1); }
+    | EXP_PR { $$=$1; }
 	// | QUERY { $$=$1;
 	// 		  prod_1 = grammar_stack.pop();
 	// 		  grammar_stack.push({'E -> QUERY {SS=S1}': [prod_1]}); }
