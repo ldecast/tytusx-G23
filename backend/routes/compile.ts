@@ -57,7 +57,7 @@ function compile(req: any) {
         let root: Element = new Element("[object XMLDocument]", [], "", cadena.ambito.tablaSimbolos, "0", "0", "[object XMLDocument]")
         let output: any = { cadena: "", elementos: [root], atributos: null };
         let xQuery_parse = xQuery_ast.ast; // AST que genera Jison
-        let bloque = Bloque(xQuery_parse, cadena.ambito, output); // Procesa las instrucciones
+        let bloque = Bloque.Bloque(xQuery_parse, cadena.ambito, output); // Procesa las instrucciones
         if (bloque.error) {
             errors.push(bloque);
             return { arreglo_errores: errors, output: bloque.error }

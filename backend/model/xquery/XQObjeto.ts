@@ -97,9 +97,9 @@ export class XQObjeto {
         }
     }
 
-    nuevaInyeccion(_valor: any, _onlyData: boolean, _linea: number, _columna: number) { // > content <
+    nuevaInyeccion(_path: any, _onlyData: boolean, _linea: number, _columna: number) { // > content <
         return {
-            path: _valor,
+            path: _path,
             onlyData: _onlyData,
             tipo: Tipos.INYECCION,
             linea: _linea,

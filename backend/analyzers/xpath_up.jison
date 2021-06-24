@@ -595,7 +595,6 @@ ini: XPATH_U EOF { 	prod_1 = grammar_stack.pop();
 			 		grammar_stack.push({'ini -> XPATH_U EOF': [prod_2, prod_1]});
 					grammar_report =  getGrammarReport(grammar_stack);
                     cst = getCST(grammar_stack);
-                    console.log(grammar_report);
                     let arbol_ast = getASTTree($1);
 					ast = { ast: $1, errors: errors, cst :cst, grammar_report:grammar_report,  arbolAST : arbol_ast }; return ast;
 					}

@@ -157,6 +157,7 @@ function getFromCurrent(_id: any, _contexto: any, _ambito: Ambito, _condicion: a
                 });
             }
         }
+        elements = [...new Set(elements)];
         if (_condicion) {
             let filter = new Predicate(_condicion, _ambito, elements);
             elements = filter.filterElements(elements);

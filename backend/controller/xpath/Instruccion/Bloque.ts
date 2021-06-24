@@ -9,14 +9,18 @@ import ForLoop from "../../xquery/For";
 
 let reset: any;
 let output: Array<any> = [];
-// doc(.xml) debería retornar el xml ya montado en la tabla de símbolos para arrancar el bloque
+
 function Bloque(_instruccion: Array<any>, _ambito: Ambito, _retorno: any) {
+    output = [];
     let tmp: any;
     reset = _retorno;
+    // console.log(_instruccion,272727272727)
     for (let i = 0; i < _instruccion.length; i++) {
         const instr = _instruccion[i]; // En caso de tener varios caminos
+        // console.log(_retorno, 33)
         if (instr.tipo === Tipos.FOR_LOOP) {
             tmp = ForLoop(instr, _ambito, _retorno);
+            return { cadena: tmp, codigo3d: "codigo3d" };
         }
         else if (instr.tipo === Tipos.SELECT_FROM_ROOT) {
             tmp = Eje(instr, _ambito, _retorno);
@@ -27,18 +31,33 @@ function Bloque(_instruccion: Array<any>, _ambito: Ambito, _retorno: any) {
         else if (instr.tipo === Tipos.SELECT_AXIS) {
             tmp = Axis.SA(instr, _ambito, _retorno);
         }
+        else if (instr.tipo === Tipos.EXPRESION) {
+            const Expresion = require('../Expresion/Expresion');
+            // console.log("AAAAAAAA")
+            return Expresion(instr.expresion, _ambito, _retorno);
+        }
         else {
             return { error: "Error: Instrucción no procesada.", tipo: "Semántico", origen: "Query", linea: instr.linea, columna: instr.columna };
         }
-        if (tmp.notFound) { _retorno = reset; break; }
+        if (tmp.notFound && i + 1 < _instruccion.length) { _retorno = reset; break; }
         if (tmp.error) return tmp;
         _retorno = tmp;
-        output.push(_retorno);
-        _retorno = reset;
     }
+    output.push(_retorno);
     let cadena = writeOutput();
     let codigo3d = ""; // Método que devuelve código tres direcciones
     return { cadena: cadena, codigo3d: codigo3d };
+}
+
+function getIterators(_instruccion: Array<any>, _ambito: Ambito, _retorno: any) {
+    Bloque(_instruccion, _ambito, _retorno);
+    return output;
+    let aux: Array<Element> = [];
+    output.forEach(element => {
+        if (element.elementos)
+            aux.push(element.elementos);
+    });
+    return aux;
 }
 
 function writeOutput() {
@@ -83,7 +102,6 @@ function writeOutput() {
             });
         }
     }
-    output = [];
     if (cadena) return replaceEntity(cadena.substring(1));
     return "No se encontraron elementos.";
 }
@@ -140,4 +158,4 @@ function concatText(_text: string): string {
     return `\n${_text}`;
 }
 
-export = Bloque;
+export = { Bloque: Bloque, getIterators: getIterators };
