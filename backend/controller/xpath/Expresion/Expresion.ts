@@ -4,6 +4,7 @@ import { Element } from "../../../model/xml/Element"
 import pushIterators from "../../xquery/BuildElement";
 
 function Expresion(_expresion: any, _ambito: Ambito, _contexto: Array<Element>, id?: any): any {
+    // if (!_expresion) return null;
     let tipo: Tipos = _expresion.tipo;
     if (tipo === Tipos.EXPRESION) {
         return Expresion(_expresion.expresion, _ambito, _contexto);
@@ -62,15 +63,15 @@ function Expresion(_expresion: any, _ambito: Ambito, _contexto: Array<Element>, 
     // Fase 2
     else if (tipo === Tipos.HTML) {
         let content = [];
-        // content.push({ valor: '<' + _expresion.id_open + '>' });
         for (let i = 0; i < _expresion.value.length; i++) {
             const value = Expresion(_expresion.value[i], _ambito, _contexto, id);
+            console.log(value, 99999999, id)
+            // if (Array.isArray(value)) { if (value.length > 0) content.push(value); }
             if (value)
                 content.push(value);
             else
                 content.pop();
         }
-        // content.push({ valor: '</' + _expresion.id_close + '>' });
         return content;
     }
 
@@ -79,21 +80,22 @@ function Expresion(_expresion: any, _ambito: Ambito, _contexto: Array<Element>, 
     }
 
     else if (tipo === Tipos.INYECCION) {
-        if (_expresion.path[0].expresion.nodename != id) return null;
+        let e_0 = Expresion(_expresion.path[0], _ambito, _contexto, id);
+        if (e_0.valor != id) return null;
+        if (_contexto[0].item) return _contexto
         const Bloque = require("../Instruccion/Bloque");
         let elements: Array<any> = [];
-        elements.push(Expresion(_expresion.path.shift(), _ambito, _contexto));
+        elements.push(e_0);
         let _x = Bloque.getIterators(_expresion.path, _ambito, _contexto[0]);
-        elements = elements.concat(_x);
+        if (_x && _x.length > 0)
+            elements = elements.concat(_x);
         return pushIterators(elements);
     }
 
     if (Array.isArray(_expresion)) {
         const Bloque = require("../Instruccion/Bloque");
         const elements = Bloque.getIterators(_expresion, _ambito, _contexto);
-        // console.log(_expresion, elements, 3222)
         return elements; //<- Retorna un arreglo de elementos
-        // return pushIterators(elements);
     }
 
     else if (tipo === Tipos.INTERVALO) {
@@ -101,7 +103,7 @@ function Expresion(_expresion: any, _ambito: Ambito, _contexto: Array<Element>, 
         let val_1 = Expresion(_expresion.valor1, _ambito, _contexto); if (val_1.error) return val_1;
         let val_2 = Expresion(_expresion.valor2, _ambito, _contexto); if (val_2.error) return val_2;
         for (let i = parseInt(val_1.valor); i <= parseInt(val_2.valor); i++) {
-            iterators.push(i);
+            iterators.push({ item: i });
         }
         return iterators;
     }
@@ -111,7 +113,7 @@ function Expresion(_expresion: any, _ambito: Ambito, _contexto: Array<Element>, 
         _expresion.valores.forEach((valor: any) => {
             const expresion = Expresion(valor, _ambito, _contexto);
             if (!expresion.error)
-                iterators.push(parseInt(expresion.valor));
+                iterators.push({ item: parseInt(expresion.valor) });
         });
         return iterators;
     }

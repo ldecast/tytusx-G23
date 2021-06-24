@@ -10,25 +10,29 @@ function returnQuery(_expresion: any, _ambito: Ambito, _iterators: Array<any>, _
     }
     for (let i = 0; i < _iterators.length; i++) {
         const iterator = _iterators[i];
-        expresion = expresion.concat(Expresion(_expresion, _ambito, iterator.iterators, iterator.id));
+        let _x = Expresion(_expresion, _ambito, iterator.iterators, iterator.id);
+        expresion = expresion.concat(_x);
     }
     if (_expresion.tipo === Tipos.HTML) {
         expresion.push({ valor: '</' + _expresion.id_close + '>' })
     }
+    console.log(expresion, 3444);
     return writeReturn(expresion);
 }
 
 function writeReturn(_expresion: any): string {
     let cadena = "";
     let max = getMaxLength(_expresion);
+    // console.log(max);
     for (let i = 0; i < max; i++) {
         for (let j = 0; j < _expresion.length; j++) {
             var exp = _expresion[j];
             if (exp.valor)
                 cadena += exp.valor;
-            else {
+            else if (exp.length > 0) {
                 let shift = exp.shift();
-                cadena += shift;
+                if (shift.item) cadena += shift.item;
+                else cadena += shift
                 exp = exp.push(shift);
             }
         }
@@ -39,10 +43,12 @@ function writeReturn(_expresion: any): string {
 }
 
 function getMaxLength(context: Array<any>): number {
-    let index = -1;
+    let index = 1;
     context.forEach(element => {
         if (element.length > index)
             index = element.length;
+        if (element.iterators)
+            index = element.iterators.length;
     });
     return index;
 }
