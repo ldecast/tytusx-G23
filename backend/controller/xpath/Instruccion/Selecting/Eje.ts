@@ -8,12 +8,16 @@ import Axis from "./Axis/Axis";
 
 function Eje(_instruccion: any, _ambito: Ambito, _contexto: any): any {
     let _404 = { notFound: "No se encontraron elementos." };
+    if (Array.isArray(_contexto))
+        _contexto = _contexto[0];
     let contexto: any = (_contexto.elementos) ? (_contexto) : null;
-    let expresion;
-    if (_instruccion.expresion.expresion) expresion = Expresion(_instruccion.expresion.expresion, _ambito, contexto);
-    else expresion = Expresion(_instruccion.expresion, _ambito, contexto);
+    let expresion = Expresion(_instruccion.expresion, _ambito, contexto);
+    // if (_instruccion.expresion.expresion) expresion = Expresion(_instruccion.expresion.expresion, _ambito, contexto);
+    // else expresion = Expresion(_instruccion.expresion, _ambito, contexto);
     if (expresion.error) return expresion;
-    let predicate = _instruccion.expresion.predicate;
+    // if (expresion.elementos) return expresion;
+    let predicate = _instruccion.predicate;
+    // console.log(_instruccion,444449)
     let root: any;
     if (expresion.tipo === Tipos.ELEMENTOS) {
         root = getSymbolFromRoot(expresion.valor, contexto, _ambito, predicate);
@@ -197,4 +201,4 @@ function getFromCurrent(_id: any, _contexto: any, _ambito: Ambito, _condicion: a
     }
 }
 
-export =  Eje;
+export = Eje;

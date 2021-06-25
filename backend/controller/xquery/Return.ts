@@ -2,25 +2,29 @@ import { Ambito } from "../../model/xml/Ambito/Ambito";
 import { Element } from "../../model/xml/Element";
 import { Tipos } from "../../model/xpath/Enum";
 import Expresion from "../xpath/Expresion/Expresion";
+import pushIterators from "./BuildElement";
 
 function returnQuery(_expresion: any, _ambito: Ambito, _iterators: Array<any>, _contexto: Array<Element>) {
     let expresion: Array<any> = [];
-    if (_expresion.tipo === Tipos.HTML) {
-        expresion.push({ valor: '<' + _expresion.id_open + '>' })
-    }
-    for (let i = 0; i < _iterators.length; i++) {
-        const iterator = _iterators[i];
-        let _x = Expresion(_expresion, _ambito, iterator.iterators, iterator.id);
+    // console.log(_iterators,4444)
+    // console.log(_expresion,2424242)
+    for (let i = 0; i < _iterators.length; i++) { // [$x, $y, $z]
+        const iterator = _iterators[i]; // { id: $x, iterators: /book/title (contexto) }
+        // console.log(iterator.iterators,33333333333333)
+        let _x = Expresion(_expresion, _ambito, iterator.iterators, iterator.id); // _expresion = [XPATH]
         expresion = expresion.concat(_x);
     }
+    let _str: Array<any> = [pushIterators(expresion)];
     if (_expresion.tipo === Tipos.HTML) {
-        expresion.push({ valor: '</' + _expresion.id_close + '>' })
+        _str.unshift({ valor: '<' + _expresion.id_open + '>' })
+        _str.push({ valor: '</' + _expresion.id_close + '>' })
     }
-    console.log(expresion, 3444);
-    return writeReturn(expresion);
+    // console.log(_expresion,409999,_str)
+    return { cadena: writeReturn(_str), parametros: expresion };
 }
 
 function writeReturn(_expresion: any): string {
+    // console.log(_expresion, 3444);
     let cadena = "";
     let max = getMaxLength(_expresion);
     // console.log(max);
@@ -47,6 +51,8 @@ function getMaxLength(context: Array<any>): number {
     context.forEach(element => {
         if (element.length > index)
             index = element.length;
+        if (element.elementos)
+            index = element.elementos.length;
         if (element.iterators)
             index = element.iterators.length;
     });

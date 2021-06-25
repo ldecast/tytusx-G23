@@ -18,12 +18,15 @@ function Bloque(_instruccion: Array<any>, _ambito: Ambito, _retorno: any) {
     // console.log(_retorno, 272727272727)
     for (i = 0; i < _instruccion.length; i++) {
         const instr = _instruccion[i];
+
         if (instr.tipo === Tipos.FOR_LOOP) {
             tmp = ForLoop(instr, _ambito, _retorno);
-            return { cadena: tmp, codigo3d: "codigo3d" };
+            // console.log(tmp, 3333);
+            return tmp;
         }
         else if (instr.tipo === Tipos.SELECT_FROM_ROOT) {
-            tmp = Eje(instr, _ambito, _retorno);
+            tmp = Eje(instr.expresion, _ambito, _retorno);
+            // console.log(tmp,8888888888)
         }
         else if (instr.tipo === Tipos.SELECT_FROM_CURRENT) {
             tmp = DobleEje(instr, _ambito, _retorno);
