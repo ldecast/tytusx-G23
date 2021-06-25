@@ -12,6 +12,25 @@ export class XQObjeto {
         }
     }
 
+    nuevaVariable(_variable: any, _linea: number, _columna: number) {
+        return {
+            variable: _variable,
+            tipo: Tipos.VARIABLE,
+            linea: _linea,
+            columna: _columna
+        }
+    }
+
+    nuevaExpresion(_variable: any, _valor: any, _linea: number, _columna: number) {
+        return {
+            variable: _variable,
+            valor: _valor,
+            tipo: Tipos.ASIGNACION,
+            linea: _linea,
+            columna: _columna
+        }
+    }
+
     nuevoLet(_varName: any, _valor: any, _linea: number, _columna: number) {
         return {
             id: _varName, // $x, $y, $z

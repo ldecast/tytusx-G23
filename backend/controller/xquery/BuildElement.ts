@@ -2,13 +2,17 @@ import { Element } from "../../model/xml/Element";
 import { Atributo } from "../../model/xml/Atributo";
 import { Tipos } from "../../model/xpath/Enum";
 
-function pushIterators(input: Array<any>) {
+function pushIterators(input: Array<any>): Array<any> {
     let iterators: Array<string> = [];
+    // console.log(input, 36363638)
     for (let i = 0; i < input.length; i++) {
         const path = input[i];
         if (path.notFound) {
-            return ["''"];
+            return ['No se encontraron elementos.'];
         }
+        // if (path.valor) {
+        //     iterators.unshift(path);
+        // }
         if (path.cadena === Tipos.TEXTOS) {
             let root: Array<string> = (path.texto) ? (path.texto) : (path.elementos);
             root.forEach(txt => {
@@ -49,7 +53,7 @@ function pushIterators(input: Array<any>) {
     }
     if (iterators)
         return iterators;
-    return ["''"];
+    return ['No se encontraron elementos.'];
 }
 
 function concatChilds(_element: Element, cadena: string): string {
