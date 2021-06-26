@@ -16,10 +16,11 @@ function Expresion(_expresion: any, _ambito: Ambito, _contexto: Array<Element>, 
         return _expresion;
     }
     else if (tipo === Tipos.SELECT_CURRENT) {
-        // if (id) {
-        //     if (id === _expresion.expresion) return { valor: ".", tipo: Tipos.ELEMENTOS, linea: _expresion.linea, columna: _expresion.columna };
-        //     else return null;
-        // }
+        if (id) {
+            // console.log(_expresion.expresion, id, 445);
+            if (id === _expresion.expresion) return { valor: ".", tipo: Tipos.ELEMENTOS, linea: _expresion.linea, columna: _expresion.columna };
+            else return null;
+        }
         return { valor: ".", tipo: Tipos.ELEMENTOS, linea: _expresion.linea, columna: _expresion.columna };
     }
     else if (tipo === Tipos.SELECT_PARENT) {

@@ -10,7 +10,7 @@ import ForLoop from "../../xquery/For";
 let reset: any;
 let output: Array<any> = [];
 
-function Bloque(_instruccion: Array<any>, _ambito: Ambito, _retorno: any) {
+function Bloque(_instruccion: Array<any>, _ambito: Ambito, _retorno: any, id?: any) {
     output = [];
     reset = _retorno;
     let tmp: any;
@@ -25,7 +25,7 @@ function Bloque(_instruccion: Array<any>, _ambito: Ambito, _retorno: any) {
             return tmp;
         }
         else if (instr.tipo === Tipos.SELECT_FROM_ROOT) {
-            tmp = Eje(instr.expresion, _ambito, _retorno);
+            tmp = Eje(instr.expresion, _ambito, _retorno, id);
             // console.log(tmp,8888888888)
         }
         else if (instr.tipo === Tipos.SELECT_FROM_CURRENT) {
@@ -40,6 +40,7 @@ function Bloque(_instruccion: Array<any>, _ambito: Ambito, _retorno: any) {
         else {
             return { error: "Error: Instrucción no procesada.", tipo: "Semántico", origen: "Query", linea: instr.linea, columna: instr.columna };
         }
+        if (tmp === null) return null;
         if (tmp.notFound && i + 1 < _instruccion.length) { _retorno = reset; break; }
         if (tmp.error) return tmp;
         _retorno = tmp;
@@ -51,8 +52,8 @@ function Bloque(_instruccion: Array<any>, _ambito: Ambito, _retorno: any) {
     return { cadena: cadena, codigo3d: codigo3d };
 }
 
-function getIterators(_instruccion: Array<any>, _ambito: Ambito, _retorno: any) {
-    Bloque(_instruccion, _ambito, _retorno);
+function getIterators(_instruccion: Array<any>, _ambito: Ambito, _retorno: any, _id: any) {
+    Bloque(_instruccion, _ambito, _retorno, _id);
     return output;
 }
 
