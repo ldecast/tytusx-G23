@@ -265,14 +265,18 @@ QUERY: tk_2bar QUERY { $$=builder.newDoubleAxis($2, this._$.first_line, this._$.
 	| tk_bar QUERY { $$=builder.newAxis($2, this._$.first_line, this._$.first_column+1);
 					 prod_1 = grammar_stack.pop();
 			 		 grammar_stack.push({'QUERY -> tk_bar QUERY {SS=builder.newAxis(Param);}': ['token: tk_bar\t Lexema: ' + $1, prod_1]}); }
-	| EXP_PR { $$=$1;
-			   prod_1 = grammar_stack.pop();
-			   grammar_stack.push({'QUERY -> EXP_PR {SS=S1}': [prod_1]}); }
-	| AXIS { $$=$1;
-			 prod_1 = grammar_stack.pop();
-			 grammar_stack.push({'QUERY -> AXIS {SS=S1}': [prod_1]}); }
-	| tk_bar tk_asterisco { $$=builder.newAxis(builder.newValue($2, Tipos.ASTERISCO, this._$.first_line, this._$.first_column+1), this._$.first_line, this._$.first_column+1); }
-	| tk_2bar tk_asterisco { $$=builder.newDoubleAxis(builder.newValue($2, Tipos.ASTERISCO, this._$.first_line, this._$.first_column+1), this._$.first_line, this._$.first_column+1); }
+	| tk_bar tk_asterisco CORCHETP {
+			var linea = this._$.first_line;
+			var columna = this._$.first_column+1;
+			$$=builder.newAxis(builder.newExpression(builder.newValue($2, Tipos.ASTERISCO, linea, columna), $3, linea, columna), linea, columna);
+		}
+	| tk_2bar tk_asterisco CORCHETP {
+			var linea = this._$.first_line;
+			var columna = this._$.first_column+1;
+			$$=builder.newDoubleAxis(builder.newExpression(builder.newValue($2, Tipos.ASTERISCO, linea, columna), $3, linea, columna), linea, columna);
+		}
+	| EXP_PR { $$=$1; }
+	| AXIS { $$=$1; }
 ;
 
 CORCHET: CORCHET tk_corA E tk_corC { $1.push(builder.newPredicate($3, this._$.first_line, this._$.first_column+1)); $$=$1;
@@ -364,7 +368,7 @@ EXP_PR: FUNC CORCHETP { $$=builder.newExpression($1, $2, this._$.first_line, thi
 
 PRIMITIVO: tk_id { $$=builder.newNodename($1, this._$.first_line, this._$.first_column+1);
 				   grammar_stack.push({'PRIMITIVO -> tk_id {SS=builder.newNodename(Param)}':['token: tk_text\t Lexema: ' + $1]}); }
-        | VARIABLE	{ $$=builder.newCurrent($1.variable, this._$.first_line, this._$.first_column+1); }
+        | VARIABLE	{ $$=builder.newAxis(builder.newCurrent($1.variable, this._$.first_line, this._$.first_column+1), this._$.first_line, this._$.first_column+1); }
         | STRING { $$ = $1; }
 		| num { $$=builder.newValue(Number($1), Tipos.NUMBER, this._$.first_line, this._$.first_column+1);
 				grammar_stack.push({'PRIMITIVO -> num {SS=builder.newValue(Param)}':['token: num\t Lexema: ' + $1]}); }
