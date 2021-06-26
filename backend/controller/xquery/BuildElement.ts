@@ -7,6 +7,9 @@ function pushIterators(input: Array<any>): Array<any> {
     // console.log(input, 36363638)
     for (let i = 0; i < input.length; i++) {
         const path = input[i];
+        if (path.item) {
+            return input;
+        }
         if (path.notFound) {
             return ['No se encontraron elementos.'];
         }
@@ -51,7 +54,7 @@ function pushIterators(input: Array<any>): Array<any> {
             });
         }
     }
-    if (iterators)
+    if (iterators.length > 0)
         return iterators;
     return ['No se encontraron elementos.'];
 }

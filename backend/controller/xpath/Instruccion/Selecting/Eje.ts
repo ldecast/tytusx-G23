@@ -6,14 +6,15 @@ import { Atributo } from "../../../../model/xml/Atributo";
 import { Predicate } from "./Predicate";
 import Axis from "./Axis/Axis";
 
-function Eje(_instruccion: any, _ambito: Ambito, _contexto: any): any {
+function Eje(_instruccion: any, _ambito: Ambito, _contexto: any, id?: any): any {
     let _404 = { notFound: "No se encontraron elementos." };
     if (Array.isArray(_contexto))
         _contexto = _contexto[0];
     let contexto: any = (_contexto.elementos) ? (_contexto) : null;
-    let expresion = Expresion(_instruccion.expresion, _ambito, contexto);
+    let expresion = Expresion(_instruccion.expresion, _ambito, contexto, id);
     // if (_instruccion.expresion.expresion) expresion = Expresion(_instruccion.expresion.expresion, _ambito, contexto);
     // else expresion = Expresion(_instruccion.expresion, _ambito, contexto);
+    if (expresion === null) return null;
     if (expresion.error) return expresion;
     // if (expresion.elementos) return expresion;
     let predicate = _instruccion.predicate;

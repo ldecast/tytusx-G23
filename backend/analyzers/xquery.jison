@@ -194,9 +194,9 @@ ORDER_BY: ORDER_BY tk_coma E { $1.push($3); $$=$1; }
         | tk_order tk_by E { $$=[$3]; }
 ;
 
-RETURN_STATEMENT: tk_return EXP_HTML { $$ = queryBuilder.nuevoReturn($2, this._$.first_line, this._$.first_column+1); }
+RETURN_STATEMENT: tk_return HTML { $$ = queryBuilder.nuevoReturn($2, this._$.first_line, this._$.first_column+1); }
                 | tk_return VARIABLE XPATH {
-					$3.unshift(insert_current('.', @2.first_line, @2.first_column+1));
+					$3.unshift(insert_current($2.variable, @2.first_line, @2.first_column+1));
 					$$ = queryBuilder.nuevoReturn($3, this._$.first_line, this._$.first_column+1);
 				}
 				| tk_return PRIMITIVO { $$ = queryBuilder.nuevoReturn($2, this._$.first_line, this._$.first_column+1); }
@@ -223,9 +223,9 @@ VALORES_COMA: VALORES_COMA tk_coma E { $1.push($3); $$=$1; }
             | E { $$=[$1]; }
 ;
 
-EXP_HTML: EXP_HTML HTML { $1.push($2); $$=$1; }
-        | HTML { $$=[$1]; }
-;
+// EXP_HTML: EXP_HTML HTML { $1.push($2); $$=$1; }
+//         | HTML { $$=[$1]; }
+// ;
 
 HTML: tk_menor tk_id ATTRIBUTE_LIST tk_mayor CONTENT_LL tk_menor tk_bar tk_id tk_mayor { $$ = queryBuilder.nuevoHTML($2, $3, $5, $8, this._$.first_line, this._$.first_column+1); }
     | tk_menor tk_id ATTRIBUTE_LIST tk_mayor tk_menor tk_bar tk_id tk_mayor { $$ = queryBuilder.nuevoHTML($2, $3, null, $7, this._$.first_line, this._$.first_column+1); }
