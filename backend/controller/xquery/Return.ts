@@ -7,12 +7,12 @@ import pushIterators from "./BuildElement";
 function returnQuery(_expresion: any, _ambito: Ambito, _iterators: Array<any>, _contexto: Array<Element>) {
     let expresion: Array<any> = [];
     // console.log(_iterators,4444)
-    console.log(_expresion, 2424242)
     for (let i = 0; i < _iterators.length; i++) { // [$x, $y, $z]
         const iterator = _iterators[i]; // { id: $x, iterators: /book/title (contexto) }
-        // console.log(iterator.iterators,33333333333333)
-        let _x = Expresion(_expresion, _ambito, iterator.iterators, iterator.id); // _expresion = [XPATH]
-        // console.log(_x)
+        let iters = iterator.iterators;
+        if (Array.isArray(iters)) iters = iters[0];
+        let _x = Expresion(_expresion, _ambito, iters, iterator.id); // _expresion = [XPATH]
+        // console.log(_x, 8888888888888888)
         if (_x) expresion = expresion.concat(_x);
     }
     // console.log(_expresion,409999,expresion)

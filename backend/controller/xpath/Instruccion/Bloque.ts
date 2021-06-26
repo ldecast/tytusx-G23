@@ -15,7 +15,7 @@ function Bloque(_instruccion: Array<any>, _ambito: Ambito, _retorno: any, id?: a
     reset = _retorno;
     let tmp: any;
     let i;
-    // console.log(_retorno, 272727272727)
+    // console.log(_instruccion, 272727272727)
     for (i = 0; i < _instruccion.length; i++) {
         const instr = _instruccion[i];
 
@@ -24,7 +24,7 @@ function Bloque(_instruccion: Array<any>, _ambito: Ambito, _retorno: any, id?: a
             // console.log(tmp, 3333);
             return tmp;
         }
-        else if (instr.tipo === Tipos.SELECT_FROM_ROOT) {
+        else if (instr.tipo === Tipos.SELECT_FROM_ROOT || instr.tipo === Tipos.EXPRESION) {
             tmp = Eje(instr.expresion, _ambito, _retorno, id);
             // console.log(tmp,8888888888)
         }
@@ -35,6 +35,10 @@ function Bloque(_instruccion: Array<any>, _ambito: Ambito, _retorno: any, id?: a
             tmp = Axis.SA(instr, _ambito, _retorno);
         }
         else if (instr.tipo === Tipos.EXPRESION) {
+            console.log(instr, "Entró a Bloque");
+            // const Expresion = require('../Expresion/Expresion')
+            // let a = Expresion(instr, _ambito, _retorno, id);
+            // console.log(a)
             continue;
         }
         else {
@@ -48,7 +52,7 @@ function Bloque(_instruccion: Array<any>, _ambito: Ambito, _retorno: any, id?: a
     if (i > 0)
         output.push(_retorno);
     let cadena = writeOutput();
-    let codigo3d = ""; // Método que devuelve código tres direcciones
+    let codigo3d = ""; // Agregar función que devuelva código tres direcciones
     return { cadena: cadena, codigo3d: codigo3d };
 }
 

@@ -12,13 +12,10 @@ function Eje(_instruccion: any, _ambito: Ambito, _contexto: any, id?: any): any 
         _contexto = _contexto[0];
     let contexto: any = (_contexto.elementos) ? (_contexto) : null;
     let expresion = Expresion(_instruccion.expresion, _ambito, contexto, id);
-    // if (_instruccion.expresion.expresion) expresion = Expresion(_instruccion.expresion.expresion, _ambito, contexto);
-    // else expresion = Expresion(_instruccion.expresion, _ambito, contexto);
     if (expresion === null) return null;
     if (expresion.error) return expresion;
-    // if (expresion.elementos) return expresion;
     let predicate = _instruccion.predicate;
-    // console.log(_instruccion,444449)
+    // console.log(expresion,444449)
     let root: any;
     if (expresion.tipo === Tipos.ELEMENTOS) {
         root = getSymbolFromRoot(expresion.valor, contexto, _ambito, predicate);
@@ -195,6 +192,7 @@ function getFromCurrent(_id: any, _contexto: any, _ambito: Ambito, _condicion: a
             }
         }
         if (_condicion) {
+            // console.log(_condicion,3999)
             let filter = new Predicate(_condicion, _ambito, elements);
             elements = filter.filterElements(elements);
         }

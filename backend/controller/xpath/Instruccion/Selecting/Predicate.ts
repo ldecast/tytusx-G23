@@ -24,9 +24,11 @@ export class Predicate {
         let expresion: any;
         for (let i = 0; i < this.predicado.length; i++) {
             const e = this.predicado[i]; // En caso de tener varios predicados seguidos
-            console.log(e, "Predicado")
-            expresion = Expresion(e.condicion, this.ambito, this.contexto);
-            console.log(expresion, "Expresion predicado")
+            // console.log(e, "Predicado")
+            let condicion = e;
+            if (Array.isArray(e.condicion)) condicion = e.condicion[0];
+            expresion = Expresion(condicion, this.ambito, this.contexto);
+            // console.log(expresion, "Expresion predicado")
             if (expresion.error) return expresion;
             if (expresion.tipo === Tipos.NUMBER) {
                 let index = parseInt(expresion.valor) - 1;
@@ -174,9 +176,11 @@ export class Predicate {
         let expresion: any;
         for (let i = 0; i < this.predicado.length; i++) {
             const e = this.predicado[i]; // En caso de tener varios predicados seguidos
-            console.log(e, "Predicado")
-            expresion = Expresion(e.condicion, this.ambito, this.contexto);
-            console.log(expresion, "Expresion predicado")
+            // console.log(e, "Predicado")
+            let condicion = e;
+            if (Array.isArray(e.condicion)) condicion = e.condicion[0];
+            expresion = Expresion(condicion, this.ambito, this.contexto);
+            // console.log(expresion, "Expresion predicado")
             if (expresion.error) return expresion;
             if (expresion.tipo === Tipos.NUMBER) {
                 let index = parseInt(expresion.valor) - 1;

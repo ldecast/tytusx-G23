@@ -20,13 +20,14 @@ function ForLoop(_instruccion: any, _ambito: Ambito, _contexto: any) {
         iterators = iterators.concat(it);
     });
     for (let i = 0; i < _instruccion.instrucciones.length; i++) {
-        var instr = _instruccion.instrucciones[i];
+        const instr = _instruccion.instrucciones[i];
         // if (!Array.isArray(instr.expresion)) {
         //     instr.expresion = [instr.expresion];
         // }
-        // if (instr.tipo === Tipos.WHERE_CONDITION) {
-        //     _contexto = WhereClause(instr, _ambito, _contexto);
-        // }
+        if (instr.tipo === Tipos.WHERE_CONDITION) {
+            console.log(instr);
+            _contexto = WhereClause(instr.expresion, _ambito, _contexto);
+        }
         if (instr.tipo === Tipos.RETURN_STATEMENT) {
             return returnQuery(instr.expresion, _ambito, iterators, contexto);
         }
