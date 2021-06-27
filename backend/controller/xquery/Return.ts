@@ -1,12 +1,10 @@
 import { Ambito } from "../../model/xml/Ambito/Ambito";
-import { Element } from "../../model/xml/Element";
 import { Tipos } from "../../model/xpath/Enum";
 import Expresion from "../xpath/Expresion/Expresion";
 import pushIterators from "./BuildElement";
 
-function returnQuery(_expresion: any, _ambito: Ambito, _iterators: Array<any>, _contexto: Array<Element>) {
+function returnQuery(_expresion: any, _ambito: Ambito, _iterators: Array<any>) {
     let expresion: Array<any> = [];
-    // console.log(_iterators,4444)
     for (let i = 0; i < _iterators.length; i++) { // [$x, $y, $z]
         const iterator = _iterators[i]; // { id: $x, iterators: /book/title (contexto) }
         let iters = iterator.iterators;
