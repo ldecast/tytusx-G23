@@ -4,8 +4,8 @@ import { Element } from "../../../model/xml/Element"
 
 function Expresion(_expresion: any, _ambito: Ambito, _contexto: Array<Element>, id?: any): any {
     // if (!_expresion) return null;
-    let tipo: Tipos = _expresion.tipo;
-    // console.log(_expresion,89898989)
+    let tipo: Tipos = (Array.isArray(_expresion)) ? Tipos.NONE : _expresion.tipo;
+    // console.log(tipo,89898989)
     if (tipo === Tipos.EXPRESION) {
         return Expresion(_expresion.expresion, _ambito, _contexto, id);
     }
@@ -58,7 +58,7 @@ function Expresion(_expresion: any, _ambito: Ambito, _contexto: Array<Element>, 
         || tipo === Tipos.RELACIONAL_MENOR || tipo === Tipos.RELACIONAL_MENORIGUAL
         || tipo === Tipos.RELACIONAL_IGUAL || tipo === Tipos.RELACIONAL_DIFERENTE) {
         const Relacional = require("./Operators/Relacional");
-        return Relacional(_expresion, _ambito, _contexto);
+        return Relacional(_expresion, _ambito, _contexto, id);
     }
     else if (tipo === Tipos.LOGICA_AND || tipo === Tipos.LOGICA_OR) {
         const Logica = require("./Operators/Logica");

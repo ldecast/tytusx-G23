@@ -25,11 +25,13 @@ function ForLoop(_instruccion: any, _ambito: Ambito, _contexto: any) {
         //     instr.expresion = [instr.expresion];
         // }
         if (instr.tipo === Tipos.WHERE_CONDITION) {
-            console.log(instr);
-            _contexto = WhereClause(instr.expresion, _ambito, _contexto);
+            let filter = WhereClause(instr.condiciones, _ambito, iterators); //, contexto
+            if (filter) iterators = filter;
+            else iterators = [];
         }
         if (instr.tipo === Tipos.RETURN_STATEMENT) {
-            return returnQuery(instr.expresion, _ambito, iterators, contexto);
+            // console.log(iterators[0].iterators,33333);
+            return returnQuery(instr.expresion, _ambito, iterators) //, contexto);
         }
     }
 
