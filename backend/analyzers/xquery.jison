@@ -156,34 +156,37 @@ ini: XPATH_U EOF{   prod_1 = grammar_stack.pop();
 
 XQUERY: XQUERY INSTR_QUERY  { $1.push($2); $$=$1; }
         | INSTR_QUERY { $$=[$1]; }
+		// | LET_CLAUSE
 ;
 
 INSTR_QUERY: IF_ELSE_IF
-            | FLWOR { $$=$1; } //Incluido el let
+            | FOR_LOOP { $$=$1; }
+			| LET_CLAUSE
             | FUNCIONES
 ;
 
-FLWOR: FOR_LOOP { $$ = $1; }
-        | LET_CLAUSE { $$ = $1; }
-        | WHERE_CONDITION { $$ = $1; }
-        | ORDER_BY { $$ = queryBuilder.nuevoOrderBy($1, this._$.first_line, this._$.first_column+1); }
-        | RETURN_STATEMENT { $$ = $1; }
+// FLWOR: FOR_LOOP { $$ = $1; }
+//         | LET_CLAUSE { $$ = $1; }
+//         | WHERE_CONDITION { $$ = $1; }
+//         | ORDER_BY { $$ = queryBuilder.nuevoOrderBy($1, this._$.first_line, this._$.first_column+1); }
+//         | RETURN_STATEMENT { $$ = $1; }
+// ;
+
+FOR_LOOP: tk_for DECLARACION INSTRUCCIONES_FOR { $$ = queryBuilder.nuevoFor($2, $3, this._$.first_line, this._$.first_column+1); }
 ;
 
-FOR_LOOP: tk_for DECLARACION INSTR_FOR { $$ = queryBuilder.nuevoFor($2, $3, this._$.first_line, this._$.first_column+1); }
-;
-
-INSTR_FOR: INSTRUCCIONES_FOR INSTR_FOR_P { $1.push($2); $$=$1; }
+INSTRUCCIONES_FOR: INSTRUCCIONES_FOR INSTR_FOR_P { $1.push($2); $$=$1; }
                 | INSTR_FOR_P { $$=[$1]; }
 ;
 
-INSTR_FOR_P: LET_CLAUSE { $$=$1; }
-            | WHERE_CONDITION { $$ = $1; }
+INSTR_FOR_P: WHERE_CONDITION { $$ = $1; }
             | ORDER_BY { $$ = queryBuilder.nuevoOrderBy($1, this._$.first_line, this._$.first_column+1); }
             | RETURN_STATEMENT { $$ = $1; }
+			// | LET_CLAUSE
 ;
 
-LET_CLAUSE: tk_let VARIABLE tk_2puntos_igual DECLARACION { $$ = queryBuilder.nuevoLet($2, $4, this._$.first_line, this._$.first_column+1); }
+LET_CLAUSE: tk_let VARIABLE tk_2puntos_igual DECLARACIONPP { $$ = queryBuilder.nuevoLet($2, $4, this._$.first_line, this._$.first_column+1); }
+			| tk_let DECLARACIONP
 ;
 
 WHERE_CONDITION: tk_where E { $$ = queryBuilder.nuevoWhere($2, this._$.first_line, this._$.first_column+1); }

@@ -57,8 +57,10 @@ function Bloque(_instruccion: Array<any>, _ambito: Ambito, _retorno: any, id?: a
 }
 
 function getIterators(_instruccion: Array<any>, _ambito: Ambito, _retorno: any, _id: any) {
-    Bloque(_instruccion, _ambito, _retorno, _id);
-    return output;
+    let _bloque = Bloque(_instruccion, _ambito, _retorno, _id);
+    // console.log(_bloque,22222222222)
+    if (_bloque) return output;
+    else return null;
 }
 
 function writeOutput() {

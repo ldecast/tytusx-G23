@@ -86,7 +86,7 @@ function ExpresionQuery(_expresion: any, _ambito: Ambito, _contexto: Array<Eleme
         const Bloque = require('../../xpath/Instruccion/Bloque');
         // console.log(_expresion,4444);
         let _bloque = Bloque.getIterators(_expresion, _ambito, _contexto, id);
-        if (_bloque.error) return _bloque;
+        if (_bloque === null || _bloque.error) return _bloque;
         else _contexto = _bloque;
         return _contexto
     }
