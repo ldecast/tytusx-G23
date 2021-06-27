@@ -192,8 +192,8 @@ LET_CLAUSE: tk_let VARIABLE tk_2puntos_igual DECLARACIONPP { $$ = queryBuilder.n
 WHERE_CONDITION: tk_where E { $$ = queryBuilder.nuevoWhere($2, this._$.first_line, this._$.first_column+1); }
 ;
 
-ORDER_BY: ORDER_BY tk_coma E { $1.push($3); $$=$1; }
-        | tk_order tk_by E { $$=[$3]; }
+ORDER_BY: ORDER_BY tk_coma E { $$=$1; }
+        | tk_order tk_by E { $$=$3; }
 ;
 
 RETURN_STATEMENT: tk_return HTML { $$ = queryBuilder.nuevoReturn($2, this._$.first_line, this._$.first_column+1); }

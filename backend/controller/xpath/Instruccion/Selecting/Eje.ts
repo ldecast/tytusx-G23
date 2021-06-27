@@ -15,7 +15,6 @@ function Eje(_instruccion: any, _ambito: Ambito, _contexto: any, id?: any): any 
     if (expresion === null) return null;
     if (expresion.error) return expresion;
     let predicate = _instruccion.predicate;
-    // console.log(expresion,444449)
     let root: any;
     if (expresion.tipo === Tipos.ELEMENTOS) {
         root = getSymbolFromRoot(expresion.valor, contexto, _ambito, predicate);
@@ -54,7 +53,7 @@ function getSymbolFromRoot(_nodename: any, _contexto: Array<Element>, _ambito: A
     if (_contexto)
         return getFromCurrent(_nodename, _contexto, _ambito, _condicion);
     else
-        return { error: "Indstrucción no procesada.", tipo: "Semántico", origen: "Query", linea: 1, columna: 1 };
+        return { error: "Instrucción no procesada.", tipo: "Semántico", origen: "Query", linea: 1, columna: 1 };
 }
 
 // Desde el ámbito actual
@@ -149,14 +148,7 @@ function getFromCurrent(_id: any, _contexto: any, _ambito: Ambito, _condicion: a
             const element = _contexto.elementos[i];
             let dad = element.father;
             if (dad) {
-                _ambito.tablaSimbolos.forEach(elm => {
-                    if (elm.id_open === dad.id && elm.line == dad.line && elm.column == dad.column)
-                        elements.push(elm);
-                    if (elm.childs)
-                        elm.childs.forEach(child => {
-                            elements = _ambito.searchDad(child, dad.id, dad.line, dad.column, elements);
-                        });
-                });
+                elements = _ambito.searchDad(_ambito.tablaSimbolos[0], dad.id, dad.line, dad.column, elements);
             }
         }
         elements = [...new Set(elements)];
@@ -192,7 +184,6 @@ function getFromCurrent(_id: any, _contexto: any, _ambito: Ambito, _condicion: a
             }
         }
         if (_condicion) {
-            // console.log(_condicion,3999)
             let filter = new Predicate(_condicion, _ambito, elements);
             elements = filter.filterElements(elements);
         }
