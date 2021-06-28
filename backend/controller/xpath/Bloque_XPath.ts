@@ -1,60 +1,48 @@
-import { Ambito } from "../../../model/xml/Ambito/Ambito";
-import { Element } from "../../../model/xml/Element";
-import { Atributo } from "../../../model/xml/Atributo";
-import { Tipos } from "../../../model/xpath/Enum";
-import DobleEje from "./Selecting/DobleEje";
-import Eje from "./Selecting/Eje";
-import Axis from "./Selecting/Axis/Axis";
-import ForLoop from "../../xquery/For";
-import { Contexto } from "../../Contexto";
+import { Ambito } from "../../model/xml/Ambito/Ambito";
+import { Element } from "../../model/xml/Element";
+import { Atributo } from "../../model/xml/Atributo";
+import { Tipos } from "../../model/xpath/Enum";
+import DobleEje from "./Instruccion/Selecting/DobleEje";
+import Eje from "./Instruccion/Selecting/Eje";
+import Axis from "./Instruccion/Selecting/Axis/Axis";
+import { Contexto } from "../Contexto";
 
 let reset: Contexto;
 let output: Array<Contexto> = [];
 
-function Bloque(_instruccion: Array<any>, _ambito: Ambito, _retorno: Contexto, id?: any) {
-    output = [];
-    reset = _retorno;
+function Bloque(_instruccion: Array<any>, _ambito: Ambito, _retorno: Contexto) {
     let tmp: Contexto;
-    let i;
-    // console.log(_instruccion, 272727272727)
-    for (i = 0; i < _instruccion.length; i++) {
-        const instr = _instruccion[i];
-        if (instr.tipo === Tipos.FOR_LOOP) {
-            return ForLoop(instr, _ambito, _retorno);
+    reset = _retorno;
+    for (let i = 0; i < _instruccion.length; i++) {
+        const camino = _instruccion[i]; // En caso de tener varios caminos
+        for (let j = 0; j < camino.length; j++) {
+            const instr = camino[j];
+            if (instr.tipo === Tipos.SELECT_FROM_ROOT) {
+                tmp = Eje(instr.expresion, _ambito, _retorno);
+            }
+            else if (instr.tipo === Tipos.SELECT_FROM_CURRENT) {
+                tmp = DobleEje(instr.expresion, _ambito, _retorno);
+            }
+            else if (instr.tipo === Tipos.SELECT_AXIS) {
+                tmp = Axis.SA(instr, _ambito, _retorno);
+            }
+            else {
+                return { error: "Error: Instrucción no procesada.", tipo: "Semántico", origen: "Query", linea: instr.linea, columna: instr.columna };
+            }
+            if (tmp.notFound) { _retorno = reset; break; }
+            if (tmp.error) return tmp;
+            _retorno = tmp;
         }
-        else if (instr.tipo === Tipos.SELECT_FROM_ROOT || instr.tipo === Tipos.EXPRESION) {
-            tmp = Eje(instr.expresion, _ambito, _retorno, id);
-            // console.log(tmp,8888888888)
-        }
-        else if (instr.tipo === Tipos.SELECT_FROM_CURRENT) {
-            tmp = DobleEje(instr, _ambito, _retorno);
-        }
-        else if (instr.tipo === Tipos.SELECT_AXIS) {
-            tmp = Axis.SA(instr, _ambito, _retorno);
-        }
-        else {
-            return { error: "Error: Instrucción no procesada.", tipo: "Semántico", origen: "Query", linea: instr.linea, columna: instr.columna };
-        }
-        if (tmp === null || tmp.error) return tmp;
-        if (tmp.notFound && i + 1 < _instruccion.length) { _retorno = reset; break; }
-        _retorno = tmp;
-    }
-    if (i > 0)
         output.push(_retorno);
+        _retorno = reset;
+    }
 }
 
-function getOutput(_instruccion: Array<any>, _ambito: Ambito, _retorno: Contexto) {
+function XPath(_instruccion: Array<any>, _ambito: Ambito, _retorno: Contexto) {
     Bloque(_instruccion, _ambito, _retorno);
     let cadena = writeOutput();
     let codigo3d = ""; // Agregar función que devuelva código tres direcciones
     return { cadena: cadena, codigo3d: codigo3d };
-}
-
-function getIterators(_instruccion: Array<any>, _ambito: Ambito, _retorno: any, _id: any): Contexto {
-    let _bloque = Bloque(_instruccion, _ambito, _retorno, _id);
-    // console.log(_bloque,22222222222)
-    if (_bloque) return output[0];
-    else return new Contexto();
 }
 
 function writeOutput() {
@@ -99,6 +87,7 @@ function writeOutput() {
             });
         }
     }
+    output = [];
     if (cadena) return replaceEntity(cadena.substring(1));
     return "No se encontraron elementos.";
 }
@@ -155,4 +144,4 @@ function concatText(_text: string): string {
     return `\n${_text}`;
 }
 
-export = { Bloque: Bloque, getIterators: getIterators, getOutput: getOutput };
+export = XPath;

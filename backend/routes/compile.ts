@@ -1,4 +1,6 @@
+import { Contexto } from '../controller/Contexto';
 import Bloque from '../controller/xpath/Instruccion/Bloque';
+import XPath from '../controller/xpath/Bloque_XPath';
 import { Ambito } from '../model/xml/Ambito/Ambito';
 import { Global } from '../model/xml/Ambito/Global';
 import { Element } from '../model/xml/Element';
@@ -45,30 +47,31 @@ function compile(req: any) {
 
         // Análisis de xQuery
         let xQuery_ast = parser_xQuery.parse(xQuery);
+        let ast = (xQuery_ast.xquery) ? (xQuery_ast.xquery) : (xQuery_ast.xpath); // AST que genera Jison
         // console.log(xQuery_ast.ast, "ast");
-        if (xQuery_ast.errors.length > 0 || xQuery_ast.ast === null || xQuery_ast === true) {
+        if (xQuery_ast.errors.length > 0 || ast === null || xQuery_ast === true) {
             if (xQuery_ast.errors.length > 0) errors = xQuery_ast.errors;
-            if (xQuery_ast.ast === null || xQuery_ast === true) {
+            if (ast === null || xQuery_ast === true) {
                 errors.push({ tipo: "Sintáctico", error: "Sintaxis errónea de la consulta digitada.", origen: "XQuery", linea: "1", columna: "1" });
                 return { output: "La consulta contiene errores para analizar.\nIntente de nuevo.", arreglo_errores: errors };
             }
         }
 
-        let root: Element = new Element("[object XMLDocument]", [], "", cadena.ambito.tablaSimbolos, "0", "0", "[object XMLDocument]")
-        let output: any = { cadena: "", elementos: [root], atributos: null };
-        let xQuery_parse = xQuery_ast.ast; // AST que genera Jison
-        let bloque = Bloque.Bloque(xQuery_parse, cadena.ambito, output); // Procesa las instrucciones
-        if (bloque.error) {
-            errors.push(bloque);
-            return { arreglo_errores: errors, output: bloque.error }
+        let root = new Contexto();
+        root.elementos = [new Element("[object XMLDocument]", [], "", cadena.ambito.tablaSimbolos, "0", "0", "[object XMLDocument]")];
+        let bloque;
+        if (xQuery_ast.xquery) {
+            bloque = Bloque.getOutput(xQuery_ast.xquery, cadena.ambito, root); // Procesa las instrucciones de XQuery (fase 2)
         }
-
-        output = {
+        else if (xQuery_ast.xpath) {
+            bloque = XPath(xQuery_ast.xpath, cadena.ambito, root); // Procesa las instrucciones si sólo viene XPath (fase 1)
+        }
+        let output = {
             arreglo_simbolos: simbolos,
             arreglo_errores: errors,
-            output: bloque.cadena,
+            output: bloque?.cadena,
             encoding: encoding,
-            codigo3d: bloque.codigo3d
+            codigo3d: bloque?.codigo3d
         }
         errors = [];
         return output;

@@ -1,8 +1,9 @@
 import { Ambito } from "../../../model/xml/Ambito/Ambito";
 import { Tipos } from "../../../model/xpath/Enum";
 import { Element } from "../../../model/xml/Element"
+import { Contexto } from "../../Contexto";
 
-function Expresion(_expresion: any, _ambito: Ambito, _contexto: Array<Element>, id?: any): any {
+function Expresion(_expresion: any, _ambito: Ambito, _contexto: Contexto, id?: any): any {
     // if (!_expresion) return null;
     let tipo: Tipos = (Array.isArray(_expresion)) ? Tipos.NONE : _expresion.tipo;
     // console.log(tipo,89898989)

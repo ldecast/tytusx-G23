@@ -1,9 +1,9 @@
 import { Tipos } from "../../../model/xpath/Enum";
 import { Ambito } from "../../../model/xml/Ambito/Ambito";
-import { Element } from "../../../model/xml/Element";
 import Expresion from "../../xpath/Expresion/Expresion";
+import { Contexto } from "../../Contexto";
 
-function ExpresionQuery(_expresion: any, _ambito: Ambito, _contexto: Array<Element>, id?: any): any {
+function ExpresionQuery(_expresion: any, _ambito: Ambito, _contexto: Contexto, id?: any): any {
     let tipo: Tipos = _expresion.tipo;
 
     if (tipo === Tipos.DECLARACION) {
@@ -17,7 +17,7 @@ function ExpresionQuery(_expresion: any, _ambito: Ambito, _contexto: Array<Eleme
 
     if (tipo === Tipos.VARIABLE) {
         // console.log(_expresion, 33444, _contexto)
-        if (id && hasElements(_contexto)) {
+        if (id && _contexto.cadena != Tipos.NONE) {
             if (id === _expresion.variable)
                 return _contexto;
             else return null;
@@ -25,11 +25,23 @@ function ExpresionQuery(_expresion: any, _ambito: Ambito, _contexto: Array<Eleme
         return { valor: _expresion.variable };
     }
 
-    // if (Array.isArray(_expresion)) {
-    //     const Bloque = require("../../xpath/Instruccion/Bloque");
-    //     const elements = Bloque.getIterators(_expresion, _ambito, _contexto);
-    //     return elements; //<- Retorna un arreglo de elementos
-    // }
+    if (tipo === Tipos.INTERVALO) {
+        let val_1 = Expresion(_expresion.valor1, _ambito, _contexto); if (val_1.error) return val_1;
+        let val_2 = Expresion(_expresion.valor2, _ambito, _contexto); if (val_2.error) return val_2;
+        for (let i = parseInt(val_1.valor); i <= parseInt(val_2.valor); i++) {
+            _contexto.items.push({ item: i });
+        }
+        return _contexto;
+    }
+
+    if (tipo === Tipos.VALORES) {
+        _expresion.valores.forEach((valor: any) => {
+            const expresion = Expresion(valor, _ambito, _contexto);
+            if (expresion && !expresion.error)
+                _contexto.items.push({ item: parseInt(expresion.valor) });
+        });
+        return _contexto;
+    }
 
     if (tipo === Tipos.HTML) {
         let content: Array<any> = [];
@@ -50,36 +62,16 @@ function ExpresionQuery(_expresion: any, _ambito: Ambito, _contexto: Array<Eleme
     if (tipo === Tipos.INYECCION) {
         let e_0 = Expresion(_expresion.path[0], _ambito, _contexto, id);
         if (!e_0) return null;
-        if (_contexto[0].item) return _contexto
+        if (_contexto.items.length > 0) return _contexto;
         const Bloque = require("../../xpath/Instruccion/Bloque");
         let elements: Array<any> = [];
         // elements.push(e_0);
-        let _x = Bloque.getIterators(_expresion.path, _ambito, _contexto[0], id);
+        let _x = Bloque.getIterators(_expresion.path, _ambito, _contexto, id);
         if (_x && _x.length > 0) {
             _contexto = _x;
             elements = elements.concat(_x);
         }
         return elements;
-    }
-
-    if (tipo === Tipos.INTERVALO) {
-        let iterators = [];
-        let val_1 = Expresion(_expresion.valor1, _ambito, _contexto); if (val_1.error) return val_1;
-        let val_2 = Expresion(_expresion.valor2, _ambito, _contexto); if (val_2.error) return val_2;
-        for (let i = parseInt(val_1.valor); i <= parseInt(val_2.valor); i++) {
-            iterators.push({ item: i });
-        }
-        return iterators;
-    }
-
-    if (tipo === Tipos.VALORES) {
-        let iterators: Array<any> = [];
-        _expresion.valores.forEach((valor: any) => {
-            const expresion = Expresion(valor, _ambito, _contexto);
-            if (!expresion.error)
-                iterators.push({ item: parseInt(expresion.valor) });
-        });
-        return iterators;
     }
 
     else {
@@ -90,17 +82,6 @@ function ExpresionQuery(_expresion: any, _ambito: Ambito, _contexto: Array<Eleme
         else _contexto = _bloque;
         return _contexto
     }
-}
-
-function hasElements(_array: Array<any>): boolean {
-    for (let i = 0; i < _array.length; i++) {
-        const element = _array[i];
-        if (element.cadena)
-            if (element.cadena.length > 0) return true;
-        if (element.item)
-            return true;
-    }
-    return false;
 }
 
 export = ExpresionQuery;

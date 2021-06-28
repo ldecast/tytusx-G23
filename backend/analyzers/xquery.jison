@@ -149,9 +149,9 @@ ini: XPATH_U EOF{   prod_1 = grammar_stack.pop();
 					prod_2 = grammar_stack.pop();
 			 		grammar_stack.push({'ini -> XPATH_U EOF': [prod_2, prod_1]});
 					// grammar_report =  getGrammarReport(grammar_stack); // cst = getCST(grammar_stack); // let arbol_ast = getASTTree($1);
-					ast = { ast: $1, errors: errors, cst: "cst", grammar_report: "grammar_report",  arbolAST : "arbol_ast" }; return ast;
+					ast = { xpath: $1, errors: errors, cst: "cst", grammar_report: "grammar_report",  arbolAST : "arbol_ast" }; return ast;
                 }
-    | XQUERY EOF { ast = { ast: $1, errors: errors, cst: "cst", grammar_report: "grammar_report",  arbolAST : "arbol_ast" }; return ast; }
+    | XQUERY EOF { ast = { xquery: $1, errors: errors, cst: "cst", grammar_report: "grammar_report",  arbolAST : "arbol_ast" }; return ast; }
 ;
 
 XQUERY: XQUERY INSTR_QUERY  { $1.push($2); $$=$1; }
@@ -334,7 +334,7 @@ E:	E tk_menorigual E { $$=builder.newOperation($1, $3, Tipos.RELACIONAL_MENORIGU
 				   prod_1 = grammar_stack.pop();
 				   prod_2 = grammar_stack.pop();
 				   grammar_stack.push({'E -> E tk_mod E {SS=builder.newOperation(Param)}': [prod_2, 'token: tk_mod\t Lexema: ' + $2, prod_1]}); }
-	| tk_menos E %prec umenos { $$=builder.newOperation(builder.newValue(0, Tipos.NUMBER, this.$.first_line, this.$.first_column+1), $2, Tipos.OPERACION_RESTA, this.$.first_line, this.$.first_column+1); 
+	| tk_menos E %prec umenos { $$=builder.newOperation(builder.newValue(0, Tipos.NUMBER, @1.first_line, @1.first_column+1), $2, Tipos.OPERACION_RESTA, this.$.first_line, this.$.first_column+1); 
 								prod_1 = grammar_stack.pop();
 						  		grammar_stack.push({'E -: tk_menos E': ['token: tk_menos\t Lexema: ' + $1, prod_1]});}
 	| tk_ParA E tk_ParC { $$=$2;
@@ -407,6 +407,11 @@ AXIS: AXISNAME tk_4puntos QUERY { $$=builder.newAxisObject($1, $3, this._$.first
 								prod_1 = grammar_stack.pop();
 								prod_2 = grammar_stack.pop();
 								grammar_stack.push({'AXIS -> AXISNAME tk_4puntos QUERY {SS=builder.newAxisObject(Param)}':[prod_2, 'token: tk_4puntos\t Lexema: ' + $2, prod_1]}); }
+	| AXISNAME tk_4puntos tk_asterisco CORCHETP { 
+		var linea = this._$.first_line;
+		var columna = this._$.first_column+1;
+		$$=builder.newAxisObject($1, builder.newExpression(builder.newValue($3, Tipos.ASTERISCO, linea, columna), $4, linea, columna), linea, columna);
+	}
 ;
 
 AXISNAME: tk_ancestor { $$ = Tipos.AXIS_ANCESTOR;
