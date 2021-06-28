@@ -1,8 +1,9 @@
 import { Ambito } from "../../../../model/xml/Ambito/Ambito";
 import { Tipos } from "../../../../model/xpath/Enum";
+import { Contexto } from "../../../Contexto";
 import filterElements from "./Match";
 
-function Relacional(_expresion: any, _ambito: Ambito, _contexto: Array<any>, id?: any) {
+function Relacional(_expresion: any, _ambito: Ambito, _contexto: Contexto, id?: any) {
     let operators = init(_expresion.opIzq, _expresion.opDer, _ambito, _expresion.tipo, _contexto, id);
     if (operators === null || operators.error) return operators;
     if (Array.isArray(operators)) return operators;
@@ -24,32 +25,29 @@ function Relacional(_expresion: any, _ambito: Ambito, _contexto: Array<any>, id?
     }
 }
 
-function init(_opIzq: any, _opDer: any, _ambito: Ambito, _tipo: Tipos, _contexto: Array<any>, id?: any) {
+function init(_opIzq: any, _opDer: any, _ambito: Ambito, _tipo: Tipos, _contexto: Contexto, id?: any) {
     const Expresion = require("../Expresion");
-    // console.log(_opIzq,818181818118)
-    let op1 = Expresion(_opIzq, _ambito, _contexto, id);
+    let op1 = Expresion((Array.isArray(_opIzq)) ? (_opIzq[0]) : (_opIzq), _ambito, _contexto, id);
     if (op1 === null || op1.error) return op1;
     let op2 = Expresion((Array.isArray(_opDer)) ? (_opDer[0]) : (_opDer), _ambito, _contexto, id);
-    if (op1 === null || op2.error) return op2;
+    if (op2 === null || op2.error) return op2;
     let tipo: Tipos = _tipo;
-    // Numéricas
-    // console.log(op1, op2, tipo, 1010101010)
     if (Array.isArray(op1) || Array.isArray(op2)) {
         if (Array.isArray(op1) && (op2.tipo === Tipos.NUMBER || op2.tipo === Tipos.STRING)) {
             _contexto = filterElements(op2.valor, tipo, _ambito, op1[0].elementos);
-            // console.log(_contexto, 6777777777);
             return _contexto;
         }
     }
+    // Numéricas
     if (tipo === Tipos.RELACIONAL_MAYOR || tipo === Tipos.RELACIONAL_MAYORIGUAL ||
         tipo === Tipos.RELACIONAL_MENOR || tipo === Tipos.RELACIONAL_MENORIGUAL) {
         if ((op1.tipo === Tipos.FUNCION_POSITION || op1.tipo === Tipos.FUNCION_LAST) && op2.tipo === Tipos.NUMBER) {
-            op1 = _contexto.length;
+            op1 = _contexto.getLength();
             op2 = Number(op2.valor);
         }
         else if (op1.tipo === Tipos.NUMBER && (op2.tipo === Tipos.FUNCION_POSITION || op2.tipo === Tipos.FUNCION_LAST)) {
             op2 = Number(op1.valor);
-            op1 = _contexto.length;
+            op1 = _contexto.getLength();
             if (_tipo === Tipos.RELACIONAL_MAYOR) tipo = Tipos.RELACIONAL_MENOR;
             if (_tipo === Tipos.RELACIONAL_MAYORIGUAL) tipo = Tipos.RELACIONAL_MENORIGUAL;
             if (_tipo === Tipos.RELACIONAL_MENOR) tipo = Tipos.RELACIONAL_MAYOR;
@@ -99,12 +97,12 @@ function init(_opIzq: any, _opDer: any, _ambito: Ambito, _tipo: Tipos, _contexto
         let opIzq = { valor: 0, tipo: op1.tipo };
         let opDer = { valor: 0, tipo: op2.tipo };
         if ((op1.tipo === Tipos.FUNCION_POSITION || op1.tipo === Tipos.FUNCION_LAST) && op2.tipo === Tipos.NUMBER) {
-            opIzq.valor = _contexto.length;
+            opIzq.valor = _contexto.getLength();
             opDer.valor = Number(op2.valor);
         }
         else if (op1.tipo === Tipos.NUMBER && (op2.tipo === Tipos.FUNCION_POSITION || op2.tipo === Tipos.FUNCION_LAST)) {
             opIzq.valor = Number(op1.valor);
-            opDer.valor = _contexto.length;
+            opDer.valor = _contexto.getLength();
         }
         else if (op1.tipo === Tipos.ATRIBUTOS || op2.tipo === Tipos.ATRIBUTOS) {
             opIzq.tipo = Tipos.ATRIBUTOS;
