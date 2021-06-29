@@ -5,7 +5,7 @@ import { Contexto } from "../Contexto";
 
 function pushIterators(input: Array<Contexto>): Array<any> {
     let iterators: Array<string> = [];
-    // console.log(input, 36363638)
+    // console.log(input.xquery, 36363638)
     for (let i = 0; i < input.length; i++) {
         const path = input[i];
         if (path.items.length > 0) {
