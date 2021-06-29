@@ -888,7 +888,10 @@ INI: XML_DECLARATION ROOT EOF               {/*$1[0].printTest(0);console.log($1
 
 
 
-ROOT:  XML ROOT                                 {if($1 != null && $2 != null){ $2.push($1); $$ = $2; } else if($2 == null){$$ = []; $$.push($1); }else{$$ = null;}
+ROOT:  XML ROOT                                 {if($1 != null && $2 != null){
+$2.push($1); $$ = $2;
+
+} else if($2 == null){$$ = []; $$.push($1); }else{$$ = null;}
                                                 prod_1 = grammar_stack.pop();
                                                 prod_2 = grammar_stack.pop();
                                                 grammar_stack.push({'ROOT ->  XML ROOT  {﹩﹩ = ﹩2.push(﹩1);}': [prod_2, prod_1 ]});

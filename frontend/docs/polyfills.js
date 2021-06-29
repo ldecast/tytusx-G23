@@ -1815,7 +1815,7 @@ function patchEventTarget(_global, apis, patchOptions) {
         }
         /**
          * This util function will build an option object with passive option
-         * to handle all possible input from the user.
+         * to handle all possible input.xquery from the user.
          */
         function buildEventListenerOptions(options, passive) {
             if (!passiveSupported && typeof options === 'object' && options) {

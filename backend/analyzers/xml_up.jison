@@ -886,7 +886,7 @@ INI: XML_DECLARATION ROOT EOF               {/*$1[0].printTest(0);console.log($1
 
 
 
-ROOT: ROOT XML                                  {$1.push($2);
+ROOT: ROOT XML                                  {$1.push($2); $$ = $1;
                                                 prod_1 = grammar_stack.pop();
                                                 prod_2 = grammar_stack.pop();
                                                 grammar_stack.push({'ROOT -> ROOT XML {﹩﹩ = ﹩1.push(₤2);}': [prod_2, prod_1 ]});
