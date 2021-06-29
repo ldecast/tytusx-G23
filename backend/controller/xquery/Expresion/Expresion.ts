@@ -14,6 +14,8 @@ function ExpresionQuery(_expresion: any, _ambito: Ambito, _contexto: Contexto, i
         if (id.valor && it) {
             contexto = it;
             contexto.variable = new Variable(id.valor, Tipos.VARIABLE);
+            if (_expresion.atKey)
+                contexto.atCounter = new Variable(_expresion.atKey.variable, Tipos.VARIABLE);
         }
         return contexto;
     }

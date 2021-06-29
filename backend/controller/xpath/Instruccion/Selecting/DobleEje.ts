@@ -10,7 +10,7 @@ function DobleEje(_instruccion: any, _ambito: Ambito, _contexto: Contexto, id?: 
     let _404 = "No se encontraron elementos.";
     if (Array.isArray(_contexto))
         _contexto = _contexto[0];
-    let expresion = Expresion((_instruccion.expresion) ? (_instruccion.expresion) : (_instruccion), _ambito, _contexto, id);
+    let expresion = Expresion(_instruccion, _ambito, _contexto, id);
     if (expresion === null || expresion.error) return expresion;
     let predicate = _instruccion.predicate;
     let root: Contexto = new Contexto();
