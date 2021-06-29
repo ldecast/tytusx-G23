@@ -125,8 +125,8 @@ element_content                     ([^<>&\"{}] | '&lt;' | '&gt;' | '&amp;' | '&
     var builder = new Objeto();
     var queryBuilder = new XQObjeto();
     // const getASTTree = require('./ast_xpath');
-	function insert_current(_variable, _linea, _columna) {
-		return builder.newAxis(builder.newExpression(builder.newCurrent(_variable, _linea, _columna), null, _linea, _columna), _linea, _columna)
+	function insert_current(_variable, _predicate, _linea, _columna) {
+		return builder.newAxis(builder.newExpression(builder.newCurrent(_variable, _linea, _columna), _predicate, _linea, _columna), _linea, _columna)
 	}
 %}
 
@@ -192,7 +192,7 @@ LET_CLAUSE: tk_let VARIABLE tk_2puntos_igual DECLARACIONPP { $$ = queryBuilder.n
 WHERE_CONDITION: tk_where E { $$ = queryBuilder.nuevoWhere($2, this._$.first_line, this._$.first_column+1); }
 ;
 
-ORDER_BY: ORDER_BY tk_coma E { $$=$1; }
+ORDER_BY: ORDER_BY tk_coma E { $$=$3; }
         | tk_order tk_by E { $$=$3; }
 ;
 
@@ -213,7 +213,11 @@ DECLARACIONP: VARIABLE tk_in DECLARACIONPP { $$ = queryBuilder.nuevaDeclaracion(
 
 DECLARACIONPP: tk_ParA E tk_to E tk_ParC { $$ = queryBuilder.nuevoIntervalo($2, $4, this._$.first_line, this._$.first_column+1); }
             | tk_ParA VALORES_COMA tk_ParC { $$ = queryBuilder.nuevosValores($2, this._$.first_line, this._$.first_column+1); }
-            | XPATH { $$=$1; }
+            | DOC XPATH { $$=$2; }
+;
+
+DOC: tk_doc tk_ParA STRING tk_ParC
+	|
 ;
 
 VALORES_COMA: VALORES_COMA tk_coma E { $1.push($3); $$=$1; }
@@ -367,11 +371,12 @@ EXP_PR: FUNC CORCHETP { $$=builder.newExpression($1, $2, this._$.first_line, thi
 								prod_1 = grammar_stack.pop();
 								prod_2 = grammar_stack.pop();
 								grammar_stack.push({'EXP_PR -> PRIMITIVO CORCHETP {SS=builder.newExpression(Param)}': [prod_2, prod_1]}); }
+		| VARIABLE CORCHETP { $$=insert_current($1.variable, $2, this._$.first_line, this._$.first_column+1); }
 ;
 
 PRIMITIVO: tk_id { $$=builder.newNodename($1, this._$.first_line, this._$.first_column+1);
 				   grammar_stack.push({'PRIMITIVO -> tk_id {SS=builder.newNodename(Param)}':['token: tk_text\t Lexema: ' + $1]}); }
-        | VARIABLE	{ $$=builder.newAxis(builder.newCurrent($1.variable, this._$.first_line, this._$.first_column+1), this._$.first_line, this._$.first_column+1); }
+        // | VARIABLE	{ $$=builder.newAxis(builder.newCurrent($1.variable, this._$.first_line, this._$.first_column+1), this._$.first_line, this._$.first_column+1); }
         | STRING { $$ = $1; }
 		| num { $$=builder.newValue(Number($1), Tipos.NUMBER, this._$.first_line, this._$.first_column+1);
 				grammar_stack.push({'PRIMITIVO -> num {SS=builder.newValue(Param)}':['token: num\t Lexema: ' + $1]}); }

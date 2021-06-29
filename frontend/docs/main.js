@@ -1,65 +1,9 @@
 (window["webpackJsonp"] = window["webpackJsonp"] || []).push([["main"],{
 
-/***/ 0:
-/*!***************************!*\
-  !*** multi ./src/main.ts ***!
-  \***************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-module.exports = __webpack_require__(/*! /home/ldecast/JUNIO 2021/Compiladores 2/tytusx-G23/frontend/src/main.ts */"zUnb");
-
-
-/***/ }),
-
-/***/ 1:
-/*!***************************!*\
-  !*** ./streams (ignored) ***!
-  \***************************/
-/*! no static exports found */
-/***/ (function(module, exports) {
-
-/* (ignored) */
-
-/***/ }),
-
-/***/ 2:
-/*!*******************************!*\
-  !*** ./extend-node (ignored) ***!
-  \*******************************/
-/*! no static exports found */
-/***/ (function(module, exports) {
-
-/* (ignored) */
-
-/***/ }),
-
-/***/ 3:
-/*!********************!*\
-  !*** fs (ignored) ***!
-  \********************/
-/*! no static exports found */
-/***/ (function(module, exports) {
-
-/* (ignored) */
-
-/***/ }),
-
-/***/ 4:
-/*!**********************!*\
-  !*** path (ignored) ***!
-  \**********************/
-/*! no static exports found */
-/***/ (function(module, exports) {
-
-/* (ignored) */
-
-/***/ }),
-
-/***/ "67Yu":
-/*!*******************************************************************!*\
-  !*** ./src/js/controller/xpath/Instruccion/Selecting/DobleEje.js ***!
-  \*******************************************************************/
+/***/ "+qh/":
+/*!***************************************************!*\
+  !*** ./src/js/controller/xquery/Bloque_XQuery.js ***!
+  \***************************************************/
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -68,237 +12,11 @@ module.exports = __webpack_require__(/*! /home/ldecast/JUNIO 2021/Compiladores 2
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
-const Enum_1 = __webpack_require__(/*! ../../../../model/xpath/Enum */ "MEUw");
-const Expresion_1 = __importDefault(__webpack_require__(/*! ../../Expresion/Expresion */ "gajf"));
-const Predicate_1 = __webpack_require__(/*! ./Predicate */ "Iysv");
-const Axis_1 = __importDefault(__webpack_require__(/*! ./Axis/Axis */ "pW4W"));
-function DobleEje(_instruccion, _ambito, _contexto) {
-    let _404 = { notFound: "No se encontraron elementos." };
-    if (Array.isArray(_contexto))
-        _contexto = _contexto[0];
-    let contexto = (_contexto.elementos) ? (_contexto) : null;
-    let expresion;
-    if (_instruccion.expresion.expresion)
-        expresion = Expresion_1.default(_instruccion.expresion.expresion, _ambito, contexto);
-    else
-        expresion = Expresion_1.default(_instruccion.expresion, _ambito, contexto);
-    if (expresion.error)
-        return expresion;
-    let predicate = _instruccion.expresion.predicate;
-    let root;
-    if (expresion.tipo === Enum_1.Tipos.ELEMENTOS) {
-        root = getAllSymbolFromCurrent(expresion.valor, contexto, _ambito, predicate);
-    }
-    else if (expresion.tipo === Enum_1.Tipos.ATRIBUTOS) {
-        root = getAllSymbolFromCurrent({ id: expresion.valor, tipo: "@" }, contexto, _ambito, predicate);
-        if (root.atributos.error)
-            return root.atributos;
-        if (root.atributos.length === 0)
-            return _404;
-        return root;
-    }
-    else if (expresion.tipo === Enum_1.Tipos.ASTERISCO) {
-        root = getAllSymbolFromCurrent(expresion.valor, contexto, _ambito, predicate);
-    }
-    else if (expresion.tipo === Enum_1.Tipos.FUNCION_NODE) {
-        root = getAllSymbolFromCurrent(expresion.valor, contexto, _ambito, predicate);
-        if (root.nodos.error)
-            return root.nodos;
-        if (root.nodos.length === 0)
-            return _404;
-    }
-    else if (expresion.tipo === Enum_1.Tipos.FUNCION_TEXT) {
-        root = getAllSymbolFromCurrent(expresion.valor, contexto, _ambito, predicate);
-        if (root.texto.error)
-            return root.texto;
-        if (root.texto.length === 0)
-            return _404;
-    }
-    else if (expresion.tipo === Enum_1.Tipos.SELECT_AXIS) {
-        root = Axis_1.default.GetAxis(expresion.axisname, expresion.nodetest, expresion.predicate, contexto, _ambito, true);
-        if (root.error)
-            return root;
-        return root;
-    }
-    else {
-        return { error: "Expresión no válida.", tipo: "Semántico", origen: "Query", linea: _instruccion.linea, columna: _instruccion.columna };
-    }
-    if (root === null || root.error || root.elementos.error || root.elementos.length === 0)
-        return _404;
-    return root;
-}
-function getAllSymbolFromCurrent(_nodename, _contexto, _ambito, _condicion) {
-    if (_contexto)
-        return getFromCurrent(_nodename, _contexto, _ambito, _condicion);
-    else
-        return { error: "Indstrucción no procesada.", tipo: "Semántico", origen: "Query", linea: 1, columna: 1 };
-}
-function getFromCurrent(_id, _contexto, _ambito, _condicion) {
-    let elements = Array();
-    let attributes = Array();
-    let nodes = Array();
-    // Selecciona únicamente el texto contenido en el nodo y todos sus descendientes
-    if (_id === "text()") {
-        let text = Array();
-        for (let i = 0; i < _contexto.elementos.length; i++) {
-            const element = _contexto.elementos[i];
-            text = _ambito.searchAnyText(element, text);
-            elements.push(element);
-        }
-        if (_condicion) {
-            let filter = new Predicate_1.Predicate(_condicion, _ambito, elements);
-            text = filter.filterElements(text);
-            elements = filter.contexto;
-        }
-        return { texto: text, elementos: elements, cadena: Enum_1.Tipos.TEXTOS };
-    }
-    // Selecciona todos los descencientes (elementos y/o texto)
-    else if (_id === "node()") {
-        for (let i = 0; i < _contexto.elementos.length; i++) {
-            const element = _contexto.elementos[i];
-            if (element.childs) {
-                element.childs.forEach((child) => {
-                    nodes = _ambito.nodesFunction(child, nodes);
-                });
-            }
-            else if (element.value)
-                nodes.push({ textos: element.value });
-            elements.push(element);
-        }
-        if (_condicion) {
-            let filter = new Predicate_1.Predicate(_condicion, _ambito, elements);
-            nodes = filter.filterElements(nodes);
-            elements = filter.contexto;
-        }
-        return { cadena: Enum_1.Tipos.COMBINADO, nodos: nodes, elementos: _contexto.elementos };
-    }
-    // Selecciona todos los atributos a partir del contexto
-    else if (_id.tipo === "@") {
-        for (let i = 0; i < _contexto.elementos.length; i++) {
-            const element = _contexto.elementos[i];
-            attributes = _ambito.searchAnyAttributes(_id.id, element, attributes);
-        }
-        if (_condicion) {
-            let filter = new Predicate_1.Predicate(_condicion, _ambito, elements);
-            attributes = filter.filterAttributes(attributes);
-        }
-        return { atributos: attributes, elementos: [], cadena: Enum_1.Tipos.ATRIBUTOS };
-    }
-    // Selecciona el padre
-    else if (_id === "..") {
-        if (_contexto.atributos) {
-            for (let i = 0; i < _contexto.atributos.length; i++) {
-                const attribute = _contexto.atributos[i];
-                _ambito.tablaSimbolos.forEach(elm => {
-                    elements = _ambito.searchDadFromAttribute(elm, attribute, elements);
-                });
-            }
-            if (_condicion) {
-                let filter = new Predicate_1.Predicate(_condicion, _ambito, elements);
-                elements = filter.filterElements(elements);
-            }
-            return { elementos: elements, cadena: Enum_1.Tipos.ELEMENTOS };
-        }
-        for (let i = 0; i < _contexto.elementos.length; i++) {
-            const element = _contexto.elementos[i];
-            let dad = element.father;
-            if (dad) {
-                _ambito.tablaSimbolos.forEach(elm => {
-                    if (elm.id_open === dad.id && elm.line == dad.line && elm.column == dad.column)
-                        elements.push(elm);
-                    if (elm.childs)
-                        elm.childs.forEach(child => {
-                            elements = _ambito.searchDad(child, dad.id, dad.line, dad.column, elements);
-                        });
-                });
-            }
-        }
-        elements = [...new Set(elements)];
-        if (_condicion) {
-            let filter = new Predicate_1.Predicate(_condicion, _ambito, elements);
-            elements = filter.filterElements(elements);
-        }
-        return { elementos: elements, cadena: Enum_1.Tipos.ELEMENTOS };
-    }
-    // Selecciona todos los descendientes con el id o en el caso que sea //*
-    else {
-        for (let i = 0; i < _contexto.elementos.length; i++) {
-            const element = _contexto.elementos[i];
-            if (element.childs)
-                element.childs.forEach((child) => {
-                    elements = _ambito.searchNodes(_id, child, elements);
-                });
-        }
-        if (_condicion) {
-            let filter = new Predicate_1.Predicate(_condicion, _ambito, elements);
-            elements = filter.filterElements(elements);
-        }
-        return { elementos: elements, cadena: Enum_1.Tipos.ELEMENTOS };
-    }
-}
-module.exports = DobleEje;
-
-
-/***/ }),
-
-/***/ "7f3N":
-/*!*******************************************!*\
-  !*** ./src/js/controller/xquery/Where.js ***!
-  \*******************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-const Expresion_1 = __importDefault(__webpack_require__(/*! ../xpath/Expresion/Expresion */ "gajf"));
 const Enum_1 = __webpack_require__(/*! ../../model/xpath/Enum */ "MEUw");
-function WhereClause(_instruccion, _ambito, _iterators) {
-    const Bloque = __webpack_require__(/*! ../xpath/Instruccion/Bloque */ "8Ym7");
-    let iterators = [];
-    for (let i = 0; i < _iterators.length; i++) { // [$x, $y, $z]
-        const iterator = _iterators[i]; // { id: $x, iterators: /book/title (contexto) }
-        let iters = iterator.iterators;
-        if (Array.isArray(iters))
-            iters = iters[0];
-        // let _x = Bloque.getIterators(_instruccion, _ambito, iters, iterator.id); // _instruccion = [comparissons]
-        let _x = Expresion_1.default(_instruccion, _ambito, iters, iterator.id);
-        // console.log(_x, 8888888888888888)
-        if (_x) {
-            _x.forEach((element) => {
-                iterators.push({ id: iterator.id, iterators: { elementos: [element], cadena: Enum_1.Tipos.ELEMENTOS } });
-            });
-        }
-    }
-    // console.log(iterators, 22222222222)
-    if (iterators.length > 0)
-        return iterators;
-    return null;
-}
-module.exports = WhereClause;
-
-
-/***/ }),
-
-/***/ "8Ym7":
-/*!*******************************************************!*\
-  !*** ./src/js/controller/xpath/Instruccion/Bloque.js ***!
-  \*******************************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-const Enum_1 = __webpack_require__(/*! ../../../model/xpath/Enum */ "MEUw");
-const DobleEje_1 = __importDefault(__webpack_require__(/*! ./Selecting/DobleEje */ "67Yu"));
-const Eje_1 = __importDefault(__webpack_require__(/*! ./Selecting/Eje */ "CG7/"));
-const Axis_1 = __importDefault(__webpack_require__(/*! ./Selecting/Axis/Axis */ "pW4W"));
-const For_1 = __importDefault(__webpack_require__(/*! ../../xquery/For */ "9hMJ"));
+const DobleEje_1 = __importDefault(__webpack_require__(/*! ../xpath/Instruccion/Selecting/DobleEje */ "67Yu"));
+const Eje_1 = __importDefault(__webpack_require__(/*! ../xpath/Instruccion/Selecting/Eje */ "CG7/"));
+const Axis_1 = __importDefault(__webpack_require__(/*! ../xpath/Instruccion/Selecting/Axis/Axis */ "pW4W"));
+const For_1 = __importDefault(__webpack_require__(/*! ./For */ "9hMJ"));
 let reset;
 let output = [];
 function Bloque(_instruccion, _ambito, _retorno, id) {
@@ -306,55 +24,44 @@ function Bloque(_instruccion, _ambito, _retorno, id) {
     reset = _retorno;
     let tmp;
     let i;
-    // console.log(_instruccion, 272727272727)
     for (i = 0; i < _instruccion.length; i++) {
         const instr = _instruccion[i];
         if (instr.tipo === Enum_1.Tipos.FOR_LOOP) {
-            tmp = For_1.default(instr, _ambito, _retorno);
-            // console.log(tmp, 3333);
-            return tmp;
+            return For_1.default(instr, _ambito, _retorno);
         }
         else if (instr.tipo === Enum_1.Tipos.SELECT_FROM_ROOT || instr.tipo === Enum_1.Tipos.EXPRESION) {
             tmp = Eje_1.default(instr.expresion, _ambito, _retorno, id);
-            // console.log(tmp,8888888888)
         }
         else if (instr.tipo === Enum_1.Tipos.SELECT_FROM_CURRENT) {
-            tmp = DobleEje_1.default(instr, _ambito, _retorno);
+            tmp = DobleEje_1.default(instr.expresion, _ambito, _retorno, id);
         }
         else if (instr.tipo === Enum_1.Tipos.SELECT_AXIS) {
-            tmp = Axis_1.default.SA(instr, _ambito, _retorno);
-        }
-        else if (instr.tipo === Enum_1.Tipos.EXPRESION) {
-            console.log(instr, "Entró a Bloque");
-            // const Expresion = require('../Expresion/Expresion')
-            // let a = Expresion(instr, _ambito, _retorno, id);
-            // console.log(a)
-            continue;
+            tmp = Axis_1.default.SA(instr, _ambito, _retorno, id);
         }
         else {
             return { error: "Error: Instrucción no procesada.", tipo: "Semántico", origen: "Query", linea: instr.linea, columna: instr.columna };
         }
-        if (tmp === null)
-            return null;
+        if (tmp === null || tmp.error)
+            return tmp;
         if (tmp.notFound && i + 1 < _instruccion.length) {
             _retorno = reset;
             break;
         }
-        if (tmp.error)
-            return tmp;
         _retorno = tmp;
     }
     if (i > 0)
         output.push(_retorno);
-    let cadena = writeOutput();
+}
+function getOutput(_instruccion, _ambito, _retorno) {
+    let _bloque = Bloque(_instruccion, _ambito, _retorno);
+    let cadena = (_bloque.cadena) ? (_bloque.cadena) : writeOutput();
     let codigo3d = ""; // Agregar función que devuelva código tres direcciones
     return { cadena: cadena, codigo3d: codigo3d };
 }
 function getIterators(_instruccion, _ambito, _retorno, _id) {
-    let _bloque = Bloque(_instruccion, _ambito, _retorno, _id);
-    // console.log(_bloque,22222222222)
-    if (_bloque)
-        return output;
+    Bloque(_instruccion, _ambito, _retorno, _id);
+    if (output.length > 0)
+        return output[output.length - 1];
     else
         return null;
 }
@@ -363,7 +70,7 @@ function writeOutput() {
     for (let i = 0; i < output.length; i++) {
         const path = output[i];
         if (path.cadena === Enum_1.Tipos.TEXTOS) {
-            let root = (path.texto) ? (path.texto) : (path.elementos);
+            let root = path.texto;
             root.forEach(txt => {
                 cadena += concatText(txt);
             });
@@ -451,7 +158,391 @@ function extractAttributes(_element, cadena) {
 function concatText(_text) {
     return `\n${_text}`;
 }
-module.exports = { Bloque: Bloque, getIterators: getIterators };
+module.exports = { Bloque: Bloque, getIterators: getIterators, getOutput: getOutput };
+
+
+/***/ }),
+
+/***/ 0:
+/*!***************************!*\
+  !*** multi ./src/main.ts ***!
+  \***************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+module.exports = __webpack_require__(/*! /home/ldecast/JUNIO 2021/Compiladores 2/tytusx-G23/frontend/src/main.ts */"zUnb");
+
+
+/***/ }),
+
+/***/ 1:
+/*!***************************!*\
+  !*** ./streams (ignored) ***!
+  \***************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+/* (ignored) */
+
+/***/ }),
+
+/***/ 2:
+/*!*******************************!*\
+  !*** ./extend-node (ignored) ***!
+  \*******************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+/* (ignored) */
+
+/***/ }),
+
+/***/ 3:
+/*!********************!*\
+  !*** fs (ignored) ***!
+  \********************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+/* (ignored) */
+
+/***/ }),
+
+/***/ 4:
+/*!**********************!*\
+  !*** path (ignored) ***!
+  \**********************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+/* (ignored) */
+
+/***/ }),
+
+/***/ "67Yu":
+/*!*******************************************************************!*\
+  !*** ./src/js/controller/xpath/Instruccion/Selecting/DobleEje.js ***!
+  \*******************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+const Enum_1 = __webpack_require__(/*! ../../../../model/xpath/Enum */ "MEUw");
+const Expresion_1 = __importDefault(__webpack_require__(/*! ../../Expresion/Expresion */ "gajf"));
+const Predicate_1 = __webpack_require__(/*! ./Predicate */ "Iysv");
+const Axis_1 = __importDefault(__webpack_require__(/*! ./Axis/Axis */ "pW4W"));
+const Contexto_1 = __webpack_require__(/*! ../../../Contexto */ "ivfU");
+const Variable_1 = __webpack_require__(/*! ../../../../model/xml/Ambito/Variable */ "C8dJ");
+function DobleEje(_instruccion, _ambito, _contexto, id) {
+    let _404 = "No se encontraron elementos.";
+    if (Array.isArray(_contexto))
+        _contexto = _contexto[0];
+    let expresion = Expresion_1.default((_instruccion.expresion) ? (_instruccion.expresion) : (_instruccion), _ambito, _contexto, id);
+    if (expresion === null || expresion.error)
+        return expresion;
+    let predicate = _instruccion.predicate;
+    let root = new Contexto_1.Contexto();
+    if (expresion.tipo === Enum_1.Tipos.ELEMENTOS || expresion.tipo === Enum_1.Tipos.ASTERISCO) {
+        root = getAllSymbolFromCurrent(expresion.valor, _contexto, _ambito, predicate, id);
+    }
+    else if (expresion.tipo === Enum_1.Tipos.ATRIBUTOS) {
+        root = getAllSymbolFromCurrent({ id: expresion.valor, tipo: "@" }, _contexto, _ambito, predicate, id);
+        if (root.atributos.length === 0)
+            root.notFound = _404;
+    }
+    else if (expresion.tipo === Enum_1.Tipos.FUNCION_NODE) {
+        root = getAllSymbolFromCurrent(expresion.valor, _contexto, _ambito, predicate, id);
+        if (root.nodos.length === 0)
+            root.notFound = _404;
+    }
+    else if (expresion.tipo === Enum_1.Tipos.FUNCION_TEXT) {
+        root = getAllSymbolFromCurrent(expresion.valor, _contexto, _ambito, predicate, id);
+        if (root.texto.length === 0)
+            root.notFound = _404;
+    }
+    else if (expresion.tipo === Enum_1.Tipos.SELECT_AXIS) {
+        root = Axis_1.default.GetAxis(expresion.axisname, expresion.nodetest, expresion.predicate, _contexto, _ambito, true, id);
+        return root;
+    }
+    else {
+        root.error = { error: "Expresión no válida.", tipo: "Semántico", origen: "Query", linea: _instruccion.linea, columna: _instruccion.columna };
+    }
+    if (root === null || root.error || root.getLength() === 0)
+        root.notFound = _404;
+    return root;
+}
+function getAllSymbolFromCurrent(_nodename, _contexto, _ambito, _condicion, id) {
+    if (_contexto.getLength() > 0)
+        return getFromCurrent(_nodename, _contexto, _ambito, _condicion);
+    else {
+        _contexto.error = { error: "Instrucción no procesada.", tipo: "Semántico", origen: "Query", linea: 1, columna: 1 };
+        return _contexto;
+    }
+}
+function getFromCurrent(_id, _contexto, _ambito, _condicion, id) {
+    let retorno = new Contexto_1.Contexto();
+    if (id) {
+        retorno.variable = new Variable_1.Variable(id, Enum_1.Tipos.VARIABLE);
+    }
+    // Selecciona únicamente el texto contenido en el nodo y todos sus descendientes
+    if (_id === "text()") {
+        for (let i = 0; i < _contexto.elementos.length; i++) {
+            const element = _contexto.elementos[i];
+            retorno.texto = _ambito.searchAnyText(element, retorno.texto);
+        }
+        if (_condicion) {
+            let filter = new Predicate_1.Predicate(_condicion, _ambito, retorno);
+            retorno.texto = filter.filterElements(retorno.texto);
+        }
+        retorno.cadena = Enum_1.Tipos.TEXTOS;
+        return retorno;
+    }
+    // Selecciona todos los descencientes (elementos y/o texto)
+    else if (_id === "node()") {
+        for (let i = 0; i < _contexto.elementos.length; i++) {
+            const element = _contexto.elementos[i];
+            retorno.nodos = _ambito.nodesFunction(_ambito.tablaSimbolos[0], retorno.nodos);
+        }
+        if (_condicion) {
+            let filter = new Predicate_1.Predicate(_condicion, _ambito, retorno);
+            retorno.nodos = filter.filterElements(retorno.nodos);
+        }
+        retorno.cadena = Enum_1.Tipos.COMBINADO;
+        return retorno;
+    }
+    // Selecciona todos los atributos a partir del contexto
+    else if (_id.tipo === "@") {
+        for (let i = 0; i < _contexto.elementos.length; i++) {
+            const element = _contexto.elementos[i];
+            retorno.atributos = _ambito.searchAnyAttributes(_id.id, element, retorno.atributos);
+        }
+        if (_condicion) {
+            let filter = new Predicate_1.Predicate(_condicion, _ambito, retorno);
+            retorno.atributos = filter.filterElements(retorno.atributos);
+        }
+        retorno.cadena = Enum_1.Tipos.ATRIBUTOS;
+        return retorno;
+    }
+    // Selecciona el padre
+    else if (_id === "..") {
+        retorno = _contexto;
+        retorno.elementos.push(_ambito.tablaSimbolos[0]);
+        retorno.removeDuplicates();
+        if (_condicion) {
+            let filter = new Predicate_1.Predicate(_condicion, _ambito, retorno);
+            retorno.elementos = filter.filterElements(retorno.elementos);
+        }
+        retorno.cadena = Enum_1.Tipos.ELEMENTOS;
+        return retorno;
+    }
+    // Selecciona todos los descendientes con el id o en el caso que sea //*
+    else {
+        for (let i = 0; i < _contexto.elementos.length; i++) {
+            const element = _contexto.elementos[i];
+            if (element.childs)
+                element.childs.forEach(child => {
+                    retorno.elementos = _ambito.searchNodes(_id, child, retorno.elementos);
+                });
+            else if (_id === ".")
+                retorno.elementos.push(element);
+        }
+    }
+    if (_condicion) {
+        let filter = new Predicate_1.Predicate(_condicion, _ambito, retorno);
+        retorno.elementos = filter.filterElements(retorno.elementos);
+    }
+    retorno.cadena = Enum_1.Tipos.ELEMENTOS;
+    return retorno;
+}
+module.exports = DobleEje;
+
+
+/***/ }),
+
+/***/ "7QFG":
+/*!*************************************************!*\
+  !*** ./src/js/controller/xpath/Bloque_XPath.js ***!
+  \*************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+const Enum_1 = __webpack_require__(/*! ../../model/xpath/Enum */ "MEUw");
+const DobleEje_1 = __importDefault(__webpack_require__(/*! ./Instruccion/Selecting/DobleEje */ "67Yu"));
+const Eje_1 = __importDefault(__webpack_require__(/*! ./Instruccion/Selecting/Eje */ "CG7/"));
+const Axis_1 = __importDefault(__webpack_require__(/*! ./Instruccion/Selecting/Axis/Axis */ "pW4W"));
+let reset;
+let output = [];
+function Bloque(_instruccion, _ambito, _retorno) {
+    let tmp;
+    reset = _retorno;
+    for (let i = 0; i < _instruccion.length; i++) {
+        const camino = _instruccion[i]; // En caso de tener varios caminos
+        for (let j = 0; j < camino.length; j++) {
+            const instr = camino[j];
+            if (instr.tipo === Enum_1.Tipos.SELECT_FROM_ROOT) {
+                tmp = Eje_1.default(instr.expresion, _ambito, _retorno);
+            }
+            else if (instr.tipo === Enum_1.Tipos.SELECT_FROM_CURRENT) {
+                tmp = DobleEje_1.default(instr.expresion, _ambito, _retorno);
+            }
+            else if (instr.tipo === Enum_1.Tipos.SELECT_AXIS) {
+                tmp = Axis_1.default.SA(instr, _ambito, _retorno);
+            }
+            else {
+                return { error: "Error: Instrucción no procesada.", tipo: "Semántico", origen: "Query", linea: instr.linea, columna: instr.columna };
+            }
+            if (tmp.notFound) {
+                _retorno = reset;
+                break;
+            }
+            if (tmp.error)
+                return tmp;
+            _retorno = tmp;
+        }
+        output.push(_retorno);
+        _retorno = reset;
+    }
+}
+function XPath(_instruccion, _ambito, _retorno) {
+    Bloque(_instruccion, _ambito, _retorno);
+    let cadena = writeOutput();
+    let codigo3d = ""; // Agregar función que devuelva código tres direcciones
+    return { cadena: cadena, codigo3d: codigo3d };
+}
+function writeOutput() {
+    let cadena = "";
+    for (let i = 0; i < output.length; i++) {
+        const path = output[i];
+        if (path.cadena === Enum_1.Tipos.TEXTOS) {
+            let root = path.texto;
+            root.forEach(txt => {
+                cadena += concatText(txt);
+            });
+        }
+        else if (path.cadena === Enum_1.Tipos.ELEMENTOS) {
+            let root = path.elementos;
+            root.forEach(element => {
+                cadena += concatChilds(element, "");
+            });
+        }
+        else if (path.cadena === Enum_1.Tipos.ATRIBUTOS) {
+            if (path.atributos) {
+                let root = path.atributos; // <-- muestra sólo el atributo
+                root.forEach(attr => {
+                    cadena += concatAttributes(attr);
+                });
+            }
+            else {
+                let root = path.elementos; // <-- muestra toda la etiqueta
+                root.forEach(element => {
+                    cadena += extractAttributes(element, "");
+                });
+            }
+        }
+        else if (path.cadena === Enum_1.Tipos.COMBINADO) {
+            let root = path.nodos;
+            root.forEach((elemento) => {
+                if (elemento.elementos) {
+                    cadena += concatChilds(elemento.elementos, "");
+                }
+                else if (elemento.textos) {
+                    cadena += concatText(elemento.textos);
+                }
+            });
+        }
+    }
+    output = [];
+    if (cadena)
+        return replaceEntity(cadena.substring(1));
+    return "No se encontraron elementos.";
+}
+function replaceEntity(cadena) {
+    const _lessThan = /&lt;/gi;
+    const _greaterThan = /&gt;/gi;
+    const _ampersand = /&amp;/gi;
+    const _apostrophe = /&apos;/gi;
+    const _quotation = /&quot;/gi;
+    var salida = cadena.replace(_lessThan, "<").replace(_greaterThan, ">").replace(_ampersand, "&").replace(_apostrophe, "\'").replace(_quotation, "\"");
+    return salida;
+}
+function concatChilds(_element, cadena) {
+    cadena = ("\n<" + _element.id_open);
+    if (_element.attributes) {
+        _element.attributes.forEach(attribute => {
+            cadena += (" " + attribute.id + "=\"" + attribute.value + "\"");
+        });
+    }
+    if (_element.childs) {
+        cadena += ">";
+        _element.childs.forEach(child => {
+            cadena += concatChilds(child, cadena);
+        });
+        cadena += ("\n</" + _element.id_close + ">");
+    }
+    else {
+        if (_element.id_close === null)
+            cadena += "/>";
+        else {
+            cadena += ">";
+            cadena += (_element.value + "</" + _element.id_close + ">");
+        }
+    }
+    return cadena;
+}
+function concatAttributes(_attribute) {
+    return `\n${_attribute.id}="${_attribute.value}"`;
+}
+function extractAttributes(_element, cadena) {
+    if (_element.attributes) {
+        _element.attributes.forEach(attribute => {
+            cadena += `\n${attribute.id}="${attribute.value}"`;
+        });
+    }
+    return cadena;
+}
+function concatText(_text) {
+    return `\n${_text}`;
+}
+module.exports = XPath;
+
+
+/***/ }),
+
+/***/ "7f3N":
+/*!*******************************************!*\
+  !*** ./src/js/controller/xquery/Where.js ***!
+  \*******************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+const Expresion_1 = __importDefault(__webpack_require__(/*! ../xpath/Expresion/Expresion */ "gajf"));
+function WhereClause(_instruccion, _ambito, _iterators) {
+    var _a;
+    let iterators = [];
+    for (let i = 0; i < _iterators.length; i++) { // [$x, $y, $z]
+        const iterator = _iterators[i]; // { Contexto }
+        let _x = Expresion_1.default(_instruccion, _ambito, iterator, (_a = iterator.variable) === null || _a === void 0 ? void 0 : _a.id); // _instruccion = [comparissons]
+        if (_x)
+            iterators = iterators.concat(_x);
+    }
+    // console.log(iterators)
+    return iterators;
+}
+module.exports = WhereClause;
 
 
 /***/ }),
@@ -1995,13 +2086,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 const Expresion_1 = __importDefault(__webpack_require__(/*! ../xpath/Expresion/Expresion */ "gajf"));
 const Enum_1 = __webpack_require__(/*! ../../model/xpath/Enum */ "MEUw");
-const Return_1 = __importDefault(__webpack_require__(/*! ./Return */ "JNzZ"));
 const Where_1 = __importDefault(__webpack_require__(/*! ./Where */ "7f3N"));
+const OrderBy_1 = __importDefault(__webpack_require__(/*! ./OrderBy */ "mo2C"));
+const Return_1 = __importDefault(__webpack_require__(/*! ./Return */ "JNzZ"));
 function ForLoop(_instruccion, _ambito, _contexto) {
     // console.log(_instruccion, 'instrucciones For')
-    let contexto = (_contexto.elementos) ? (_contexto.elementos) : null;
     let declaracion = _instruccion.cuerpo;
-    // console.log(declaracion, 444)
     let iterators = [];
     declaracion.forEach((_declaracion) => {
         let it = Expresion_1.default(_declaracion, _ambito, _contexto);
@@ -2009,29 +2099,17 @@ function ForLoop(_instruccion, _ambito, _contexto) {
     });
     for (let i = 0; i < _instruccion.instrucciones.length; i++) {
         const instr = _instruccion.instrucciones[i];
-        // if (!Array.isArray(instr.expresion)) {
-        //     instr.expresion = [instr.expresion];
-        // }
-        if (instr.tipo === Enum_1.Tipos.WHERE_CONDITION) {
-            let filter = Where_1.default(instr.condiciones, _ambito, iterators); //, contexto
-            if (filter)
+        if (instr.tipo === Enum_1.Tipos.WHERE_CONDITION) { // Filtrar los elementos de cada variable
+            iterators = Where_1.default(instr.condiciones, _ambito, iterators);
+        }
+        if (instr.tipo === Enum_1.Tipos.ORDER_BY_CLAUSE) { // Ordenar los elementos según los parámetros
+            let filter = OrderBy_1.default(instr.ordenes, _ambito, iterators);
+            if (filter.length > 0)
                 iterators = filter;
-            else
-                iterators = [];
         }
-        if (instr.tipo === Enum_1.Tipos.RETURN_STATEMENT) {
-            // console.log(iterators[0].iterators,33333);
-            return Return_1.default(instr.expresion, _ambito, iterators); //, contexto);
+        if (instr.tipo === Enum_1.Tipos.RETURN_STATEMENT) { // Retorna la salida
+            return Return_1.default(instr.expresion, _ambito, iterators);
         }
-    }
-    if (_instruccion.where) {
-        // Filtrar los elementos de cada variable
-    }
-    if (_instruccion.orderby) {
-        // Ordenar los elementos según los parámetros
-    }
-    if (_instruccion.return) {
-        // let retorno = Expresion()
     }
 }
 module.exports = ForLoop;
@@ -2067,6 +2145,28 @@ const environment = {
 
 /***/ }),
 
+/***/ "C8dJ":
+/*!*********************************************!*\
+  !*** ./src/js/model/xml/Ambito/Variable.js ***!
+  \*********************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.Variable = void 0;
+class Variable {
+    constructor(_id, _tipo) {
+        this.id = _id;
+        this.tipo = _tipo;
+    }
+}
+exports.Variable = Variable;
+
+
+/***/ }),
+
 /***/ "CG7/":
 /*!**************************************************************!*\
   !*** ./src/js/controller/xpath/Instruccion/Selecting/Eje.js ***!
@@ -2083,122 +2183,111 @@ const Enum_1 = __webpack_require__(/*! ../../../../model/xpath/Enum */ "MEUw");
 const Expresion_1 = __importDefault(__webpack_require__(/*! ../../Expresion/Expresion */ "gajf"));
 const Predicate_1 = __webpack_require__(/*! ./Predicate */ "Iysv");
 const Axis_1 = __importDefault(__webpack_require__(/*! ./Axis/Axis */ "pW4W"));
+const Contexto_1 = __webpack_require__(/*! ../../../Contexto */ "ivfU");
+const Variable_1 = __webpack_require__(/*! ../../../../model/xml/Ambito/Variable */ "C8dJ");
 function Eje(_instruccion, _ambito, _contexto, id) {
-    let _404 = { notFound: "No se encontraron elementos." };
-    // console.log(_instruccion,444449)
+    let _404 = "No se encontraron elementos.";
     if (Array.isArray(_contexto))
         _contexto = _contexto[0];
-    let contexto = (_contexto.elementos) ? (_contexto) : null;
-    let expresion = Expresion_1.default(_instruccion.expresion, _ambito, contexto, id);
-    if (expresion === null)
-        return null;
-    if (expresion.error)
+    let expresion = Expresion_1.default(_instruccion, _ambito, _contexto, id);
+    // console.log(_instruccion, expresion, 2222222222)
+    if (expresion === null || expresion.error)
         return expresion;
     let predicate = _instruccion.predicate;
-    // console.log(contexto,444449, expresion)
-    let root;
-    if (expresion.tipo === Enum_1.Tipos.ELEMENTOS) {
-        // console.log(expresion.valor, 5555555, contexto)
-        root = getSymbolFromRoot(expresion.valor, contexto, _ambito, predicate);
-        // console.log(root, 5555555)
+    let root = new Contexto_1.Contexto();
+    if (expresion.tipo === Enum_1.Tipos.ELEMENTOS || expresion.tipo === Enum_1.Tipos.ASTERISCO) {
+        root = getSymbolFromRoot(expresion.valor, _contexto, _ambito, predicate, id);
     }
     else if (expresion.tipo === Enum_1.Tipos.ATRIBUTOS) {
-        root = getSymbolFromRoot({ id: expresion.valor, tipo: "@" }, contexto, _ambito, predicate);
-        if (root.atributos.error)
-            return root.atributos;
+        root = getSymbolFromRoot({ id: expresion.valor, tipo: "@" }, _contexto, _ambito, predicate, id);
         if (root.atributos.length === 0)
-            return _404;
-        return root;
-    }
-    else if (expresion.tipo === Enum_1.Tipos.ASTERISCO) {
-        root = getSymbolFromRoot(expresion.valor, contexto, _ambito, predicate);
+            root.notFound = _404;
     }
     else if (expresion.tipo === Enum_1.Tipos.FUNCION_NODE) {
-        root = getSymbolFromRoot(expresion.valor, contexto, _ambito, predicate);
-        if (root.nodos.error)
-            return root.nodos;
+        root = getSymbolFromRoot(expresion.valor, _contexto, _ambito, predicate, id);
         if (root.nodos.length === 0)
-            return _404;
+            root.notFound = _404;
     }
     else if (expresion.tipo === Enum_1.Tipos.FUNCION_TEXT) {
-        root = getSymbolFromRoot(expresion.valor, contexto, _ambito, predicate);
-        if (root.texto.error)
-            return root.texto;
+        root = getSymbolFromRoot(expresion.valor, _contexto, _ambito, predicate, id);
         if (root.texto.length === 0)
-            return _404;
+            root.notFound = _404;
     }
     else if (expresion.tipo === Enum_1.Tipos.SELECT_AXIS) {
-        root = Axis_1.default.GetAxis(expresion.axisname, expresion.nodetest, expresion.predicate, contexto, _ambito, false);
+        root = Axis_1.default.GetAxis(expresion.axisname, expresion.nodetest, expresion.predicate, _contexto, _ambito, false, id);
         return root;
     }
     else {
-        return { error: "Expresión no válida.", tipo: "Semántico", origen: "Query", linea: _instruccion.linea, columna: _instruccion.columna };
+        return expresion;
+        // root.error = { error: "Expresión no válida.", tipo: "Semántico", origen: "Query", linea: _instruccion.linea, columna: _instruccion.columna };
     }
-    if (root === null || root.error || root.elementos.error || root.elementos.length === 0)
-        return _404;
+    if (root === null || root.error || root.getLength() === 0)
+        root.notFound = _404;
     return root;
 }
-function getSymbolFromRoot(_nodename, _contexto, _ambito, _condicion) {
-    if (_contexto)
-        return getFromCurrent(_nodename, _contexto, _ambito, _condicion);
-    else
-        return { error: "Instrucción no procesada.", tipo: "Semántico", origen: "Query", linea: 1, columna: 1 };
+function getSymbolFromRoot(_nodename, _contexto, _ambito, _condicion, id) {
+    if (_contexto.getLength() > 0)
+        return getFromCurrent(_nodename, _contexto, _ambito, _condicion, id);
+    else {
+        _contexto.error = { error: "Instrucción no procesada.", tipo: "Semántico", origen: "Query", linea: 1, columna: 1 };
+        return _contexto;
+    }
 }
 // Desde el ámbito actual
-function getFromCurrent(_id, _contexto, _ambito, _condicion) {
-    let elements = Array();
-    let attributes = Array();
+function getFromCurrent(_id, _contexto, _ambito, _condicion, id) {
+    let retorno = new Contexto_1.Contexto();
+    if (id) {
+        retorno.variable = new Variable_1.Variable(id, Enum_1.Tipos.VARIABLE);
+    }
     // Selecciona el texto contenido únicamente en el nodo
     if (_id === "text()") {
-        let text = Array();
         for (let i = 0; i < _contexto.elementos.length; i++) {
             const element = _contexto.elementos[i];
             if (element.value) {
-                text.push(element.value);
-                elements.push(element);
+                retorno.pushText(element.value);
             }
         }
         if (_condicion) {
-            let filter = new Predicate_1.Predicate(_condicion, _ambito, elements);
-            text = filter.filterElements(text);
-            elements = filter.contexto;
+            let filter = new Predicate_1.Predicate(_condicion, _ambito, retorno);
+            retorno.texto = filter.filterElements(retorno.texto);
         }
-        return { texto: text, elementos: elements, cadena: Enum_1.Tipos.TEXTOS };
+        retorno.cadena = Enum_1.Tipos.TEXTOS;
+        return retorno;
     }
     // Selecciona todos los hijos (elementos o texto)
     else if (_id === "node()") {
-        let nodes = Array();
         for (let i = 0; i < _contexto.elementos.length; i++) {
             const element = _contexto.elementos[i];
             if (element.childs)
-                element.childs.forEach((child) => {
-                    nodes.push({ elementos: child });
+                element.childs.forEach(child => {
+                    retorno.nodos.push({ elementos: child });
                 });
             else if (element.value)
-                nodes.push({ textos: element.value });
+                retorno.nodos.push({ textos: element.value });
         }
         if (_condicion) {
-            let filter = new Predicate_1.Predicate(_condicion, _ambito, elements);
-            nodes = filter.filterElements(nodes);
-            elements = filter.contexto;
+            let filter = new Predicate_1.Predicate(_condicion, _ambito, retorno);
+            retorno.nodos = filter.filterElements(retorno.nodos);
         }
-        return { cadena: Enum_1.Tipos.COMBINADO, nodos: nodes, elementos: _contexto.elementos };
+        retorno.cadena = Enum_1.Tipos.COMBINADO;
+        return retorno;
     }
     // Selecciona todos los hijos (elementos)
     else if (_id === "*") {
         for (let i = 0; i < _contexto.elementos.length; i++) {
             const element = _contexto.elementos[i];
             if (element.childs) {
-                element.childs.forEach((child) => {
-                    elements.push(child);
+                element.childs.forEach(child => {
+                    retorno.elementos.push(child);
                 });
             }
         }
         if (_condicion) {
-            let filter = new Predicate_1.Predicate(_condicion, _ambito, elements);
-            elements = filter.filterElements(elements);
+            let filter = new Predicate_1.Predicate(_condicion, _ambito, retorno);
+            retorno.elementos = filter.filterElements(retorno.elementos);
         }
-        return { elementos: elements, cadena: Enum_1.Tipos.ELEMENTOS };
+        retorno.cadena = Enum_1.Tipos.ELEMENTOS;
+        return retorno;
     }
     // Selecciona los atributos
     else if (_id.tipo === "@") {
@@ -2206,67 +2295,64 @@ function getFromCurrent(_id, _contexto, _ambito, _condicion) {
             const element = _contexto.elementos[i];
             if (element.attributes)
                 element.attributes.forEach((attribute) => {
-                    if ((_id.id == attribute.id) || (_id.id === "*")) { // En caso de que sea un id ó @*
-                        attributes.push(attribute);
+                    if ((_id.id == attribute.id) || (_id.id === "*")) { // En caso de que sea un @id | @*
+                        retorno.atributos.push(attribute);
                     }
                 });
         }
         if (_condicion) {
-            let filter = new Predicate_1.Predicate(_condicion, _ambito, elements);
-            attributes = filter.filterAttributes(attributes);
+            let filter = new Predicate_1.Predicate(_condicion, _ambito, retorno);
+            retorno.atributos = filter.filterElements(retorno.atributos);
         }
-        return { atributos: attributes, elementos: [], cadena: Enum_1.Tipos.ATRIBUTOS };
+        retorno.cadena = Enum_1.Tipos.ATRIBUTOS;
+        return retorno;
     }
     // Selecciona el padre
     else if (_id === "..") { // Manejar el regreso de atributos a su padre como la etiqueta misma !
-        if (_contexto.atributos) {
+        if (_contexto.atributos.length > 0) {
             for (let i = 0; i < _contexto.atributos.length; i++) {
                 const attribute = _contexto.atributos[i];
-                _ambito.tablaSimbolos.forEach(elm => {
-                    elements = _ambito.searchDadFromAttribute(elm, attribute, elements);
-                });
-            }
-            if (_condicion) {
-                let filter = new Predicate_1.Predicate(_condicion, _ambito, elements);
-                elements = filter.filterElements(elements);
-            }
-            return { elementos: elements, cadena: Enum_1.Tipos.ELEMENTOS };
-        }
-        for (let i = 0; i < _contexto.elementos.length; i++) {
-            const element = _contexto.elementos[i];
-            let dad = element.father;
-            if (dad) {
-                _ambito.tablaSimbolos.forEach(elm => {
-                    if (elm.id_open === dad.id && elm.line == dad.line && elm.column == dad.column)
-                        elements.push(elm);
-                    if (elm.childs)
-                        elm.childs.forEach(child => {
-                            elements = _ambito.searchDad(child, dad.id, dad.line, dad.column, elements);
-                        });
-                });
+                retorno.elementos = _ambito.searchDadFromAttribute(_ambito.tablaSimbolos[0], attribute, retorno.elementos);
             }
         }
-        elements = [...new Set(elements)];
+        else if (_contexto.texto.length > 0) {
+            for (let i = 0; i < _contexto.texto.length; i++) {
+                const text = _contexto.texto[i];
+                retorno.elementos = _ambito.searchDadFromText(_ambito.tablaSimbolos[0], text, retorno.elementos);
+            }
+        }
+        else if (_contexto.nodos.length > 0) {
+            for (let i = 0; i < _contexto.nodos.length; i++) {
+                const node = _contexto.nodos[i].elementos;
+                if (node)
+                    retorno.elementos = _ambito.searchDadFromNode(_ambito.tablaSimbolos[0], node, retorno.elementos);
+            }
+        }
+        else {
+            for (let i = 0; i < _contexto.elementos.length; i++) {
+                const dad = _contexto.elementos[i].father;
+                if (dad)
+                    retorno.elementos = _ambito.searchDad(_ambito.tablaSimbolos[0], dad.id, dad.line, dad.column, retorno.elementos);
+            }
+        }
+        // retorno.elementos = [...new Set(retorno.elementos)];
+        retorno.removeDuplicates();
         if (_condicion) {
-            let filter = new Predicate_1.Predicate(_condicion, _ambito, elements);
-            elements = filter.filterElements(elements);
+            let filter = new Predicate_1.Predicate(_condicion, _ambito, retorno);
+            retorno.elementos = filter.filterElements(retorno.elementos);
         }
-        return { elementos: elements, cadena: Enum_1.Tipos.ELEMENTOS };
+        retorno.cadena = Enum_1.Tipos.ELEMENTOS;
+        return retorno;
     }
     // Selecciona el nodo actual
     else if (_id === ".") {
-        if (_contexto.atributos) {
-            return { elementos: [], atributos: _contexto.atributos, cadena: Enum_1.Tipos.ATRIBUTOS };
-        }
-        for (let i = 0; i < _contexto.elementos.length; i++) {
-            const element = _contexto.elementos[i];
-            elements.push(element);
-        }
+        retorno = _contexto;
         if (_condicion) {
-            let filter = new Predicate_1.Predicate(_condicion, _ambito, elements);
-            elements = filter.filterElements(elements);
+            let filter = new Predicate_1.Predicate(_condicion, _ambito, retorno);
+            retorno.elementos = filter.filterElements(retorno.elementos);
         }
-        return { elementos: elements, cadena: Enum_1.Tipos.ELEMENTOS };
+        retorno.cadena = Enum_1.Tipos.ELEMENTOS;
+        return retorno;
     }
     // Búsqueda en los hijos por id
     else {
@@ -2274,94 +2360,19 @@ function getFromCurrent(_id, _contexto, _ambito, _condicion) {
             const element = _contexto.elementos[i];
             if (element.childs) {
                 element.childs.forEach((child) => {
-                    elements = _ambito.searchSingleNode(_id, child, elements);
+                    retorno.elementos = _ambito.searchSingleNode(_id, child, retorno.elementos);
                 });
             }
         }
         if (_condicion) {
-            // console.log(_condicion,3999)
-            let filter = new Predicate_1.Predicate(_condicion, _ambito, elements);
-            elements = filter.filterElements(elements);
+            let filter = new Predicate_1.Predicate(_condicion, _ambito, retorno);
+            retorno.elementos = filter.filterElements(retorno.elementos);
         }
-        return { elementos: elements, cadena: Enum_1.Tipos.ELEMENTOS };
+        retorno.cadena = Enum_1.Tipos.ELEMENTOS;
+        return retorno;
     }
 }
 module.exports = Eje;
-
-
-/***/ }),
-
-/***/ "Dbnh":
-/*!*************************************************************************!*\
-  !*** ./src/js/controller/xpath/Instruccion/Selecting/Axis/Funciones.js ***!
-  \*************************************************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-const Enum_1 = __webpack_require__(/*! ../../../../../model/xpath/Enum */ "MEUw");
-// Revisa el nodetest y busca hacer match
-function f1(_element, _elements, _text, isDoubleBar) {
-    if (_element.value) {
-        _text.push(_element.value);
-        _elements.push(_element);
-    }
-    if (_element.childs && isDoubleBar) {
-        _element.childs.forEach(child => {
-            f1(child, _elements, _text, isDoubleBar);
-        });
-    }
-    return { elementos: _elements, texto: _text };
-}
-function f2(_element, _elements, _attributes, valor, isDoubleBar) {
-    for (let j = 0; j < _element.attributes.length; j++) {
-        const attribute = _element.attributes[j];
-        if (attribute.id == valor || valor === "*") {
-            _elements.push(_element);
-            _attributes.push(attribute);
-            break; // Sale del ciclo de atributos para pasar al siguiente elemento
-        }
-        if (attribute.value == valor) {
-            _elements.push(_element);
-            _attributes.push(attribute);
-            break;
-        }
-    }
-    if (_element.childs && isDoubleBar) {
-        _element.childs.forEach(child => {
-            f2(child, _elements, _attributes, valor, isDoubleBar);
-        });
-    }
-    return { elementos: _elements, atributos: _attributes };
-}
-function f3(_element, _elements, _text, valor, tipo, isDoubleBar) {
-    if (_element.id_open == valor || valor == "*") {
-        if (tipo === Enum_1.Tipos.FUNCION_TEXT)
-            _text.push(_element.value);
-        _elements.push(_element);
-    }
-    if (_element.childs && isDoubleBar) {
-        _element.childs.forEach(child => {
-            f3(child, _elements, _text, valor, tipo, isDoubleBar);
-        });
-    }
-    return { elementos: _elements, texto: _text };
-}
-function f4(_element, _elements, _text, valor, tipo, isDoubleBar) {
-    if (_element.value == valor || valor == "*") {
-        if (tipo === Enum_1.Tipos.FUNCION_TEXT)
-            _text.push(_element.value);
-        _elements.push(_element);
-    }
-    if (_element.childs && isDoubleBar) {
-        _element.childs.forEach(child => {
-            f4(child, _elements, _text, valor, tipo, isDoubleBar);
-        });
-    }
-    return { elementos: _elements, texto: _text };
-}
-module.exports = { f1: f1, f2: f2, f3: f3, f4: f4 };
 
 
 /***/ }),
@@ -2510,18 +2521,17 @@ class Predicate {
         this.contexto = _contexto;
         this.ambito = _ambito;
     }
-    set setContext(v) {
-        this.contexto = v;
-    }
     filterElements(_resultado) {
+        var _a;
         let expresion;
         for (let i = 0; i < this.predicado.length; i++) {
             const e = this.predicado[i]; // En caso de tener varios predicados seguidos
             // console.log(e, "Predicado")
-            let condicion = e;
+            let condicion = e.condicion;
             if (Array.isArray(e.condicion))
                 condicion = e.condicion[0];
-            expresion = Expresion_1.default(condicion, this.ambito, this.contexto);
+            // console.log(condicion, "Predicado")
+            expresion = Expresion_1.default(condicion, this.ambito, this.contexto, (_a = this.contexto.variable) === null || _a === void 0 ? void 0 : _a.id);
             // console.log(expresion, "Expresion predicado")
             if (expresion.error)
                 return expresion;
@@ -2533,8 +2543,7 @@ class Predicate {
                     _resultado = [_resultado[index]];
             }
             else if (expresion.tipo === Enum_1.Tipos.ATRIBUTOS) {
-                let tmp = [];
-                this.contexto = [];
+                this.contexto.elementos = [];
                 _resultado.forEach(element => {
                     if (element.attributes)
                         for (let i = 0; i < element.attributes.length; i++) {
@@ -2542,49 +2551,44 @@ class Predicate {
                             if (expresion.atributo) { // Es una comparación
                                 if (expresion.desigualdad) { // (<,<=,>,>=)
                                     if (expresion.atributo == attribute.id && this.operarDesigualdad(expresion.desigualdad, expresion.condicion, attribute.value)) {
-                                        tmp.push(element);
-                                        this.contexto.push(element);
+                                        this.contexto.elementos.push(element);
                                         break;
                                     }
                                 }
                                 else if (expresion.exclude) { // (!=)
                                     if (expresion.atributo == attribute.id && expresion.condicion != attribute.value) {
-                                        tmp.push(element);
-                                        this.contexto.push(element);
+                                        this.contexto.elementos.push(element);
                                         break;
                                     }
                                 }
                                 else if (expresion.atributo == attribute.id && expresion.condicion == attribute.value) { // (==)
-                                    tmp.push(element);
-                                    this.contexto.push(element);
+                                    this.contexto.elementos.push(element);
                                     break;
                                 }
                             }
                             else if (expresion.valor == attribute.id || expresion.valor == "*") { // No compara valor, sólo apila
-                                tmp.push(element);
-                                this.contexto.push(element);
+                                this.contexto.elementos.push(element);
                                 break;
                             }
                         }
                 });
-                _resultado = tmp;
-                return _resultado;
+                return this.contexto.elementos;
             }
             else if (expresion.tipo === Enum_1.Tipos.FUNCION_TEXT) {
-                this.contexto = [];
+                this.contexto.elementos = [];
                 for (let i = 0; i < _resultado.length; i++) {
                     const element = _resultado[i];
                     let text = element.value;
                     if (text) {
                         if (expresion.exclude) {
                             if (text != expresion.condicion) // text() != 'x'
-                                this.contexto.push(element);
+                                this.contexto.elementos.push(element);
                         }
                         else if (text == expresion.condicion) // text() == 'x'
-                            this.contexto.push(element);
+                            this.contexto.elementos.push(element);
                     }
                 }
-                return this.contexto;
+                return this.contexto.elementos;
             }
             else if (expresion.tipo === Enum_1.Tipos.FUNCION_LAST) {
                 let index = _resultado.length - 1;
@@ -2624,8 +2628,8 @@ class Predicate {
                 const e2 = expresion.e2;
                 let condition = false;
                 let tmp = [];
-                for (let i = 0; i < this.contexto.length; i++) {
-                    const element = this.contexto[i];
+                for (let i = 0; i < this.contexto.elementos.length; i++) {
+                    const element = this.contexto.elementos[i];
                     if (element.attributes) { // Hace match con un atributo
                         for (let j = 0; j < element.attributes.length; j++) {
                             const attribute = element.attributes[j];
@@ -2668,129 +2672,22 @@ class Predicate {
                     _resultado = tmp;
                 }
             }
-        }
-        this.contexto = _resultado;
-        return this.contexto;
-    }
-    filterAttributes(_resultado) {
-        let expresion;
-        for (let i = 0; i < this.predicado.length; i++) {
-            const e = this.predicado[i]; // En caso de tener varios predicados seguidos
-            // console.log(e, "Predicado")
-            let condicion = e;
-            if (Array.isArray(e.condicion))
-                condicion = e.condicion[0];
-            expresion = Expresion_1.default(condicion, this.ambito, this.contexto);
-            // console.log(expresion, "Expresion predicado")
-            if (expresion.error)
-                return expresion;
-            if (expresion.tipo === Enum_1.Tipos.NUMBER) {
-                let index = parseInt(expresion.valor) - 1;
-                if (index < 0 || index >= _resultado.length)
-                    _resultado = [];
-                else
-                    _resultado = [_resultado[index]];
-            }
-            else if (expresion.tipo === Enum_1.Tipos.ATRIBUTOS) {
-                let tmp = [];
-                this.contexto = [];
-                _resultado.forEach(attribute => {
-                    if (expresion.atributo) { // Es una comparación
-                        if (expresion.desigualdad) { // (<,<=,>,>=)
-                            if (expresion.atributo == attribute.id && this.operarDesigualdad(expresion.desigualdad, expresion.condicion, attribute.value)) {
-                                tmp.push(attribute);
-                            }
-                        }
-                        else if (expresion.exclude) { // (!=)
-                            if (expresion.atributo == attribute.id && expresion.condicion != attribute.value) {
-                                tmp.push(attribute);
-                            }
-                        }
-                        else if (expresion.atributo == attribute.id && expresion.condicion == attribute.value) { // (==)
-                            tmp.push(attribute);
-                        }
-                    }
-                    else if (expresion.valor == attribute.id || expresion.valor == "*") { // No compara valor, sólo apila
-                        tmp.push(attribute);
-                    }
+            else if (Array.isArray(expresion)) {
+                this.contexto.elementos = [];
+                expresion.forEach((context) => {
+                    this.contexto.elementos = this.contexto.elementos.concat(context.elementos);
                 });
-                _resultado = tmp;
-                return _resultado;
-            }
-            else if (expresion.tipo === Enum_1.Tipos.FUNCION_TEXT) {
-                let tmp = [];
-                for (let i = 0; i < _resultado.length; i++) {
-                    const attribute = _resultado[i];
-                    let text = attribute.value;
-                    if (expresion.exclude) {
-                        if (text != expresion.condicion) // text() != 'x'
-                            tmp.push(attribute);
-                    }
-                    else if (text == expresion.condicion) // text() == 'x'
-                        tmp.push(attribute);
-                }
-                return tmp;
-            }
-            else if (expresion.tipo === Enum_1.Tipos.FUNCION_LAST) {
-                let index = _resultado.length - 1;
-                _resultado = [_resultado[index]];
-            }
-            else if (expresion.tipo === Enum_1.Tipos.RELACIONAL_MENORIGUAL || expresion.tipo === Enum_1.Tipos.RELACIONAL_MENOR) {
-                let index = parseInt(expresion.valor) - 1;
-                if (index >= _resultado.length)
-                    index = _resultado.length - 1;
-                let tmp = [];
-                for (let i = index; i <= _resultado.length && i >= 0; i--) {
-                    const attribute = _resultado[i];
-                    tmp.push(attribute);
-                }
-                _resultado = tmp;
-            }
-            else if (expresion.tipo === Enum_1.Tipos.RELACIONAL_MAYORIGUAL || expresion.tipo === Enum_1.Tipos.RELACIONAL_MAYOR) {
-                let index = parseInt(expresion.valor) - 1;
-                if (index >= _resultado.length) {
-                    _resultado = [];
-                    return _resultado;
-                }
-                if (index <= 0)
-                    index = 0;
-                let tmp = [];
-                for (let i = index; i < _resultado.length; i++) {
-                    const attribute = _resultado[i];
-                    tmp.push(attribute);
-                }
-                _resultado = tmp;
-            }
-            else if (expresion.tipo === Enum_1.Tipos.ELEMENTOS && expresion.e1 && expresion.e2) {
-                const e1 = expresion.e1;
-                const e2 = expresion.e2;
-                let condition = false;
-                let tmp = [];
-                for (let i = 0; i < _resultado.length; i++) {
-                    const attribute = _resultado[i]; // Hace match con un atributo
-                    condition = this.verificarDesigualdad(expresion.desigualdad, attribute.id, e1, attribute.value, e2);
-                    if (condition) {
-                        tmp.push(attribute);
-                    }
-                }
-                _resultado = tmp;
-            }
-            else if (expresion.tipo === Enum_1.Tipos.LOGICA_OR || expresion.tipo === Enum_1.Tipos.LOGICA_AND) {
-                _resultado = expresion.elementos;
-            }
-            else if (expresion.tipo === Enum_1.Tipos.EXCLUDE) {
-                let index = parseInt(expresion.valor) - 1;
-                if (index >= 0 && index < _resultado.length) {
-                    let tmp = [];
-                    for (let i = 0; i < _resultado.length; i++) {
-                        const attribute = _resultado[i];
-                        if (i != index)
-                            tmp.push(attribute);
-                    }
-                    _resultado = tmp;
-                }
+                return this.contexto.elementos;
             }
         }
+        if (this.contexto.atributos.length > 0)
+            this.contexto.atributos = _resultado;
+        else if (this.contexto.texto.length > 0)
+            this.contexto.texto = _resultado;
+        else if (this.contexto.nodos.length > 0)
+            this.contexto.nodos = _resultado;
+        else
+            this.contexto.elementos = _resultado;
         return _resultado;
     }
     operarDesigualdad(_tipo, _condicion, _valor) {
@@ -2847,21 +2744,16 @@ const Enum_1 = __webpack_require__(/*! ../../model/xpath/Enum */ "MEUw");
 const Expresion_1 = __importDefault(__webpack_require__(/*! ../xpath/Expresion/Expresion */ "gajf"));
 const BuildElement_1 = __importDefault(__webpack_require__(/*! ./BuildElement */ "XhXr"));
 function returnQuery(_expresion, _ambito, _iterators) {
+    var _a;
     let expresion = [];
-    // console.log(_iterators.length, 4444)
     for (let i = 0; i < _iterators.length; i++) { // [$x, $y, $z]
-        const iterator = _iterators[i]; // { id: $x, iterators: /book/title (contexto) }
-        let iters = iterator.iterators;
-        if (Array.isArray(iters))
-            iters = iters[0];
-        // console.log(_expresion, 44444444, iters)
-        let _x = Expresion_1.default(_expresion, _ambito, iters, iterator.id); // _expresion = [XPATH]
-        // console.log(_x, 8888888888888888)
+        const iterator = _iterators[i]; // { Contexto }
+        let _x = Expresion_1.default(_expresion, _ambito, iterator, (_a = iterator.variable) === null || _a === void 0 ? void 0 : _a.id); // _expresion = [XPATH]
+        // console.log(iterator, 5555555555)
         if (_x)
             expresion = expresion.concat(_x);
     }
-    // console.log(_expresion,409999,expresion)
-    let _str = [BuildElement_1.default(expresion)];
+    let _str = BuildElement_1.default(expresion);
     if (_expresion.tipo === Enum_1.Tipos.HTML) {
         _str.unshift({ valor: '<' + _expresion.id_open + '>' });
         _str.push({ valor: '</' + _expresion.id_close + '>' });
@@ -2876,13 +2768,18 @@ function writeReturn(_expresion) {
     for (let i = 0; i < max; i++) {
         for (let j = 0; j < _expresion.length; j++) {
             var exp = _expresion[j];
+            if (exp.notFound)
+                cadena += exp.notFound;
             if (exp.valor)
                 cadena += exp.valor;
-            else if (exp.length > 0) {
+            else if (exp.items && exp.items.length > 0) {
+                let shift = exp.items.shift();
+                cadena += shift;
+                exp.items.push(shift);
+            }
+            else if (Array.isArray(exp) && exp.length > 0) {
                 let shift = exp.shift();
-                if (shift.valor)
-                    continue;
-                else if (shift.item)
+                if (shift.item)
                     cadena += shift.item;
                 else
                     cadena += shift;
@@ -2899,10 +2796,8 @@ function getMaxLength(context) {
     context.forEach(element => {
         if (element.length > index)
             index = element.length;
-        if (element.elementos)
-            index = element.elementos.length;
-        if (element.iterators)
-            index = element.iterators.length;
+        if (element.constructor.name == "Contexto")
+            index = element.getLength();
     });
     return index;
 }
@@ -3454,26 +3349,14 @@ class Ambito {
     addSimbolo(_simbolo) {
         this.tablaSimbolos.push(_simbolo);
     }
-    addVariable(_variable) {
-        this.tablaVariables.push(_variable);
-    }
-    getVariable(_id) {
-        for (let i = 0; i < this.tablaVariables.length; i++) {
-            const variable = this.tablaVariables[i];
-            if (variable.id.id === _id) {
-                return variable;
-            }
-        }
-        return null;
-    }
     nodesFunction(_element, _nodes) {
-        _nodes.push({ elementos: _element });
         if (_element.childs) {
             _element.childs.forEach(child => {
                 _nodes = this.nodesFunction(child, _nodes);
             });
         }
         if (_element.value) {
+            _nodes.push({ elementos: _element });
             _nodes.push({ textos: _element.value });
         }
         return _nodes;
@@ -3499,8 +3382,47 @@ class Ambito {
             _element.attributes.forEach(attr => {
                 if (attr.id === _attribute.id && attr.line == _attribute.line && attr.column == _attribute.column) {
                     _elements.push(_element);
+                    return _elements;
                 }
             });
+        }
+        return _elements;
+    }
+    searchDadFromText(_element, _text, _elements) {
+        if (_element.childs) {
+            _element.childs.forEach(child => {
+                _elements = this.searchDadFromText(child, _text, _elements);
+            });
+        }
+        if (_element.value) {
+            if (_element.value === _text) {
+                _elements.push(_element);
+                return _elements;
+            }
+        }
+        if (_element.attributes) {
+            _element.attributes.forEach(attr => {
+                if (attr.value === _text) {
+                    _elements.push(_element);
+                    return _elements;
+                }
+            });
+        }
+        return _elements;
+    }
+    searchDadFromNode(_element, _node, _elements) {
+        if (_element.childs) {
+            _element.childs.forEach(child => {
+                _elements = this.searchDadFromNode(child, _node, _elements);
+            });
+        }
+        if (_element.value && _node.textos) {
+            if (_element.value == _node.textos)
+                _elements.push(_element);
+        }
+        if (_element.value && _node.elementos) {
+            if (_element == _node.elementos)
+                _elements.push(_element);
         }
         return _elements;
     }
@@ -3717,19 +3639,22 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 const Enum_1 = __webpack_require__(/*! ../../../model/xpath/Enum */ "MEUw");
 const Expresion_1 = __importDefault(__webpack_require__(/*! ../../xpath/Expresion/Expresion */ "gajf"));
+const Contexto_1 = __webpack_require__(/*! ../../Contexto */ "ivfU");
+const Variable_1 = __webpack_require__(/*! ../../../model/xml/Ambito/Variable */ "C8dJ");
 function ExpresionQuery(_expresion, _ambito, _contexto, id) {
     let tipo = _expresion.tipo;
     if (tipo === Enum_1.Tipos.DECLARACION) {
-        let iterators = [];
+        let contexto = new Contexto_1.Contexto();
         let id = Expresion_1.default(_expresion.variable, _ambito, _contexto);
         let it = Expresion_1.default(_expresion.iterators, _ambito, _contexto);
-        if (!id.error && !it.error)
-            iterators.push({ id: id.valor, iterators: it });
-        return iterators;
+        if (id.valor && it) {
+            contexto = it;
+            contexto.variable = new Variable_1.Variable(id.valor, Enum_1.Tipos.VARIABLE);
+        }
+        return contexto;
     }
     if (tipo === Enum_1.Tipos.VARIABLE) {
-        // console.log(_expresion, 33444, _contexto)
-        if (id && hasElements(_contexto)) {
+        if (id && _contexto.cadena != Enum_1.Tipos.NONE) {
             if (id === _expresion.variable)
                 return _contexto;
             else
@@ -3737,11 +3662,30 @@ function ExpresionQuery(_expresion, _ambito, _contexto, id) {
         }
         return { valor: _expresion.variable };
     }
-    // if (Array.isArray(_expresion)) {
-    //     const Bloque = require("../../xpath/Instruccion/Bloque");
-    //     const elements = Bloque.getIterators(_expresion, _ambito, _contexto);
-    //     return elements; //<- Retorna un arreglo de elementos
-    // }
+    if (tipo === Enum_1.Tipos.INTERVALO) {
+        let contexto = new Contexto_1.Contexto();
+        let val_1 = Expresion_1.default(_expresion.valor1[0], _ambito, _contexto);
+        if (!val_1 || val_1.error)
+            return val_1;
+        let val_2 = Expresion_1.default(_expresion.valor2[0], _ambito, _contexto);
+        if (!val_2 || val_2.error)
+            return val_2;
+        for (let i = parseInt(val_1.valor); i <= parseInt(val_2.valor); i++) {
+            contexto.items.push(i);
+        }
+        contexto.variable = new Variable_1.Variable(id, Enum_1.Tipos.VARIABLE);
+        return contexto;
+    }
+    if (tipo === Enum_1.Tipos.VALORES) {
+        let contexto = new Contexto_1.Contexto();
+        _expresion.valores.forEach((valor) => {
+            const expresion = Expresion_1.default(valor[0], _ambito, _contexto);
+            if (expresion && !expresion.error)
+                contexto.items.push(parseInt(expresion.valor));
+        });
+        contexto.variable = new Variable_1.Variable(id, Enum_1.Tipos.VARIABLE);
+        return contexto;
+    }
     if (tipo === Enum_1.Tipos.HTML) {
         let content = [];
         for (let i = 0; i < _expresion.value.length; i++) {
@@ -3760,61 +3704,26 @@ function ExpresionQuery(_expresion, _ambito, _contexto, id) {
         let e_0 = Expresion_1.default(_expresion.path[0], _ambito, _contexto, id);
         if (!e_0)
             return null;
-        if (_contexto[0].item)
+        if (_contexto.items.length > 0)
             return _contexto;
-        const Bloque = __webpack_require__(/*! ../../xpath/Instruccion/Bloque */ "8Ym7");
+        const Bloque = __webpack_require__(/*! ../Bloque_XQuery */ "+qh/");
         let elements = [];
-        // elements.push(e_0);
-        let _x = Bloque.getIterators(_expresion.path, _ambito, _contexto[0], id);
+        /* elements.push(e_0); */
+        let _x = Bloque.getIterators(_expresion.path, _ambito, _contexto, id);
         if (_x && _x.length > 0) {
             _contexto = _x;
             elements = elements.concat(_x);
         }
         return elements;
     }
-    if (tipo === Enum_1.Tipos.INTERVALO) {
-        let iterators = [];
-        let val_1 = Expresion_1.default(_expresion.valor1, _ambito, _contexto);
-        if (val_1.error)
-            return val_1;
-        let val_2 = Expresion_1.default(_expresion.valor2, _ambito, _contexto);
-        if (val_2.error)
-            return val_2;
-        for (let i = parseInt(val_1.valor); i <= parseInt(val_2.valor); i++) {
-            iterators.push({ item: i });
-        }
-        return iterators;
-    }
-    if (tipo === Enum_1.Tipos.VALORES) {
-        let iterators = [];
-        _expresion.valores.forEach((valor) => {
-            const expresion = Expresion_1.default(valor, _ambito, _contexto);
-            if (!expresion.error)
-                iterators.push({ item: parseInt(expresion.valor) });
-        });
-        return iterators;
-    }
     else {
-        const Bloque = __webpack_require__(/*! ../../xpath/Instruccion/Bloque */ "8Ym7");
-        // console.log(_expresion,4444);
-        let _bloque = Bloque.getIterators(_expresion, _ambito, _contexto, id);
-        if (_bloque === null || _bloque.error)
-            return _bloque;
-        else
-            _contexto = _bloque;
-        return _contexto;
+        // console.log(_expresion, 4444);
+        const Bloque = __webpack_require__(/*! ../Bloque_XQuery */ "+qh/");
+        let _iterators = Bloque.getIterators(_expresion, _ambito, _contexto, id);
+        if (_iterators === null)
+            return null;
+        return _iterators;
     }
-}
-function hasElements(_array) {
-    for (let i = 0; i < _array.length; i++) {
-        const element = _array[i];
-        if (element.cadena)
-            if (element.cadena.length > 0)
-                return true;
-        if (element.item)
-            return true;
-    }
-    return false;
 }
 module.exports = ExpresionQuery;
 
@@ -3982,6 +3891,7 @@ class AppComponent {
 </bookstore>`;
         this.consulta = `for $x in /bookstore/book
 where $x/price>30
+order by $x/title
 return $x/title`;
         this.salida = '';
         this.fname = '';
@@ -4403,7 +4313,7 @@ AppComponent.ɵcmp = _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵdefineCompo
 const Enum_1 = __webpack_require__(/*! ../../../../model/xpath/Enum */ "MEUw");
 function Logica(_expresion, _ambito, _contexto) {
     let operators = init(_expresion.opIzq, _expresion.opDer, _ambito, _contexto, _expresion.tipo);
-    if (operators.error)
+    if (operators === null || operators.error)
         return operators;
     switch (operators.tipo) {
         case Enum_1.Tipos.LOGICA_AND:
@@ -4416,11 +4326,11 @@ function Logica(_expresion, _ambito, _contexto) {
 }
 function init(_opIzq, _opDer, _ambito, _contexto, _tipo) {
     const Expresion = __webpack_require__(/*! ../Expresion */ "gajf");
-    let op1 = Expresion(_opIzq, _ambito, _contexto);
-    if (op1.error)
+    let op1 = Expresion((Array.isArray(_opIzq)) ? (_opIzq[0]) : (_opIzq), _ambito, _contexto);
+    if (op1 === null || op1.error)
         return op1;
-    let op2 = Expresion(_opDer, _ambito, _contexto);
-    if (op2.error)
+    let op2 = Expresion((Array.isArray(_opDer)) ? (_opDer[0]) : (_opDer), _ambito, _contexto);
+    if (op2 === null || op2.error)
         return op2;
     let tipo = _tipo;
     // console.log(op1, 888, op2)
@@ -4461,9 +4371,10 @@ function or(_opIzq, _opDer, _contexto) {
 }
 function filterElements(e1, e2, desigualdad, _contexto) {
     let condition = false;
+    let array = _contexto.getArray();
     let tmp = [];
-    for (let i = 0; i < _contexto.length; i++) {
-        const element = _contexto[i];
+    for (let i = 0; i < array.length; i++) {
+        const element = array[i];
         if (element.attributes) { // Hace match con un atributo
             for (let j = 0; j < element.attributes.length; j++) {
                 const attribute = element.attributes[j];
@@ -4485,9 +4396,16 @@ function filterElements(e1, e2, desigualdad, _contexto) {
                 }
             }
         }
-        condition = verificarDesigualdad(desigualdad, element.id_open, e1, element.value, e2); // Hace match con el elemento
-        if (condition)
-            tmp.push(element);
+        if (element.id_open) {
+            condition = verificarDesigualdad(desigualdad, element.id_open, e1, element.value, e2); // Hace match con el elemento
+            if (condition)
+                tmp.push(element);
+        }
+        else if (element.value) {
+            condition = verificarDesigualdad(desigualdad, element.id, e1, element.value, e2); // Hace match con el elemento
+            if (condition)
+                tmp.push(element);
+        }
     }
     return tmp;
 }
@@ -4692,17 +4610,17 @@ function pushIterators(input) {
     // console.log(input, 36363638)
     for (let i = 0; i < input.length; i++) {
         const path = input[i];
-        if (path.item) {
+        if (path.items.length > 0) {
             return input;
         }
         if (path.notFound) {
-            return ['No se encontraron elementos.'];
+            return [{ notFound: 'No se encontraron elementos.' }];
         }
         // if (path.valor) {
         //     iterators.unshift(path);
         // }
         if (path.cadena === Enum_1.Tipos.TEXTOS) {
-            let root = (path.texto) ? (path.texto) : (path.elementos);
+            let root = path.texto;
             root.forEach(txt => {
                 iterators.push(concatText(txt).substring(1));
             });
@@ -4740,8 +4658,8 @@ function pushIterators(input) {
         }
     }
     if (iterators.length > 0)
-        return iterators;
-    return ['No se encontraron elementos.'];
+        return [iterators];
+    return [{ notFound: 'No se encontraron elementos.' }];
 }
 function concatChilds(_element, cadena) {
     cadena = ("\n<" + _element.id_open);
@@ -6830,7 +6748,6 @@ const Enum_1 = __webpack_require__(/*! ../../../model/xpath/Enum */ "MEUw");
 function Expresion(_expresion, _ambito, _contexto, id) {
     // if (!_expresion) return null;
     let tipo = (Array.isArray(_expresion)) ? Enum_1.Tipos.NONE : _expresion.tipo;
-    // console.log(tipo,89898989)
     if (tipo === Enum_1.Tipos.EXPRESION) {
         return Expresion(_expresion.expresion, _ambito, _contexto, id);
     }
@@ -6842,7 +6759,6 @@ function Expresion(_expresion, _ambito, _contexto, id) {
     }
     else if (tipo === Enum_1.Tipos.SELECT_CURRENT) {
         if (id) {
-            // console.log(_expresion.expresion, id, 445);
             if (id === _expresion.expresion)
                 return { valor: ".", tipo: Enum_1.Tipos.ELEMENTOS, linea: _expresion.linea, columna: _expresion.columna };
             else
@@ -6914,7 +6830,9 @@ module.exports = Expresion;
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
-const Bloque_1 = __importDefault(__webpack_require__(/*! ../controller/xpath/Instruccion/Bloque */ "8Ym7"));
+const Contexto_1 = __webpack_require__(/*! ../controller/Contexto */ "ivfU");
+const Bloque_XQuery_1 = __importDefault(__webpack_require__(/*! ../controller/xquery/Bloque_XQuery */ "+qh/"));
+const Bloque_XPath_1 = __importDefault(__webpack_require__(/*! ../controller/xpath/Bloque_XPath */ "7QFG"));
 const Ambito_1 = __webpack_require__(/*! ../model/xml/Ambito/Ambito */ "QFP7");
 const Global_1 = __webpack_require__(/*! ../model/xml/Ambito/Global */ "IRxg");
 const Element_1 = __webpack_require__(/*! ../model/xml/Element */ "Kypw");
@@ -6957,30 +6875,31 @@ function compile(req) {
         let simbolos = cadena.ambito.getArraySymbols(); // Arreglo con los símbolos
         // Análisis de xQuery
         let xQuery_ast = parser_xQuery.parse(xQuery);
+        let ast = (xQuery_ast.xquery) ? (xQuery_ast.xquery) : (xQuery_ast.xpath); // AST que genera Jison
         // console.log(xQuery_ast.ast, "ast");
-        if (xQuery_ast.errors.length > 0 || xQuery_ast.ast === null || xQuery_ast === true) {
+        if (xQuery_ast.errors.length > 0 || ast === null || xQuery_ast === true) {
             if (xQuery_ast.errors.length > 0)
                 errors = xQuery_ast.errors;
-            if (xQuery_ast.ast === null || xQuery_ast === true) {
+            if (ast === null || xQuery_ast === true) {
                 errors.push({ tipo: "Sintáctico", error: "Sintaxis errónea de la consulta digitada.", origen: "XQuery", linea: "1", columna: "1" });
                 return { output: "La consulta contiene errores para analizar.\nIntente de nuevo.", arreglo_errores: errors };
             }
         }
-        let root = new Element_1.Element("[object XMLDocument]", [], "", cadena.ambito.tablaSimbolos, "0", "0", "[object XMLDocument]");
-        let output = { cadena: "", elementos: [root], atributos: null };
-        let xQuery_parse = xQuery_ast.ast; // AST que genera Jison
-        // console.log(xQuery_parse,55555555)
-        let bloque = Bloque_1.default.Bloque(xQuery_parse, cadena.ambito, output); // Procesa las instrucciones
-        if (bloque.error) {
-            errors.push(bloque);
-            return { arreglo_errores: errors, output: bloque.error };
+        let root = new Contexto_1.Contexto();
+        root.elementos = [new Element_1.Element("[object XMLDocument]", [], "", cadena.ambito.tablaSimbolos, "0", "0", "[object XMLDocument]")];
+        let bloque;
+        if (xQuery_ast.xquery) {
+            bloque = Bloque_XQuery_1.default.getOutput(xQuery_ast.xquery, cadena.ambito, root); // Procesa las instrucciones de XQuery (fase 2)
         }
-        output = {
+        else if (xQuery_ast.xpath) {
+            bloque = Bloque_XPath_1.default(xQuery_ast.xpath, cadena.ambito, root); // Procesa las instrucciones si sólo viene XPath (fase 1)
+        }
+        let output = {
             arreglo_simbolos: simbolos,
             arreglo_errores: errors,
-            output: bloque.cadena,
+            output: bloque === null || bloque === void 0 ? void 0 : bloque.cadena,
             encoding: encoding,
-            codigo3d: bloque.codigo3d
+            codigo3d: bloque === null || bloque === void 0 ? void 0 : bloque.codigo3d
         };
         errors = [];
         return output;
@@ -7167,6 +7086,101 @@ module.exports = { generateReport: generateReport };
 
 /***/ }),
 
+/***/ "ivfU":
+/*!***************************************!*\
+  !*** ./src/js/controller/Contexto.js ***!
+  \***************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.Contexto = void 0;
+const Enum_1 = __webpack_require__(/*! ../model/xpath/Enum */ "MEUw");
+class Contexto {
+    constructor(_elementos) {
+        this.elementos = (_elementos) ? (_elementos) : [];
+        this.atributos = [];
+        this.texto = [];
+        this.nodos = [];
+        this.cadena = Enum_1.Tipos.NONE;
+        this.error = this.notFound = null;
+        this.items = [];
+    }
+    pushElement(_v) {
+        this.elementos.push(_v);
+    }
+    pushAttribute(_v) {
+        this.atributos.push(_v);
+    }
+    pushText(_v) {
+        this.texto.push(_v);
+    }
+    pushNode(_v) {
+        this.nodos.push(_v);
+    }
+    pushItem(_v) {
+        this.items.push(_v);
+    }
+    removeDuplicates() {
+        if (this.atributos.length > 0) {
+            this.atributos = this.atributos.filter((v, i, a) => a.findIndex(t => (t.line === v.line)) === i);
+        }
+        if (this.elementos.length > 0) {
+            this.elementos = this.elementos.filter((v, i, a) => a.findIndex(t => (t.line === v.line && t.column === v.column)) === i);
+        }
+    }
+    removeDadDuplicates() {
+        this.removeDuplicates();
+        this.elementos = this.elementos.filter((v, i, a) => a.findIndex(t => (t.father.line === v.father.line && t.father.column === v.father.column)) === i);
+        return this.getArray();
+    }
+    getLength() {
+        if (this.items.length > 0)
+            return this.items.length;
+        if (this.atributos.length > 0)
+            return this.atributos.length;
+        if (this.elementos.length > 0)
+            return this.elementos.length;
+        if (this.texto.length > 0)
+            return this.texto.length;
+        if (this.nodos.length > 0)
+            return this.nodos.length;
+        return 0;
+    }
+    getArray() {
+        if (this.atributos.length > 0)
+            return this.atributos;
+        if (this.elementos.length > 0)
+            return this.elementos;
+        if (this.texto.length > 0)
+            return this.texto;
+        if (this.nodos.length > 0)
+            return this.nodos;
+        return [];
+    }
+    set setCadena(v) {
+        this.cadena = v;
+    }
+    set setElements(v) {
+        this.elementos = v;
+    }
+    set setAttributes(v) {
+        this.atributos = v;
+    }
+    set setTexto(v) {
+        this.texto = v;
+    }
+    set setNodos(v) {
+        this.nodos = v;
+    }
+}
+exports.Contexto = Contexto;
+
+
+/***/ }),
+
 /***/ "jdP8":
 /*!**************************************************************!*\
   !*** ./src/js/controller/xpath/Expresion/Operators/Match.js ***!
@@ -7177,41 +7191,27 @@ module.exports = { generateReport: generateReport };
 "use strict";
 
 const Enum_1 = __webpack_require__(/*! ../../../../model/xpath/Enum */ "MEUw");
-function filterElements(valor, desigualdad, _ambito, _contexto) {
-    let condition = false;
-    let tmp = [];
-    for (let i = 0; i < _contexto.length; i++) {
-        const element = _contexto[i];
-        // console.log(element, 555555)
-        /* if (element.attributes) { // Hace match con un atributo
-            for (let j = 0; j < element.attributes.length; j++) {
-                const attribute = element.attributes[j];
-                condition = verificarDesigualdad(desigualdad, attribute.value, valor);
-                if (condition) {
-                    tmp.push(element);
-                    break; // Sale del ciclo de atributos para pasar al siguiente elemento
-                }
+const Contexto_1 = __webpack_require__(/*! ../../../Contexto */ "ivfU");
+function filterElements(valor, desigualdad, _contexto, _root) {
+    try {
+        let condition = false;
+        let out = [];
+        let array = _contexto.removeDadDuplicates();
+        for (let i = 0; i < array.length; i++) {
+            const obj = array[i];
+            condition = verificarDesigualdad(desigualdad, obj.value, valor);
+            if (condition) { // Si la condición cumple, apilar los elementos en esa posición
+                let context = new Contexto_1.Contexto([_root.elementos[i]]);
+                context.variable = _root.variable;
+                out.push(context);
             }
         }
-        if (element.childs) { // Hace match con algún hijo
-            for (let j = 0; j < element.childs.length; j++) {
-                const child = element.childs[j];
-                condition = verificarDesigualdad(desigualdad, child.value, valor);
-                if (condition) {
-                    tmp.push(element);
-                    break;
-                }
-            }
-        } */
-        condition = verificarDesigualdad(desigualdad, element.value, valor); // Hace match con el elemento
-        if (condition) {
-            let dad = element.father;
-            if (dad)
-                tmp = tmp.concat(_ambito.searchDad(_ambito.tablaSimbolos[0], dad.id, dad.line, dad.column, []));
-        }
+        return out;
     }
-    // console.log(tmp, 133333333333333)
-    return tmp;
+    catch (error) {
+        console.log(error);
+        return [];
+    }
 }
 function verificarDesigualdad(_tipo, v1, e1) {
     switch (_tipo) {
@@ -8866,12 +8866,12 @@ if ( true && __webpack_require__.c[__webpack_require__.s] === module) {
   }
 */
 var xquery = (function(){
-var o=function(k,v,o,l){for(o=o||{},l=k.length;l--;o[k[l]]=v);return o},$V0=[1,7],$V1=[1,10],$V2=[1,15],$V3=[1,16],$V4=[1,44],$V5=[1,24],$V6=[1,12],$V7=[1,11],$V8=[1,27],$V9=[1,28],$Va=[1,29],$Vb=[1,30],$Vc=[1,45],$Vd=[1,46],$Ve=[1,20],$Vf=[1,21],$Vg=[1,22],$Vh=[1,23],$Vi=[1,31],$Vj=[1,32],$Vk=[1,33],$Vl=[1,34],$Vm=[1,35],$Vn=[1,36],$Vo=[1,37],$Vp=[1,38],$Vq=[1,39],$Vr=[1,40],$Vs=[1,41],$Vt=[1,42],$Vu=[1,43],$Vv=[5,51],$Vw=[5,8,11,12,19],$Vx=[5,8,11,12,19,24,26,27,29,32,33,37,38,40,42,44,47,49,51,53,54,60,61,62,63,64,65,66,67,68,69,72,73,74,75,76,77,78,79,80,81,84,85,86,87,88,89,90,91,92,93,94,95,96],$Vy=[2,56],$Vz=[1,63],$VA=[5,8,11,12,19,24,26,27,29,32,33,37,38,40,42,44,47,49,51,53,54,59,60,61,62,63,64,65,66,67,68,69,72,73,74,75,76,77,78,79,80,81,84,85,86,87,88,89,90,91,92,93,94,95,96],$VB=[1,82],$VC=[1,83],$VD=[1,84],$VE=[24,26,27,29],$VF=[1,85],$VG=[1,86],$VH=[1,91],$VI=[1,90],$VJ=[5,8,11,12,19,24,27,29],$VK=[1,107],$VL=[1,114],$VM=[1,116],$VN=[1,124],$VO=[1,119],$VP=[1,113],$VQ=[1,115],$VR=[1,117],$VS=[1,118],$VT=[1,120],$VU=[1,121],$VV=[1,122],$VW=[1,123],$VX=[1,125],$VY=[5,8,11,12,19,24,26,27,29,37,38,40,42,49,54,60,61,62,63,64,65,66,67,68,69],$VZ=[5,8,11,12,19,24,26,27,29],$V_=[42,44],$V$=[26,38],$V01=[5,8,11,12,19,24,26,27,29,37,38,40,42,49,60,61,62,67,68,69],$V11=[5,8,11,12,19,24,26,27,29,37,38,40,42,49,60,61,62,63,64,67,68,69],$V21=[1,163],$V31=[1,164],$V41=[33,40,42,44,46];
+var o=function(k,v,o,l){for(o=o||{},l=k.length;l--;o[k[l]]=v);return o},$V0=[1,7],$V1=[1,10],$V2=[1,15],$V3=[1,16],$V4=[1,31],$V5=[1,25],$V6=[1,12],$V7=[1,11],$V8=[1,27],$V9=[1,28],$Va=[1,29],$Vb=[1,30],$Vc=[1,45],$Vd=[1,46],$Ve=[1,21],$Vf=[1,22],$Vg=[1,23],$Vh=[1,24],$Vi=[1,32],$Vj=[1,33],$Vk=[1,34],$Vl=[1,35],$Vm=[1,36],$Vn=[1,37],$Vo=[1,38],$Vp=[1,39],$Vq=[1,40],$Vr=[1,41],$Vs=[1,42],$Vt=[1,43],$Vu=[1,44],$Vv=[5,53],$Vw=[5,8,11,12,19],$Vx=[5,8,11,12,19,24,26,27,29,32,33,37,38,43,45,47,50,52,53,55,56,62,63,64,65,66,67,68,69,70,71,74,75,76,77,78,79,80,81,82,83,86,87,88,89,90,91,92,93,94,95,96,97,98],$Vy=[2,58],$Vz=[1,63],$VA=[5,8,11,12,19,24,26,27,29,32,33,37,38,43,45,47,50,52,53,55,56,61,62,63,64,65,66,67,68,69,70,71,74,75,76,77,78,79,80,81,82,83,86,87,88,89,90,91,92,93,94,95,96,97,98],$VB=[1,83],$VC=[1,84],$VD=[1,85],$VE=[24,26,27,29],$VF=[1,86],$VG=[1,87],$VH=[1,92],$VI=[1,91],$VJ=[5,8,11,12,19,24,27,29],$VK=[32,33,47,55,74,75,76,77,78,79,80,81,82,83,86,87,88,89,90,91,92,93,94,95,96,97,98],$VL=[2,31],$VM=[1,109],$VN=[1,111],$VO=[1,117],$VP=[1,119],$VQ=[1,127],$VR=[1,122],$VS=[1,116],$VT=[1,118],$VU=[1,120],$VV=[1,121],$VW=[1,123],$VX=[1,124],$VY=[1,125],$VZ=[1,126],$V_=[1,128],$V$=[5,8,11,12,19,24,26,27,29,37,38,43,45,52,56,62,63,64,65,66,67,68,69,70,71],$V01=[5,8,11,12,19,24,26,27,29],$V11=[45,47],$V21=[26,38],$V31=[5,8,11,12,19,24,26,27,29,37,38,43,45,52,62,63,64,69,70,71],$V41=[5,8,11,12,19,24,26,27,29,37,38,43,45,52,62,63,64,65,66,69,70,71],$V51=[1,171],$V61=[1,172],$V71=[33,43,45,47,49];
 var parser = {trace: function trace () { },
 yy: {},
-symbols_: {"error":2,"ini":3,"XPATH_U":4,"EOF":5,"XQUERY":6,"INSTR_QUERY":7,"IF_ELSE_IF":8,"FOR_LOOP":9,"LET_CLAUSE":10,"FUNCIONES":11,"tk_for":12,"DECLARACION":13,"INSTRUCCIONES_FOR":14,"INSTR_FOR_P":15,"WHERE_CONDITION":16,"ORDER_BY":17,"RETURN_STATEMENT":18,"tk_let":19,"VARIABLE":20,"tk_2puntos_igual":21,"DECLARACIONPP":22,"DECLARACIONP":23,"tk_where":24,"E":25,"tk_coma":26,"tk_order":27,"tk_by":28,"tk_return":29,"HTML":30,"XPATH":31,"tk_dolar":32,"tk_id":33,"tk_in":34,"tk_at":35,"tk_ParA":36,"tk_to":37,"tk_ParC":38,"VALORES_COMA":39,"tk_menor":40,"ATTRIBUTE_LIST":41,"tk_mayor":42,"CONTENT_LL":43,"tk_bar":44,"CONTENT_TAG":45,"tk_labre":46,"tk_lcierra":47,"tk_data":48,"tk_equal":49,"STRING":50,"tk_line":51,"QUERY":52,"tk_2bar":53,"tk_asterisco":54,"CORCHETP":55,"EXP_PR":56,"AXIS":57,"CORCHET":58,"tk_corA":59,"tk_corC":60,"tk_menorigual":61,"tk_mayorigual":62,"tk_mas":63,"tk_menos":64,"tk_div":65,"tk_mod":66,"tk_or":67,"tk_and":68,"tk_diferent":69,"FUNC":70,"PRIMITIVO":71,"num":72,"tk_punto":73,"tk_2puntos":74,"tk_arroba":75,"tk_string_d":76,"tk_string_s":77,"tk_text":78,"tk_last":79,"tk_position":80,"tk_node":81,"AXISNAME":82,"tk_4puntos":83,"tk_ancestor":84,"tk_ancestor2":85,"tk_attribute":86,"tk_child":87,"tk_descendant":88,"tk_descendant2":89,"tk_following":90,"tk_following2":91,"tk_namespace":92,"tk_parent":93,"tk_preceding":94,"tk_preceding2":95,"tk_self":96,"$accept":0,"$end":1},
-terminals_: {2:"error",5:"EOF",8:"IF_ELSE_IF",11:"FUNCIONES",12:"tk_for",19:"tk_let",21:"tk_2puntos_igual",24:"tk_where",26:"tk_coma",27:"tk_order",28:"tk_by",29:"tk_return",32:"tk_dolar",33:"tk_id",34:"tk_in",35:"tk_at",36:"tk_ParA",37:"tk_to",38:"tk_ParC",40:"tk_menor",42:"tk_mayor",44:"tk_bar",46:"tk_labre",47:"tk_lcierra",48:"tk_data",49:"tk_equal",51:"tk_line",53:"tk_2bar",54:"tk_asterisco",59:"tk_corA",60:"tk_corC",61:"tk_menorigual",62:"tk_mayorigual",63:"tk_mas",64:"tk_menos",65:"tk_div",66:"tk_mod",67:"tk_or",68:"tk_and",69:"tk_diferent",72:"num",73:"tk_punto",74:"tk_2puntos",75:"tk_arroba",76:"tk_string_d",77:"tk_string_s",78:"tk_text",79:"tk_last",80:"tk_position",81:"tk_node",83:"tk_4puntos",84:"tk_ancestor",85:"tk_ancestor2",86:"tk_attribute",87:"tk_child",88:"tk_descendant",89:"tk_descendant2",90:"tk_following",91:"tk_following2",92:"tk_namespace",93:"tk_parent",94:"tk_preceding",95:"tk_preceding2",96:"tk_self"},
-productions_: [0,[3,2],[3,2],[6,2],[6,1],[7,1],[7,1],[7,1],[7,1],[9,3],[14,2],[14,1],[15,1],[15,1],[15,1],[10,4],[10,2],[16,2],[17,3],[17,3],[18,2],[18,2],[20,2],[13,3],[13,1],[23,3],[23,5],[22,5],[22,3],[22,1],[39,3],[39,1],[30,9],[30,8],[30,5],[43,2],[43,1],[45,1],[45,3],[45,6],[41,3],[41,3],[41,0],[4,3],[4,1],[31,2],[31,1],[52,2],[52,2],[52,3],[52,3],[52,1],[52,1],[58,4],[58,3],[55,1],[55,0],[25,3],[25,3],[25,3],[25,3],[25,3],[25,3],[25,3],[25,3],[25,3],[25,2],[25,3],[25,3],[25,3],[25,3],[25,3],[25,1],[56,2],[56,2],[71,1],[71,1],[71,1],[71,1],[71,1],[71,1],[71,2],[71,2],[50,1],[50,1],[70,3],[70,3],[70,3],[70,3],[57,3],[82,1],[82,1],[82,1],[82,1],[82,1],[82,1],[82,1],[82,1],[82,1],[82,1],[82,1],[82,1],[82,1]],
+symbols_: {"error":2,"ini":3,"XPATH_U":4,"EOF":5,"XQUERY":6,"INSTR_QUERY":7,"IF_ELSE_IF":8,"FOR_LOOP":9,"LET_CLAUSE":10,"FUNCIONES":11,"tk_for":12,"DECLARACION":13,"INSTRUCCIONES_FOR":14,"INSTR_FOR_P":15,"WHERE_CONDITION":16,"ORDER_BY":17,"RETURN_STATEMENT":18,"tk_let":19,"VARIABLE":20,"tk_2puntos_igual":21,"DECLARACIONPP":22,"DECLARACIONP":23,"tk_where":24,"E":25,"tk_coma":26,"tk_order":27,"tk_by":28,"tk_return":29,"HTML":30,"XPATH":31,"tk_dolar":32,"tk_id":33,"tk_in":34,"tk_at":35,"tk_ParA":36,"tk_to":37,"tk_ParC":38,"VALORES_COMA":39,"DOC":40,"tk_doc":41,"STRING":42,"tk_menor":43,"ATTRIBUTE_LIST":44,"tk_mayor":45,"CONTENT_LL":46,"tk_bar":47,"CONTENT_TAG":48,"tk_labre":49,"tk_lcierra":50,"tk_data":51,"tk_equal":52,"tk_line":53,"QUERY":54,"tk_2bar":55,"tk_asterisco":56,"CORCHETP":57,"EXP_PR":58,"AXIS":59,"CORCHET":60,"tk_corA":61,"tk_corC":62,"tk_menorigual":63,"tk_mayorigual":64,"tk_mas":65,"tk_menos":66,"tk_div":67,"tk_mod":68,"tk_or":69,"tk_and":70,"tk_diferent":71,"FUNC":72,"PRIMITIVO":73,"num":74,"tk_punto":75,"tk_2puntos":76,"tk_arroba":77,"tk_string_d":78,"tk_string_s":79,"tk_text":80,"tk_last":81,"tk_position":82,"tk_node":83,"AXISNAME":84,"tk_4puntos":85,"tk_ancestor":86,"tk_ancestor2":87,"tk_attribute":88,"tk_child":89,"tk_descendant":90,"tk_descendant2":91,"tk_following":92,"tk_following2":93,"tk_namespace":94,"tk_parent":95,"tk_preceding":96,"tk_preceding2":97,"tk_self":98,"$accept":0,"$end":1},
+terminals_: {2:"error",5:"EOF",8:"IF_ELSE_IF",11:"FUNCIONES",12:"tk_for",19:"tk_let",21:"tk_2puntos_igual",24:"tk_where",26:"tk_coma",27:"tk_order",28:"tk_by",29:"tk_return",32:"tk_dolar",33:"tk_id",34:"tk_in",35:"tk_at",36:"tk_ParA",37:"tk_to",38:"tk_ParC",41:"tk_doc",43:"tk_menor",45:"tk_mayor",47:"tk_bar",49:"tk_labre",50:"tk_lcierra",51:"tk_data",52:"tk_equal",53:"tk_line",55:"tk_2bar",56:"tk_asterisco",61:"tk_corA",62:"tk_corC",63:"tk_menorigual",64:"tk_mayorigual",65:"tk_mas",66:"tk_menos",67:"tk_div",68:"tk_mod",69:"tk_or",70:"tk_and",71:"tk_diferent",74:"num",75:"tk_punto",76:"tk_2puntos",77:"tk_arroba",78:"tk_string_d",79:"tk_string_s",80:"tk_text",81:"tk_last",82:"tk_position",83:"tk_node",85:"tk_4puntos",86:"tk_ancestor",87:"tk_ancestor2",88:"tk_attribute",89:"tk_child",90:"tk_descendant",91:"tk_descendant2",92:"tk_following",93:"tk_following2",94:"tk_namespace",95:"tk_parent",96:"tk_preceding",97:"tk_preceding2",98:"tk_self"},
+productions_: [0,[3,2],[3,2],[6,2],[6,1],[7,1],[7,1],[7,1],[7,1],[9,3],[14,2],[14,1],[15,1],[15,1],[15,1],[10,4],[10,2],[16,2],[17,3],[17,3],[18,2],[18,2],[20,2],[13,3],[13,1],[23,3],[23,5],[22,5],[22,3],[22,2],[40,4],[40,0],[39,3],[39,1],[30,9],[30,8],[30,5],[46,2],[46,1],[48,1],[48,3],[48,6],[44,3],[44,3],[44,0],[4,3],[4,1],[31,2],[31,1],[54,2],[54,2],[54,3],[54,3],[54,1],[54,1],[60,4],[60,3],[57,1],[57,0],[25,3],[25,3],[25,3],[25,3],[25,3],[25,3],[25,3],[25,3],[25,3],[25,2],[25,3],[25,3],[25,3],[25,3],[25,3],[25,1],[58,2],[58,2],[58,2],[73,1],[73,1],[73,1],[73,1],[73,1],[73,2],[73,2],[42,1],[42,1],[72,3],[72,3],[72,3],[72,3],[59,3],[59,4],[84,1],[84,1],[84,1],[84,1],[84,1],[84,1],[84,1],[84,1],[84,1],[84,1],[84,1],[84,1],[84,1]],
 performAction: function anonymous(yytext, yyleng, yylineno, yy, yystate /* action[1] */, $$ /* vstack */, _$ /* lstack */) {
 /* this == yyval */
 
@@ -8882,25 +8882,25 @@ case 1:
 					prod_2 = grammar_stack.pop();
 			 		grammar_stack.push({'ini -> XPATH_U EOF': [prod_2, prod_1]});
 					// grammar_report =  getGrammarReport(grammar_stack); // cst = getCST(grammar_stack); // let arbol_ast = getASTTree($$[$0-1]);
-					ast = { ast: $$[$0-1], errors: errors, cst: "cst", grammar_report: "grammar_report",  arbolAST : "arbol_ast" }; return ast;
+					ast = { xpath: $$[$0-1], errors: errors, cst: "cst", grammar_report: "grammar_report",  arbolAST : "arbol_ast" }; return ast;
                 
 break;
 case 2:
- ast = { ast: $$[$0-1], errors: errors, cst: "cst", grammar_report: "grammar_report",  arbolAST : "arbol_ast" }; return ast; 
+ ast = { xquery: $$[$0-1], errors: errors, cst: "cst", grammar_report: "grammar_report",  arbolAST : "arbol_ast" }; return ast; 
 break;
-case 3: case 10: case 35:
+case 3: case 10: case 37:
  $$[$0-1].push($$[$0]); this.$=$$[$0-1]; 
 break;
-case 4: case 11: case 19: case 31: case 36:
+case 4: case 11: case 33: case 38:
  this.$=[$$[$0]]; 
 break;
-case 6: case 29: case 40: case 41: case 51: case 52: case 72:
+case 6: case 18: case 19: case 29: case 42: case 43: case 53: case 54: case 74:
  this.$=$$[$0]; 
 break;
 case 9:
  this.$ = queryBuilder.nuevoFor($$[$0-1], $$[$0], this._$.first_line, this._$.first_column+1); 
 break;
-case 12: case 14: case 77:
+case 12: case 14: case 79:
  this.$ = $$[$0]; 
 break;
 case 13:
@@ -8912,14 +8912,14 @@ break;
 case 17:
  this.$ = queryBuilder.nuevoWhere($$[$0], this._$.first_line, this._$.first_column+1); 
 break;
-case 18: case 23: case 30:
- $$[$0-2].push($$[$0]); this.$=$$[$0-2]; 
-break;
 case 20: case 21:
  this.$ = queryBuilder.nuevoReturn($$[$0], this._$.first_line, this._$.first_column+1); 
 break;
 case 22:
  this.$=queryBuilder.nuevaVariable("$"+$$[$0], this._$.first_line, this._$.first_column+1); 
+break;
+case 23: case 32:
+ $$[$0-2].push($$[$0]); this.$=$$[$0-2]; 
 break;
 case 24:
  this.$=[$$[$0]] 
@@ -8936,306 +8936,313 @@ break;
 case 28:
  this.$ = queryBuilder.nuevosValores($$[$0-1], this._$.first_line, this._$.first_column+1); 
 break;
-case 32:
+case 34:
  this.$ = queryBuilder.nuevoHTML($$[$0-7], $$[$0-6], $$[$0-4], $$[$0-1], this._$.first_line, this._$.first_column+1); 
 break;
-case 33:
+case 35:
  this.$ = queryBuilder.nuevoHTML($$[$0-6], $$[$0-5], null, $$[$0-1], this._$.first_line, this._$.first_column+1); 
 break;
-case 34:
+case 36:
  this.$ = queryBuilder.nuevoHTML($$[$0-3], $$[$0-2], null, null, this._$.first_line, this._$.first_column+1); 
 break;
-case 37:
+case 39:
  this.$ = queryBuilder.nuevoContenido($$[$0], this._$.first_line, this._$.first_column+1); 
 break;
-case 38:
+case 40:
  this.$ = queryBuilder.nuevaInyeccion($$[$0-1], false, this._$.first_line, this._$.first_column+1); 
 break;
-case 39:
+case 41:
  this.$ = queryBuilder.nuevaInyeccion($$[$0-2], true, this._$.first_line, this._$.first_column+1); 
 break;
-case 42:
+case 44:
  this.$=null; 
 break;
-case 43:
+case 45:
  $$[$0-2].push($$[$0]); this.$=$$[$0-2];
 								 prod_1 = grammar_stack.pop();
 								 prod_2 = grammar_stack.pop();
 			 					 grammar_stack.push({'XPATH_U -> XPATH_U tk_line XPATH {S1.push(S3); SS = S1;}': [prod_2, 'token: tk_line\t Lexema: ' + $$[$0-2], prod_1]}); 
 break;
-case 44:
+case 46:
  this.$=[$$[$0]];
 				  prod_1 = grammar_stack.pop();
 			 	  grammar_stack.push({'XPATH_U -> XPATH {SS = [S1]}': [prod_1]}); 
 break;
-case 45:
+case 47:
  $$[$0-1].push($$[$0]); this.$=$$[$0-1];
 					  prod_1 = grammar_stack.pop();
 					  prod_2 = grammar_stack.pop();
 			 		  grammar_stack.push({'XPATH -> XPATH QUERY {S1.push(S2); SS = S1;}': [prod_2, prod_1]}); 
 break;
-case 46:
+case 48:
  this.$=[$$[$0]];
 			   prod_1 = grammar_stack.pop();
 			   grammar_stack.push({'XPATH -> QUERY {SS = [S1]}': [prod_1]}); 
 break;
-case 47:
+case 49:
  this.$=builder.newDoubleAxis($$[$0], this._$.first_line, this._$.first_column+1);
 					   prod_1 = grammar_stack.pop();
 			 		   grammar_stack.push({'QUERY -> tk_2bar QUERY SS=builder.newDoubleAxis(Param);': ['token: tk_2bar\t Lexema: ' + $$[$0-1], prod_1]}); 
 break;
-case 48:
+case 50:
  this.$=builder.newAxis($$[$0], this._$.first_line, this._$.first_column+1);
 					 prod_1 = grammar_stack.pop();
 			 		 grammar_stack.push({'QUERY -> tk_bar QUERY {SS=builder.newAxis(Param);}': ['token: tk_bar\t Lexema: ' + $$[$0-1], prod_1]}); 
 break;
-case 49:
+case 51:
 
 			var linea = this._$.first_line;
 			var columna = this._$.first_column+1;
 			this.$=builder.newAxis(builder.newExpression(builder.newValue($$[$0-1], Tipos.ASTERISCO, linea, columna), $$[$0], linea, columna), linea, columna);
 		
 break;
-case 50:
+case 52:
 
 			var linea = this._$.first_line;
 			var columna = this._$.first_column+1;
 			this.$=builder.newDoubleAxis(builder.newExpression(builder.newValue($$[$0-1], Tipos.ASTERISCO, linea, columna), $$[$0], linea, columna), linea, columna);
 		
 break;
-case 53:
+case 55:
  $$[$0-3].push(builder.newPredicate($$[$0-1], this._$.first_line, this._$.first_column+1)); this.$=$$[$0-3];
 									 prod_1 = grammar_stack.pop();
 									 prod_2 = grammar_stack.pop();
 						 			 grammar_stack.push({'CORCHET -> CORCHET tk_ParA E tk_ParC {S1.push(builder.NewPredicate(Param))}': [prod_2, 'token: tk_ParA\t Lexema: ' + $$[$0-2], prod_1, 'token: tk_ParC\t Lexema: ' + $$[$0]]}); 
 break;
-case 54:
+case 56:
  this.$=[builder.newPredicate($$[$0-1], this._$.first_line, this._$.first_column+1)];
 						 prod_1 = grammar_stack.pop();
 						 grammar_stack.push({'CORCHET -> tk_corA E tk_corC {SS=builder.newPredicate(Param)}': ['token: tk_corA\t Lexema: ' + $$[$0-2], prod_1, 'token: tk_corC\t Lexema: ' + $$[$0]]}); 
 break;
-case 55:
+case 57:
  this.$=$$[$0];
 					prod_1 = grammar_stack.pop();
 					grammar_stack.push({'CORCHETP -> CORCHET {SS=S1;}': [prod_1]}); 
 break;
-case 56:
+case 58:
  this.$=null;
 			grammar_stack.push({'CORCHETP -> Empty {SS=null}': ['EMPTY'] }); 
 break;
-case 57:
+case 59:
  this.$=builder.newOperation($$[$0-2], $$[$0], Tipos.RELACIONAL_MENORIGUAL, this._$.first_line, this._$.first_column+1);
 						prod_1 = grammar_stack.pop();
 				 		prod_2 = grammar_stack.pop();
 					    grammar_stack.push({'E -> E tk_menorigual E {SS=builder.newOperation(Param)}': [prod_2, 'token: tk_menorigual\t Lexema: ' + $$[$0-1], prod_1]}); 
 break;
-case 58:
+case 60:
  this.$=builder.newOperation($$[$0-2], $$[$0], Tipos.RELACIONAL_MENOR, this._$.first_line, this._$.first_column+1);
 					 prod_1 = grammar_stack.pop();
 				 	 prod_2 = grammar_stack.pop();
 				 	 grammar_stack.push({'E -> E tk_menor E {SS=builder.newOperation(Param)}': [prod_2, 'token: tk_menor\t Lexema: ' + $$[$0-1], prod_1]}); 
 break;
-case 59:
+case 61:
  this.$=builder.newOperation($$[$0-2], $$[$0], Tipos.RELACIONAL_MAYORIGUAL, this._$.first_line, this._$.first_column+1);
 						  prod_1 = grammar_stack.pop();
 				 		  prod_2 = grammar_stack.pop();
 						  grammar_stack.push({'E -> E tk_mayorigual E {SS=builder.newOperation(Param)}': [prod_2, 'token: tk_mayorigual\t Lexema: ' + $$[$0-1], prod_1]}); 
 break;
-case 60:
+case 62:
  this.$=builder.newOperation($$[$0-2], $$[$0], Tipos.RELACIONAL_MAYOR, this._$.first_line, this._$.first_column+1);
 					 prod_1 = grammar_stack.pop();
 				 	 prod_2 = grammar_stack.pop();
 				 	 grammar_stack.push({'E -> E tk_mayor E {SS=builder.newOperation(Param)}': [prod_2, 'token: tk_mayor\t Lexema: ' + $$[$0-1], prod_1]}); 
 break;
-case 61:
+case 63:
  this.$=builder.newOperation($$[$0-2], $$[$0], Tipos.OPERACION_SUMA, this._$.first_line, this._$.first_column+1);
 				   prod_1 = grammar_stack.pop();
 				   prod_2 = grammar_stack.pop();
 				   grammar_stack.push({'E -> E tk_mas E {SS=builder.newOperation(Param)}': [prod_2, 'token: tk_mas\t Lexema: ' + $$[$0-1], prod_1]}); 
 break;
-case 62:
+case 64:
  this.$=builder.newOperation($$[$0-2], $$[$0], Tipos.OPERACION_RESTA, this._$.first_line, this._$.first_column+1);
 					 prod_1 = grammar_stack.pop();
 				 	 prod_2 = grammar_stack.pop();
 				  	 grammar_stack.push({'E -> E tk_menos E {SS=builder.newOperation(Param)}': [prod_2, 'token: tk_menos\t Lexema: ' + $$[$0-1], prod_1]}); 
 break;
-case 63:
+case 65:
  this.$=builder.newOperation($$[$0-2], $$[$0], Tipos.OPERACION_MULTIPLICACION, this._$.first_line, this._$.first_column+1);
 						 prod_1 = grammar_stack.pop();
 				 		 prod_2 = grammar_stack.pop();
 				  		 grammar_stack.push({'E -> E tk_asterisco E {SS=builder.newOperation(Param)}': [prod_2, 'token: tk_asterisco\t Lexema: ' + $$[$0-1], prod_1]}); 
 break;
-case 64:
+case 66:
  this.$=builder.newOperation($$[$0-2], $$[$0], Tipos.OPERACION_DIVISION, this._$.first_line, this._$.first_column+1);
 				   prod_1 = grammar_stack.pop();
 				   prod_2 = grammar_stack.pop();
 				   grammar_stack.push({'E -> E tk_div E {SS=builder.newOperation(Param)}': [prod_2, 'token: tk_div\t Lexema: ' + $$[$0-1], prod_1]}); 
 break;
-case 65:
+case 67:
  this.$=builder.newOperation($$[$0-2], $$[$0], Tipos.OPERACION_MODULO, this._$.first_line, this._$.first_column+1);
 				   prod_1 = grammar_stack.pop();
 				   prod_2 = grammar_stack.pop();
 				   grammar_stack.push({'E -> E tk_mod E {SS=builder.newOperation(Param)}': [prod_2, 'token: tk_mod\t Lexema: ' + $$[$0-1], prod_1]}); 
 break;
-case 66:
- this.$=builder.newOperation(builder.newValue(0, Tipos.NUMBER, this.$.first_line, this.$.first_column+1), $$[$0], Tipos.OPERACION_RESTA, this.$.first_line, this.$.first_column+1); 
+case 68:
+ this.$=builder.newOperation(builder.newValue(0, Tipos.NUMBER, _$[$0-1].first_line, _$[$0-1].first_column+1), $$[$0], Tipos.OPERACION_RESTA, this.$.first_line, this.$.first_column+1); 
 								prod_1 = grammar_stack.pop();
 						  		grammar_stack.push({'E -: tk_menos E': ['token: tk_menos\t Lexema: ' + $$[$0-1], prod_1]});
 break;
-case 67:
+case 69:
  this.$=$$[$0-1];
 						  prod_1 = grammar_stack.pop();
 						  grammar_stack.push({'E -> tk_ParA E tk_ParC {SS=S2}': ['token: tk_ParA\t Lexema: ' + $$[$0-2], prod_1, 'token: tk_ParC\t Lexema: ' + $$[$0]]}); 
 break;
-case 68:
+case 70:
  this.$=builder.newOperation($$[$0-2], $$[$0], Tipos.LOGICA_OR, this._$.first_line, this._$.first_column+1);
 				  prod_1 = grammar_stack.pop();
 				  prod_2 = grammar_stack.pop();
 				  grammar_stack.push({'E -> E tk_or E {SS=builder.newOperation(Param)}': [prod_2, 'token: tk_or\t Lexema: ' + $$[$0-1], prod_1]}); 
 break;
-case 69:
+case 71:
  this.$=builder.newOperation($$[$0-2], $$[$0], Tipos.LOGICA_AND, this._$.first_line, this._$.first_column+1);
 				   prod_1 = grammar_stack.pop();
 				   prod_2 = grammar_stack.pop();
 				   grammar_stack.push({'E -> E tk_and E {SS=builder.newOperation(Param)}': [prod_2, 'token: tk_and\t Lexema: ' + $$[$0-1], prod_1]}); 
 break;
-case 70:
+case 72:
  this.$=builder.newOperation($$[$0-2], $$[$0], Tipos.RELACIONAL_IGUAL, this._$.first_line, this._$.first_column+1); 
 					 prod_1 = grammar_stack.pop();
 					 prod_2 = grammar_stack.pop();
 					 grammar_stack.push({'E -> E tk_equal E {SS=builder.newOperation(Param)}': [prod_2, 'token: tk_equal\t Lexema: ' + $$[$0-1], prod_1]}); 
 break;
-case 71:
+case 73:
  this.$=builder.newOperation($$[$0-2], $$[$0], Tipos.RELACIONAL_DIFERENTE, this._$.first_line, this._$.first_column+1); 
 						prod_1 = grammar_stack.pop();
 						prod_2 = grammar_stack.pop();
 						grammar_stack.push({'E -> E tk_diferent E {SS=builder.newOperation(Param)}': [prod_2, 'token: tk_diferent\t Lexema: ' + $$[$0-1], prod_1]}); 
 break;
-case 73:
+case 75:
  this.$=builder.newExpression($$[$0-1], $$[$0], this._$.first_line, this._$.first_column+1);
 						prod_1 = grammar_stack.pop();
 						prod_2 = grammar_stack.pop();
 						grammar_stack.push({'EXP_PR -> FUNC CORCHETP {SS=builder.newExpression(Param)}': [prod_2, prod_1]}); 
 break;
-case 74:
+case 76:
  this.$=builder.newExpression($$[$0-1], $$[$0], this._$.first_line, this._$.first_column+1); 
 								prod_1 = grammar_stack.pop();
 								prod_2 = grammar_stack.pop();
 								grammar_stack.push({'EXP_PR -> PRIMITIVO CORCHETP {SS=builder.newExpression(Param)}': [prod_2, prod_1]}); 
 break;
-case 75:
+case 77:
+ this.$=insert_current($$[$0-1].variable, $$[$0], this._$.first_line, this._$.first_column+1); 
+break;
+case 78:
  this.$=builder.newNodename($$[$0], this._$.first_line, this._$.first_column+1);
 				   grammar_stack.push({'PRIMITIVO -> tk_id {SS=builder.newNodename(Param)}':['token: tk_text\t Lexema: ' + $$[$0]]}); 
 break;
-case 76:
- this.$=builder.newAxis(builder.newCurrent($$[$0].variable, this._$.first_line, this._$.first_column+1), this._$.first_line, this._$.first_column+1); 
-break;
-case 78:
+case 80:
  this.$=builder.newValue(Number($$[$0]), Tipos.NUMBER, this._$.first_line, this._$.first_column+1);
 				grammar_stack.push({'PRIMITIVO -> num {SS=builder.newValue(Param)}':['token: num\t Lexema: ' + $$[$0]]}); 
 break;
-case 79:
+case 81:
  this.$=builder.newCurrent($$[$0], this._$.first_line, this._$.first_column+1); 
 					 grammar_stack.push({'PRIMITIVO -> tk_punto {SS=builder.newCurrent(Param)}':['token: tk_punto\t Lexema: ' + $$[$0]]}); 
 break;
-case 80:
+case 82:
  this.$=builder.newParent($$[$0], this._$.first_line, this._$.first_column+1);
 					   grammar_stack.push({'PRIMITIVO -> tk_2puntos {SS=builder.newParent(Param)}':['token: tk_2puntos\t Lexema: ' + $$[$0]]}); 
 break;
-case 81:
+case 83:
  this.$=builder.newAttribute($$[$0], this._$.first_line, this._$.first_column+1);
 							grammar_stack.push({'PRIMITIVO -> tk_arroba tk_id {SS=builder.newAttribute(Param)}':['token: tk_arroba\t Lexema: ' + $$[$0-1], 'token: tk_id\t Lexema: ' + $$[$0]]}); 
 break;
-case 82:
+case 84:
  this.$=builder.newAttribute($$[$0], this._$.first_line, this._$.first_column+1); 
 							 grammar_stack.push({'PRIMITIVO -> tk_arroba tk_asterisco {SS=builder.newAttribute(Param)}':['token: tk_arroba\t Lexema: ' + $$[$0-1], 'token: tk_asterisco\t Lexema: ' + $$[$0]]});
 break;
-case 83:
+case 85:
  this.$=builder.newValue($$[$0], Tipos.STRING, this._$.first_line, this._$.first_column+1);
 						   grammar_stack.push({'PRIMITIVO -> tk_attribute_d {SS=builder.newValue(Param)}':['token: tk_attribute_d\t Lexema: ' + $$[$0]]}); 
 break;
-case 84:
+case 86:
  this.$=builder.newValue($$[$0], Tipos.STRING, this._$.first_line, this._$.first_column+1); 
 						   grammar_stack.push({'PRIMITIVO -> tk_attribute_s {SS=builder.newValue(Param)}':['token: tk_attribute_s\t Lexema: ' + $$[$0]]}); 
 break;
-case 85:
+case 87:
  this.$=builder.newValue($$[$0-2], Tipos.FUNCION_TEXT, this._$.first_line, this._$.first_column+1);
 								grammar_stack.push({'FUNC -> tk_text tk_ParA tk_ParC {SS=builder.newValue(Param)}':['token: tk_text\t Lexema: ' + $$[$0-2], 'token: tk_ParA\t Lexema: ' + $$[$0-1], 'token: tk_ParC\t Lexema: ' + $$[$0]]}); 
 break;
-case 86:
+case 88:
  this.$=builder.newValue($$[$0-2], Tipos.FUNCION_LAST, this._$.first_line, this._$.first_column+1);
 								grammar_stack.push({'FUNC -> tk_last tk_ParA tk_ParC {SS=builder.newValue(Param)}':['token: tk_last\t Lexema: ' + $$[$0-2], 'token: tk_ParA\t Lexema: ' + $$[$0-1], 'token: tk_ParC\t Lexema: ' + $$[$0]]}); 
 break;
-case 87:
+case 89:
  this.$=builder.newValue($$[$0-2], Tipos.FUNCION_POSITION, this._$.first_line, this._$.first_column+1); 
 									grammar_stack.push({'FUNC -> tk_position tk_ParA tk_ParC {SS=builder.newValue(Param)}':['token: tk_position\t Lexema: ' + $$[$0-2], 'token: tk_ParA\t Lexema: ' + $$[$0-1], 'token: tk_ParC\t Lexema: ' + $$[$0]]});
 break;
-case 88:
+case 90:
  this.$=builder.newValue($$[$0-2], Tipos.FUNCION_NODE, this._$.first_line, this._$.first_column+1); 
 								grammar_stack.push({'FUNC -> tk_node tk_ParA tk_ParC {SS=builder.newValue(Param)}':['token: tk_node\t Lexema: ' + $$[$0-2], 'token: tk_ParA\t Lexema: ' + $$[$0-1], 'token: tk_ParC\t Lexema: ' + $$[$0]]});
 break;
-case 89:
+case 91:
  this.$=builder.newAxisObject($$[$0-2], $$[$0], this._$.first_line, this._$.first_column+1);
 								prod_1 = grammar_stack.pop();
 								prod_2 = grammar_stack.pop();
 								grammar_stack.push({'AXIS -> AXISNAME tk_4puntos QUERY {SS=builder.newAxisObject(Param)}':[prod_2, 'token: tk_4puntos\t Lexema: ' + $$[$0-1], prod_1]}); 
 break;
-case 90:
+case 92:
+ 
+		var linea = this._$.first_line;
+		var columna = this._$.first_column+1;
+		this.$=builder.newAxisObject($$[$0-3], builder.newExpression(builder.newValue($$[$0-1], Tipos.ASTERISCO, linea, columna), $$[$0], linea, columna), linea, columna);
+	
+break;
+case 93:
  this.$ = Tipos.AXIS_ANCESTOR;
 						grammar_stack.push({'AXISNAME -> tk_ancestor {SS = Tipos.AxisTipo}':['token: tk_ancestor\t Lexema: ' + $$[$0]]}); 
 break;
-case 91:
+case 94:
  this.$ = Tipos.AXIS_ANCESTOR_OR_SELF;
 						grammar_stack.push({'AXISNAME -> tk_ancestor2 {SS = Tipos.AxisTipo}':['token: tk_ancestor2\t Lexema: ' + $$[$0]]}); 
 break;
-case 92:
+case 95:
  this.$ = Tipos.AXIS_ATTRIBUTE;
 						grammar_stack.push({'AXISNAME -> tk_attribute {SS = Tipos.AxisTipo}':['token: tk_attribute\t Lexema: ' + $$[$0]]}); 
 break;
-case 93:
+case 96:
  this.$ = Tipos.AXIS_CHILD;
 						grammar_stack.push({'AXISNAME -> tk_child {SS = Tipos.AxisTipo}':['token: tk_child\t Lexema: ' + $$[$0]]}); 
 break;
-case 94:
+case 97:
  this.$ = Tipos.AXIS_DESCENDANT;
 						grammar_stack.push({'AXISNAME -> tk_descendant {SS = Tipos.AxisTipo}':['token: tk_descendant\t Lexema: ' + $$[$0]]}); 
 break;
-case 95:
+case 98:
  this.$ = Tipos.AXIS_DESCENDANT_OR_SELF;
 						grammar_stack.push({'AXISNAME -> tk_descendant2 {SS = Tipos.AxisTipo}':['token: tk_descendant2\t Lexema: ' + $$[$0]]}); 
 break;
-case 96:
+case 99:
  this.$ = Tipos.AXIS_FOLLOWING;
 						grammar_stack.push({'AXISNAME -> tk_following {SS = Tipos.AxisTipo}':['token: tk_following\t Lexema: ' + $$[$0]]}); 
 break;
-case 97:
+case 100:
  this.$ = Tipos.AXIS_FOLLOWING_SIBLING;
 						grammar_stack.push({'AXISNAME -> tk_following2 {SS = Tipos.AxisTipo}':['token: tk_follownig2\t Lexema: ' + $$[$0]]}); 
 break;
-case 98:
+case 101:
  this.$ = Tipos.AXIS_NAMESPACE;
 						grammar_stack.push({'AXISNAME -> tk_namespace {SS = Tipos.AxisTipo}':['token: tk_namespace\t Lexema: ' + $$[$0]]}); 
 break;
-case 99:
+case 102:
  this.$ = Tipos.AXIS_PARENT;
 						grammar_stack.push({'AXISNAME -> tk_parent {SS = Tipos.AxisTipo}':['token: tk_parent\t Lexema: ' + $$[$0]]}); 
 break;
-case 100:
+case 103:
  this.$ = Tipos.AXIS_PRECEDING;
 						grammar_stack.push({'AXISNAME -> tk_preceding {SS = Tipos.AxisTipo}':['token: tk_preceding\t Lexema: ' + $$[$0]]}); 
 break;
-case 101:
+case 104:
  this.$ = Tipos.AXIS_PRECEDING_SIBLING;
 						grammar_stack.push({'AXISNAME -> tk_preceding2 {SS = Tipos.AxisTipo}':['token: tk_preceding2\t Lexema: ' + $$[$0]]}); 
 break;
-case 102:
+case 105:
  this.$ = Tipos.AXIS_SELF;
 						grammar_stack.push({'AXISNAME -> tk_self {SS = Tipos.AxisTipo}':['token: tk_self\t Lexema: ' + $$[$0]]}); 
 break;
 }
 },
-table: [{3:1,4:2,6:3,7:5,8:$V0,9:8,10:9,11:$V1,12:$V2,19:$V3,20:25,31:4,32:$V4,33:$V5,44:$V6,50:26,52:6,53:$V7,56:13,57:14,70:17,71:18,72:$V8,73:$V9,74:$Va,75:$Vb,76:$Vc,77:$Vd,78:$Ve,79:$Vf,80:$Vg,81:$Vh,82:19,84:$Vi,85:$Vj,86:$Vk,87:$Vl,88:$Vm,89:$Vn,90:$Vo,91:$Vp,92:$Vq,93:$Vr,94:$Vs,95:$Vt,96:$Vu},{1:[3]},{5:[1,47],51:[1,48]},{5:[1,49],7:50,8:$V0,9:8,10:9,11:$V1,12:$V2,19:$V3},o($Vv,[2,44],{56:13,57:14,70:17,71:18,82:19,20:25,50:26,52:51,32:$V4,33:$V5,44:$V6,53:$V7,72:$V8,73:$V9,74:$Va,75:$Vb,76:$Vc,77:$Vd,78:$Ve,79:$Vf,80:$Vg,81:$Vh,84:$Vi,85:$Vj,86:$Vk,87:$Vl,88:$Vm,89:$Vn,90:$Vo,91:$Vp,92:$Vq,93:$Vr,94:$Vs,95:$Vt,96:$Vu}),o($Vw,[2,4]),o($Vx,[2,46]),o($Vw,[2,5]),o($Vw,[2,6]),o($Vw,[2,7]),o($Vw,[2,8]),{20:25,32:$V4,33:$V5,44:$V6,50:26,52:52,53:$V7,54:[1,53],56:13,57:14,70:17,71:18,72:$V8,73:$V9,74:$Va,75:$Vb,76:$Vc,77:$Vd,78:$Ve,79:$Vf,80:$Vg,81:$Vh,82:19,84:$Vi,85:$Vj,86:$Vk,87:$Vl,88:$Vm,89:$Vn,90:$Vo,91:$Vp,92:$Vq,93:$Vr,94:$Vs,95:$Vt,96:$Vu},{20:25,32:$V4,33:$V5,44:$V6,50:26,52:54,53:$V7,54:[1,55],56:13,57:14,70:17,71:18,72:$V8,73:$V9,74:$Va,75:$Vb,76:$Vc,77:$Vd,78:$Ve,79:$Vf,80:$Vg,81:$Vh,82:19,84:$Vi,85:$Vj,86:$Vk,87:$Vl,88:$Vm,89:$Vn,90:$Vo,91:$Vp,92:$Vq,93:$Vr,94:$Vs,95:$Vt,96:$Vu},o($Vx,[2,51]),o($Vx,[2,52]),{13:56,20:58,23:57,32:$V4},{20:59,23:60,32:$V4},o($Vx,$Vy,{55:61,58:62,59:$Vz}),o($Vx,$Vy,{58:62,55:64,59:$Vz}),{83:[1,65]},{36:[1,66]},{36:[1,67]},{36:[1,68]},{36:[1,69]},o($VA,[2,75]),o($VA,[2,76]),o($VA,[2,77]),o($VA,[2,78]),o($VA,[2,79]),o($VA,[2,80]),{33:[1,70],54:[1,71]},{83:[2,90]},{83:[2,91]},{83:[2,92]},{83:[2,93]},{83:[2,94]},{83:[2,95]},{83:[2,96]},{83:[2,97]},{83:[2,98]},{83:[2,99]},{83:[2,100]},{83:[2,101]},{83:[2,102]},{33:[1,72]},o($VA,[2,83]),o($VA,[2,84]),{1:[2,1]},{20:25,31:73,32:$V4,33:$V5,44:$V6,50:26,52:6,53:$V7,56:13,57:14,70:17,71:18,72:$V8,73:$V9,74:$Va,75:$Vb,76:$Vc,77:$Vd,78:$Ve,79:$Vf,80:$Vg,81:$Vh,82:19,84:$Vi,85:$Vj,86:$Vk,87:$Vl,88:$Vm,89:$Vn,90:$Vo,91:$Vp,92:$Vq,93:$Vr,94:$Vs,95:$Vt,96:$Vu},{1:[2,2]},o($Vw,[2,3]),o($Vx,[2,45]),o($Vx,[2,47]),o($Vx,$Vy,{58:62,55:74,59:$Vz}),o($Vx,[2,48]),o($Vx,$Vy,{58:62,55:75,59:$Vz}),{14:76,15:78,16:79,17:80,18:81,24:$VB,26:[1,77],27:$VC,29:$VD},o($VE,[2,24]),{34:$VF,35:$VG},{21:[1,87],34:$VF,35:$VG},o($Vw,[2,16]),o($Vx,[2,73]),o($Vx,[2,55],{59:[1,88]}),{20:25,25:89,31:92,32:$V4,33:$V5,36:$VH,44:$V6,50:26,52:6,53:$V7,56:13,57:14,64:$VI,70:17,71:18,72:$V8,73:$V9,74:$Va,75:$Vb,76:$Vc,77:$Vd,78:$Ve,79:$Vf,80:$Vg,81:$Vh,82:19,84:$Vi,85:$Vj,86:$Vk,87:$Vl,88:$Vm,89:$Vn,90:$Vo,91:$Vp,92:$Vq,93:$Vr,94:$Vs,95:$Vt,96:$Vu},o($Vx,[2,74]),{20:25,32:$V4,33:$V5,44:$V6,50:26,52:93,53:$V7,56:13,57:14,70:17,71:18,72:$V8,73:$V9,74:$Va,75:$Vb,76:$Vc,77:$Vd,78:$Ve,79:$Vf,80:$Vg,81:$Vh,82:19,84:$Vi,85:$Vj,86:$Vk,87:$Vl,88:$Vm,89:$Vn,90:$Vo,91:$Vp,92:$Vq,93:$Vr,94:$Vs,95:$Vt,96:$Vu},{38:[1,94]},{38:[1,95]},{38:[1,96]},{38:[1,97]},o($VA,[2,81]),o($VA,[2,82]),o([5,8,11,12,19,21,24,26,27,29,32,33,34,35,37,38,40,42,44,47,49,51,53,54,59,60,61,62,63,64,65,66,67,68,69,72,73,74,75,76,77,78,79,80,81,84,85,86,87,88,89,90,91,92,93,94,95,96],[2,22]),o($Vv,[2,43],{56:13,57:14,70:17,71:18,82:19,20:25,50:26,52:51,32:$V4,33:$V5,44:$V6,53:$V7,72:$V8,73:$V9,74:$Va,75:$Vb,76:$Vc,77:$Vd,78:$Ve,79:$Vf,80:$Vg,81:$Vh,84:$Vi,85:$Vj,86:$Vk,87:$Vl,88:$Vm,89:$Vn,90:$Vo,91:$Vp,92:$Vq,93:$Vr,94:$Vs,95:$Vt,96:$Vu}),o($Vx,[2,50]),o($Vx,[2,49]),o($Vw,[2,9],{16:79,17:80,18:81,15:98,24:$VB,27:$VC,29:$VD}),{20:58,23:99,32:$V4},o($VJ,[2,11]),o($VJ,[2,12]),o($VJ,[2,13],{26:[1,100]}),o($VJ,[2,14]),{20:25,25:101,31:92,32:$V4,33:$V5,36:$VH,44:$V6,50:26,52:6,53:$V7,56:13,57:14,64:$VI,70:17,71:18,72:$V8,73:$V9,74:$Va,75:$Vb,76:$Vc,77:$Vd,78:$Ve,79:$Vf,80:$Vg,81:$Vh,82:19,84:$Vi,85:$Vj,86:$Vk,87:$Vl,88:$Vm,89:$Vn,90:$Vo,91:$Vp,92:$Vq,93:$Vr,94:$Vs,95:$Vt,96:$Vu},{28:[1,102]},{20:25,30:103,31:104,32:$V4,33:$V5,40:[1,105],44:$V6,50:26,52:6,53:$V7,56:13,57:14,70:17,71:18,72:$V8,73:$V9,74:$Va,75:$Vb,76:$Vc,77:$Vd,78:$Ve,79:$Vf,80:$Vg,81:$Vh,82:19,84:$Vi,85:$Vj,86:$Vk,87:$Vl,88:$Vm,89:$Vn,90:$Vo,91:$Vp,92:$Vq,93:$Vr,94:$Vs,95:$Vt,96:$Vu},{20:25,22:106,31:108,32:$V4,33:$V5,36:$VK,44:$V6,50:26,52:6,53:$V7,56:13,57:14,70:17,71:18,72:$V8,73:$V9,74:$Va,75:$Vb,76:$Vc,77:$Vd,78:$Ve,79:$Vf,80:$Vg,81:$Vh,82:19,84:$Vi,85:$Vj,86:$Vk,87:$Vl,88:$Vm,89:$Vn,90:$Vo,91:$Vp,92:$Vq,93:$Vr,94:$Vs,95:$Vt,96:$Vu},{20:109,32:$V4},{20:25,22:110,31:108,32:$V4,33:$V5,36:$VK,44:$V6,50:26,52:6,53:$V7,56:13,57:14,70:17,71:18,72:$V8,73:$V9,74:$Va,75:$Vb,76:$Vc,77:$Vd,78:$Ve,79:$Vf,80:$Vg,81:$Vh,82:19,84:$Vi,85:$Vj,86:$Vk,87:$Vl,88:$Vm,89:$Vn,90:$Vo,91:$Vp,92:$Vq,93:$Vr,94:$Vs,95:$Vt,96:$Vu},{20:25,25:111,31:92,32:$V4,33:$V5,36:$VH,44:$V6,50:26,52:6,53:$V7,56:13,57:14,64:$VI,70:17,71:18,72:$V8,73:$V9,74:$Va,75:$Vb,76:$Vc,77:$Vd,78:$Ve,79:$Vf,80:$Vg,81:$Vh,82:19,84:$Vi,85:$Vj,86:$Vk,87:$Vl,88:$Vm,89:$Vn,90:$Vo,91:$Vp,92:$Vq,93:$Vr,94:$Vs,95:$Vt,96:$Vu},{40:$VL,42:$VM,49:$VN,54:$VO,60:[1,112],61:$VP,62:$VQ,63:$VR,64:$VS,65:$VT,66:$VU,67:$VV,68:$VW,69:$VX},{20:25,25:126,31:92,32:$V4,33:$V5,36:$VH,44:$V6,50:26,52:6,53:$V7,56:13,57:14,64:$VI,70:17,71:18,72:$V8,73:$V9,74:$Va,75:$Vb,76:$Vc,77:$Vd,78:$Ve,79:$Vf,80:$Vg,81:$Vh,82:19,84:$Vi,85:$Vj,86:$Vk,87:$Vl,88:$Vm,89:$Vn,90:$Vo,91:$Vp,92:$Vq,93:$Vr,94:$Vs,95:$Vt,96:$Vu},{20:25,25:127,31:92,32:$V4,33:$V5,36:$VH,44:$V6,50:26,52:6,53:$V7,56:13,57:14,64:$VI,70:17,71:18,72:$V8,73:$V9,74:$Va,75:$Vb,76:$Vc,77:$Vd,78:$Ve,79:$Vf,80:$Vg,81:$Vh,82:19,84:$Vi,85:$Vj,86:$Vk,87:$Vl,88:$Vm,89:$Vn,90:$Vo,91:$Vp,92:$Vq,93:$Vr,94:$Vs,95:$Vt,96:$Vu},o($VY,[2,72],{56:13,57:14,70:17,71:18,82:19,20:25,50:26,52:51,32:$V4,33:$V5,44:$V6,53:$V7,72:$V8,73:$V9,74:$Va,75:$Vb,76:$Vc,77:$Vd,78:$Ve,79:$Vf,80:$Vg,81:$Vh,84:$Vi,85:$Vj,86:$Vk,87:$Vl,88:$Vm,89:$Vn,90:$Vo,91:$Vp,92:$Vq,93:$Vr,94:$Vs,95:$Vt,96:$Vu}),o($Vx,[2,89]),o($VA,[2,85]),o($VA,[2,86]),o($VA,[2,87]),o($VA,[2,88]),o($VJ,[2,10]),o($VE,[2,23]),{20:25,25:128,31:92,32:$V4,33:$V5,36:$VH,44:$V6,50:26,52:6,53:$V7,56:13,57:14,64:$VI,70:17,71:18,72:$V8,73:$V9,74:$Va,75:$Vb,76:$Vc,77:$Vd,78:$Ve,79:$Vf,80:$Vg,81:$Vh,82:19,84:$Vi,85:$Vj,86:$Vk,87:$Vl,88:$Vm,89:$Vn,90:$Vo,91:$Vp,92:$Vq,93:$Vr,94:$Vs,95:$Vt,96:$Vu},o($VJ,[2,17],{40:$VL,42:$VM,49:$VN,54:$VO,61:$VP,62:$VQ,63:$VR,64:$VS,65:$VT,66:$VU,67:$VV,68:$VW,69:$VX}),{20:25,25:129,31:92,32:$V4,33:$V5,36:$VH,44:$V6,50:26,52:6,53:$V7,56:13,57:14,64:$VI,70:17,71:18,72:$V8,73:$V9,74:$Va,75:$Vb,76:$Vc,77:$Vd,78:$Ve,79:$Vf,80:$Vg,81:$Vh,82:19,84:$Vi,85:$Vj,86:$Vk,87:$Vl,88:$Vm,89:$Vn,90:$Vo,91:$Vp,92:$Vq,93:$Vr,94:$Vs,95:$Vt,96:$Vu},o($VJ,[2,20]),o($VJ,[2,21],{56:13,57:14,70:17,71:18,82:19,20:25,50:26,52:51,32:$V4,33:$V5,44:$V6,53:$V7,72:$V8,73:$V9,74:$Va,75:$Vb,76:$Vc,77:$Vd,78:$Ve,79:$Vf,80:$Vg,81:$Vh,84:$Vi,85:$Vj,86:$Vk,87:$Vl,88:$Vm,89:$Vn,90:$Vo,91:$Vp,92:$Vq,93:$Vr,94:$Vs,95:$Vt,96:$Vu}),{33:[1,130]},o($VZ,[2,25]),{20:25,25:131,31:92,32:$V4,33:$V5,36:$VH,39:132,44:$V6,50:26,52:6,53:$V7,56:13,57:14,64:$VI,70:17,71:18,72:$V8,73:$V9,74:$Va,75:$Vb,76:$Vc,77:$Vd,78:$Ve,79:$Vf,80:$Vg,81:$Vh,82:19,84:$Vi,85:$Vj,86:$Vk,87:$Vl,88:$Vm,89:$Vn,90:$Vo,91:$Vp,92:$Vq,93:$Vr,94:$Vs,95:$Vt,96:$Vu},o($VZ,[2,29],{56:13,57:14,70:17,71:18,82:19,20:25,50:26,52:51,32:$V4,33:$V5,44:$V6,53:$V7,72:$V8,73:$V9,74:$Va,75:$Vb,76:$Vc,77:$Vd,78:$Ve,79:$Vf,80:$Vg,81:$Vh,84:$Vi,85:$Vj,86:$Vk,87:$Vl,88:$Vm,89:$Vn,90:$Vo,91:$Vp,92:$Vq,93:$Vr,94:$Vs,95:$Vt,96:$Vu}),{34:[1,133]},o($Vw,[2,15]),{40:$VL,42:$VM,49:$VN,54:$VO,60:[1,134],61:$VP,62:$VQ,63:$VR,64:$VS,65:$VT,66:$VU,67:$VV,68:$VW,69:$VX},o($VA,[2,54]),{20:25,25:135,31:92,32:$V4,33:$V5,36:$VH,44:$V6,50:26,52:6,53:$V7,56:13,57:14,64:$VI,70:17,71:18,72:$V8,73:$V9,74:$Va,75:$Vb,76:$Vc,77:$Vd,78:$Ve,79:$Vf,80:$Vg,81:$Vh,82:19,84:$Vi,85:$Vj,86:$Vk,87:$Vl,88:$Vm,89:$Vn,90:$Vo,91:$Vp,92:$Vq,93:$Vr,94:$Vs,95:$Vt,96:$Vu},{20:25,25:136,31:92,32:$V4,33:$V5,36:$VH,44:$V6,50:26,52:6,53:$V7,56:13,57:14,64:$VI,70:17,71:18,72:$V8,73:$V9,74:$Va,75:$Vb,76:$Vc,77:$Vd,78:$Ve,79:$Vf,80:$Vg,81:$Vh,82:19,84:$Vi,85:$Vj,86:$Vk,87:$Vl,88:$Vm,89:$Vn,90:$Vo,91:$Vp,92:$Vq,93:$Vr,94:$Vs,95:$Vt,96:$Vu},{20:25,25:137,31:92,32:$V4,33:$V5,36:$VH,44:$V6,50:26,52:6,53:$V7,56:13,57:14,64:$VI,70:17,71:18,72:$V8,73:$V9,74:$Va,75:$Vb,76:$Vc,77:$Vd,78:$Ve,79:$Vf,80:$Vg,81:$Vh,82:19,84:$Vi,85:$Vj,86:$Vk,87:$Vl,88:$Vm,89:$Vn,90:$Vo,91:$Vp,92:$Vq,93:$Vr,94:$Vs,95:$Vt,96:$Vu},{20:25,25:138,31:92,32:$V4,33:$V5,36:$VH,44:$V6,50:26,52:6,53:$V7,56:13,57:14,64:$VI,70:17,71:18,72:$V8,73:$V9,74:$Va,75:$Vb,76:$Vc,77:$Vd,78:$Ve,79:$Vf,80:$Vg,81:$Vh,82:19,84:$Vi,85:$Vj,86:$Vk,87:$Vl,88:$Vm,89:$Vn,90:$Vo,91:$Vp,92:$Vq,93:$Vr,94:$Vs,95:$Vt,96:$Vu},{20:25,25:139,31:92,32:$V4,33:$V5,36:$VH,44:$V6,50:26,52:6,53:$V7,56:13,57:14,64:$VI,70:17,71:18,72:$V8,73:$V9,74:$Va,75:$Vb,76:$Vc,77:$Vd,78:$Ve,79:$Vf,80:$Vg,81:$Vh,82:19,84:$Vi,85:$Vj,86:$Vk,87:$Vl,88:$Vm,89:$Vn,90:$Vo,91:$Vp,92:$Vq,93:$Vr,94:$Vs,95:$Vt,96:$Vu},{20:25,25:140,31:92,32:$V4,33:$V5,36:$VH,44:$V6,50:26,52:6,53:$V7,56:13,57:14,64:$VI,70:17,71:18,72:$V8,73:$V9,74:$Va,75:$Vb,76:$Vc,77:$Vd,78:$Ve,79:$Vf,80:$Vg,81:$Vh,82:19,84:$Vi,85:$Vj,86:$Vk,87:$Vl,88:$Vm,89:$Vn,90:$Vo,91:$Vp,92:$Vq,93:$Vr,94:$Vs,95:$Vt,96:$Vu},{20:25,25:141,31:92,32:$V4,33:$V5,36:$VH,44:$V6,50:26,52:6,53:$V7,56:13,57:14,64:$VI,70:17,71:18,72:$V8,73:$V9,74:$Va,75:$Vb,76:$Vc,77:$Vd,78:$Ve,79:$Vf,80:$Vg,81:$Vh,82:19,84:$Vi,85:$Vj,86:$Vk,87:$Vl,88:$Vm,89:$Vn,90:$Vo,91:$Vp,92:$Vq,93:$Vr,94:$Vs,95:$Vt,96:$Vu},{20:25,25:142,31:92,32:$V4,33:$V5,36:$VH,44:$V6,50:26,52:6,53:$V7,56:13,57:14,64:$VI,70:17,71:18,72:$V8,73:$V9,74:$Va,75:$Vb,76:$Vc,77:$Vd,78:$Ve,79:$Vf,80:$Vg,81:$Vh,82:19,84:$Vi,85:$Vj,86:$Vk,87:$Vl,88:$Vm,89:$Vn,90:$Vo,91:$Vp,92:$Vq,93:$Vr,94:$Vs,95:$Vt,96:$Vu},{20:25,25:143,31:92,32:$V4,33:$V5,36:$VH,44:$V6,50:26,52:6,53:$V7,56:13,57:14,64:$VI,70:17,71:18,72:$V8,73:$V9,74:$Va,75:$Vb,76:$Vc,77:$Vd,78:$Ve,79:$Vf,80:$Vg,81:$Vh,82:19,84:$Vi,85:$Vj,86:$Vk,87:$Vl,88:$Vm,89:$Vn,90:$Vo,91:$Vp,92:$Vq,93:$Vr,94:$Vs,95:$Vt,96:$Vu},{20:25,25:144,31:92,32:$V4,33:$V5,36:$VH,44:$V6,50:26,52:6,53:$V7,56:13,57:14,64:$VI,70:17,71:18,72:$V8,73:$V9,74:$Va,75:$Vb,76:$Vc,77:$Vd,78:$Ve,79:$Vf,80:$Vg,81:$Vh,82:19,84:$Vi,85:$Vj,86:$Vk,87:$Vl,88:$Vm,89:$Vn,90:$Vo,91:$Vp,92:$Vq,93:$Vr,94:$Vs,95:$Vt,96:$Vu},{20:25,25:145,31:92,32:$V4,33:$V5,36:$VH,44:$V6,50:26,52:6,53:$V7,56:13,57:14,64:$VI,70:17,71:18,72:$V8,73:$V9,74:$Va,75:$Vb,76:$Vc,77:$Vd,78:$Ve,79:$Vf,80:$Vg,81:$Vh,82:19,84:$Vi,85:$Vj,86:$Vk,87:$Vl,88:$Vm,89:$Vn,90:$Vo,91:$Vp,92:$Vq,93:$Vr,94:$Vs,95:$Vt,96:$Vu},{20:25,25:146,31:92,32:$V4,33:$V5,36:$VH,44:$V6,50:26,52:6,53:$V7,56:13,57:14,64:$VI,70:17,71:18,72:$V8,73:$V9,74:$Va,75:$Vb,76:$Vc,77:$Vd,78:$Ve,79:$Vf,80:$Vg,81:$Vh,82:19,84:$Vi,85:$Vj,86:$Vk,87:$Vl,88:$Vm,89:$Vn,90:$Vo,91:$Vp,92:$Vq,93:$Vr,94:$Vs,95:$Vt,96:$Vu},{20:25,25:147,31:92,32:$V4,33:$V5,36:$VH,44:$V6,50:26,52:6,53:$V7,56:13,57:14,64:$VI,70:17,71:18,72:$V8,73:$V9,74:$Va,75:$Vb,76:$Vc,77:$Vd,78:$Ve,79:$Vf,80:$Vg,81:$Vh,82:19,84:$Vi,85:$Vj,86:$Vk,87:$Vl,88:$Vm,89:$Vn,90:$Vo,91:$Vp,92:$Vq,93:$Vr,94:$Vs,95:$Vt,96:$Vu},o($VY,[2,66]),{38:[1,148],40:$VL,42:$VM,49:$VN,54:$VO,61:$VP,62:$VQ,63:$VR,64:$VS,65:$VT,66:$VU,67:$VV,68:$VW,69:$VX},o($VZ,[2,18],{40:$VL,42:$VM,49:$VN,54:$VO,61:$VP,62:$VQ,63:$VR,64:$VS,65:$VT,66:$VU,67:$VV,68:$VW,69:$VX}),o($VZ,[2,19],{40:$VL,42:$VM,49:$VN,54:$VO,61:$VP,62:$VQ,63:$VR,64:$VS,65:$VT,66:$VU,67:$VV,68:$VW,69:$VX}),o($V_,[2,42],{41:149,33:[1,150]}),o($V$,[2,31],{37:[1,151],40:$VL,42:$VM,49:$VN,54:$VO,61:$VP,62:$VQ,63:$VR,64:$VS,65:$VT,66:$VU,67:$VV,68:$VW,69:$VX}),{26:[1,153],38:[1,152]},{20:25,22:154,31:108,32:$V4,33:$V5,36:$VK,44:$V6,50:26,52:6,53:$V7,56:13,57:14,70:17,71:18,72:$V8,73:$V9,74:$Va,75:$Vb,76:$Vc,77:$Vd,78:$Ve,79:$Vf,80:$Vg,81:$Vh,82:19,84:$Vi,85:$Vj,86:$Vk,87:$Vl,88:$Vm,89:$Vn,90:$Vo,91:$Vp,92:$Vq,93:$Vr,94:$Vs,95:$Vt,96:$Vu},o($VA,[2,53]),o($V01,[2,57],{54:$VO,63:$VR,64:$VS,65:$VT,66:$VU}),o($V01,[2,58],{54:$VO,63:$VR,64:$VS,65:$VT,66:$VU}),o($V01,[2,59],{54:$VO,63:$VR,64:$VS,65:$VT,66:$VU}),o($V01,[2,60],{54:$VO,63:$VR,64:$VS,65:$VT,66:$VU}),o($V11,[2,61],{54:$VO,65:$VT,66:$VU}),o($V11,[2,62],{54:$VO,65:$VT,66:$VU}),o($VY,[2,63]),o($VY,[2,64]),o($VY,[2,65]),o([5,8,11,12,19,24,26,27,29,37,38,60,67],[2,68],{40:$VL,42:$VM,49:$VN,54:$VO,61:$VP,62:$VQ,63:$VR,64:$VS,65:$VT,66:$VU,68:$VW,69:$VX}),o([5,8,11,12,19,24,26,27,29,37,38,60,67,68],[2,69],{40:$VL,42:$VM,49:$VN,54:$VO,61:$VP,62:$VQ,63:$VR,64:$VS,65:$VT,66:$VU,69:$VX}),o($V01,[2,70],{54:$VO,63:$VR,64:$VS,65:$VT,66:$VU}),o($V01,[2,71],{54:$VO,63:$VR,64:$VS,65:$VT,66:$VU}),o($VY,[2,67]),{42:[1,155],44:[1,156]},{49:[1,157]},{20:25,25:158,31:92,32:$V4,33:$V5,36:$VH,44:$V6,50:26,52:6,53:$V7,56:13,57:14,64:$VI,70:17,71:18,72:$V8,73:$V9,74:$Va,75:$Vb,76:$Vc,77:$Vd,78:$Ve,79:$Vf,80:$Vg,81:$Vh,82:19,84:$Vi,85:$Vj,86:$Vk,87:$Vl,88:$Vm,89:$Vn,90:$Vo,91:$Vp,92:$Vq,93:$Vr,94:$Vs,95:$Vt,96:$Vu},o($VZ,[2,28]),{20:25,25:159,31:92,32:$V4,33:$V5,36:$VH,44:$V6,50:26,52:6,53:$V7,56:13,57:14,64:$VI,70:17,71:18,72:$V8,73:$V9,74:$Va,75:$Vb,76:$Vc,77:$Vd,78:$Ve,79:$Vf,80:$Vg,81:$Vh,82:19,84:$Vi,85:$Vj,86:$Vk,87:$Vl,88:$Vm,89:$Vn,90:$Vo,91:$Vp,92:$Vq,93:$Vr,94:$Vs,95:$Vt,96:$Vu},o($VZ,[2,26]),{33:$V21,40:[1,161],43:160,45:162,46:$V31},{42:[1,165]},{33:$V21,43:167,45:162,46:$V31,50:166,76:$Vc,77:$Vd},{38:[1,168],40:$VL,42:$VM,49:$VN,54:$VO,61:$VP,62:$VQ,63:$VR,64:$VS,65:$VT,66:$VU,67:$VV,68:$VW,69:$VX},o($V$,[2,30],{40:$VL,42:$VM,49:$VN,54:$VO,61:$VP,62:$VQ,63:$VR,64:$VS,65:$VT,66:$VU,67:$VV,68:$VW,69:$VX}),{33:$V21,40:[1,169],45:170,46:$V31},{44:[1,171]},o($V41,[2,36]),o($V41,[2,37]),{20:25,31:172,32:$V4,33:$V5,44:$V6,48:[1,173],50:26,52:6,53:$V7,56:13,57:14,70:17,71:18,72:$V8,73:$V9,74:$Va,75:$Vb,76:$Vc,77:$Vd,78:$Ve,79:$Vf,80:$Vg,81:$Vh,82:19,84:$Vi,85:$Vj,86:$Vk,87:$Vl,88:$Vm,89:$Vn,90:$Vo,91:$Vp,92:$Vq,93:$Vr,94:$Vs,95:$Vt,96:$Vu},o($VJ,[2,34]),o($V_,[2,40]),o($V_,[2,41],{45:170,33:$V21,46:$V31}),o($VZ,[2,27]),{44:[1,174]},o($V41,[2,35]),{33:[1,175]},{20:25,32:$V4,33:$V5,44:$V6,47:[1,176],50:26,52:51,53:$V7,56:13,57:14,70:17,71:18,72:$V8,73:$V9,74:$Va,75:$Vb,76:$Vc,77:$Vd,78:$Ve,79:$Vf,80:$Vg,81:$Vh,82:19,84:$Vi,85:$Vj,86:$Vk,87:$Vl,88:$Vm,89:$Vn,90:$Vo,91:$Vp,92:$Vq,93:$Vr,94:$Vs,95:$Vt,96:$Vu},{36:[1,177]},{33:[1,178]},{42:[1,179]},o($V41,[2,38]),{20:25,31:180,32:$V4,33:$V5,44:$V6,50:26,52:6,53:$V7,56:13,57:14,70:17,71:18,72:$V8,73:$V9,74:$Va,75:$Vb,76:$Vc,77:$Vd,78:$Ve,79:$Vf,80:$Vg,81:$Vh,82:19,84:$Vi,85:$Vj,86:$Vk,87:$Vl,88:$Vm,89:$Vn,90:$Vo,91:$Vp,92:$Vq,93:$Vr,94:$Vs,95:$Vt,96:$Vu},{42:[1,181]},o($VJ,[2,33]),{20:25,32:$V4,33:$V5,38:[1,182],44:$V6,50:26,52:51,53:$V7,56:13,57:14,70:17,71:18,72:$V8,73:$V9,74:$Va,75:$Vb,76:$Vc,77:$Vd,78:$Ve,79:$Vf,80:$Vg,81:$Vh,82:19,84:$Vi,85:$Vj,86:$Vk,87:$Vl,88:$Vm,89:$Vn,90:$Vo,91:$Vp,92:$Vq,93:$Vr,94:$Vs,95:$Vt,96:$Vu},o($VJ,[2,32]),{47:[1,183]},o($V41,[2,39])],
-defaultActions: {31:[2,90],32:[2,91],33:[2,92],34:[2,93],35:[2,94],36:[2,95],37:[2,96],38:[2,97],39:[2,98],40:[2,99],41:[2,100],42:[2,101],43:[2,102],47:[2,1],49:[2,2]},
+table: [{3:1,4:2,6:3,7:5,8:$V0,9:8,10:9,11:$V1,12:$V2,19:$V3,20:19,31:4,32:$V4,33:$V5,42:26,47:$V6,54:6,55:$V7,58:13,59:14,72:17,73:18,74:$V8,75:$V9,76:$Va,77:$Vb,78:$Vc,79:$Vd,80:$Ve,81:$Vf,82:$Vg,83:$Vh,84:20,86:$Vi,87:$Vj,88:$Vk,89:$Vl,90:$Vm,91:$Vn,92:$Vo,93:$Vp,94:$Vq,95:$Vr,96:$Vs,97:$Vt,98:$Vu},{1:[3]},{5:[1,47],53:[1,48]},{5:[1,49],7:50,8:$V0,9:8,10:9,11:$V1,12:$V2,19:$V3},o($Vv,[2,46],{58:13,59:14,72:17,73:18,20:19,84:20,42:26,54:51,32:$V4,33:$V5,47:$V6,55:$V7,74:$V8,75:$V9,76:$Va,77:$Vb,78:$Vc,79:$Vd,80:$Ve,81:$Vf,82:$Vg,83:$Vh,86:$Vi,87:$Vj,88:$Vk,89:$Vl,90:$Vm,91:$Vn,92:$Vo,93:$Vp,94:$Vq,95:$Vr,96:$Vs,97:$Vt,98:$Vu}),o($Vw,[2,4]),o($Vx,[2,48]),o($Vw,[2,5]),o($Vw,[2,6]),o($Vw,[2,7]),o($Vw,[2,8]),{20:19,32:$V4,33:$V5,42:26,47:$V6,54:52,55:$V7,56:[1,53],58:13,59:14,72:17,73:18,74:$V8,75:$V9,76:$Va,77:$Vb,78:$Vc,79:$Vd,80:$Ve,81:$Vf,82:$Vg,83:$Vh,84:20,86:$Vi,87:$Vj,88:$Vk,89:$Vl,90:$Vm,91:$Vn,92:$Vo,93:$Vp,94:$Vq,95:$Vr,96:$Vs,97:$Vt,98:$Vu},{20:19,32:$V4,33:$V5,42:26,47:$V6,54:54,55:$V7,56:[1,55],58:13,59:14,72:17,73:18,74:$V8,75:$V9,76:$Va,77:$Vb,78:$Vc,79:$Vd,80:$Ve,81:$Vf,82:$Vg,83:$Vh,84:20,86:$Vi,87:$Vj,88:$Vk,89:$Vl,90:$Vm,91:$Vn,92:$Vo,93:$Vp,94:$Vq,95:$Vr,96:$Vs,97:$Vt,98:$Vu},o($Vx,[2,53]),o($Vx,[2,54]),{13:56,20:58,23:57,32:$V4},{20:59,23:60,32:$V4},o($Vx,$Vy,{57:61,60:62,61:$Vz}),o($Vx,$Vy,{60:62,57:64,61:$Vz}),o($Vx,$Vy,{60:62,57:65,61:$Vz}),{85:[1,66]},{36:[1,67]},{36:[1,68]},{36:[1,69]},{36:[1,70]},o($VA,[2,78]),o($VA,[2,79]),o($VA,[2,80]),o($VA,[2,81]),o($VA,[2,82]),{33:[1,71],56:[1,72]},{33:[1,73]},{85:[2,93]},{85:[2,94]},{85:[2,95]},{85:[2,96]},{85:[2,97]},{85:[2,98]},{85:[2,99]},{85:[2,100]},{85:[2,101]},{85:[2,102]},{85:[2,103]},{85:[2,104]},{85:[2,105]},o($VA,[2,85]),o($VA,[2,86]),{1:[2,1]},{20:19,31:74,32:$V4,33:$V5,42:26,47:$V6,54:6,55:$V7,58:13,59:14,72:17,73:18,74:$V8,75:$V9,76:$Va,77:$Vb,78:$Vc,79:$Vd,80:$Ve,81:$Vf,82:$Vg,83:$Vh,84:20,86:$Vi,87:$Vj,88:$Vk,89:$Vl,90:$Vm,91:$Vn,92:$Vo,93:$Vp,94:$Vq,95:$Vr,96:$Vs,97:$Vt,98:$Vu},{1:[2,2]},o($Vw,[2,3]),o($Vx,[2,47]),o($Vx,[2,49]),o($Vx,$Vy,{60:62,57:75,61:$Vz}),o($Vx,[2,50]),o($Vx,$Vy,{60:62,57:76,61:$Vz}),{14:77,15:79,16:80,17:81,18:82,24:$VB,26:[1,78],27:$VC,29:$VD},o($VE,[2,24]),{34:$VF,35:$VG},{21:[1,88],34:$VF,35:$VG},o($Vw,[2,16]),o($Vx,[2,75]),o($Vx,[2,57],{61:[1,89]}),{20:19,25:90,31:93,32:$V4,33:$V5,36:$VH,42:26,47:$V6,54:6,55:$V7,58:13,59:14,66:$VI,72:17,73:18,74:$V8,75:$V9,76:$Va,77:$Vb,78:$Vc,79:$Vd,80:$Ve,81:$Vf,82:$Vg,83:$Vh,84:20,86:$Vi,87:$Vj,88:$Vk,89:$Vl,90:$Vm,91:$Vn,92:$Vo,93:$Vp,94:$Vq,95:$Vr,96:$Vs,97:$Vt,98:$Vu},o($Vx,[2,76]),o($Vx,[2,77]),{20:19,32:$V4,33:$V5,42:26,47:$V6,54:94,55:$V7,56:[1,95],58:13,59:14,72:17,73:18,74:$V8,75:$V9,76:$Va,77:$Vb,78:$Vc,79:$Vd,80:$Ve,81:$Vf,82:$Vg,83:$Vh,84:20,86:$Vi,87:$Vj,88:$Vk,89:$Vl,90:$Vm,91:$Vn,92:$Vo,93:$Vp,94:$Vq,95:$Vr,96:$Vs,97:$Vt,98:$Vu},{38:[1,96]},{38:[1,97]},{38:[1,98]},{38:[1,99]},o($VA,[2,83]),o($VA,[2,84]),o([5,8,11,12,19,21,24,26,27,29,32,33,34,35,37,38,43,45,47,50,52,53,55,56,61,62,63,64,65,66,67,68,69,70,71,74,75,76,77,78,79,80,81,82,83,86,87,88,89,90,91,92,93,94,95,96,97,98],[2,22]),o($Vv,[2,45],{58:13,59:14,72:17,73:18,20:19,84:20,42:26,54:51,32:$V4,33:$V5,47:$V6,55:$V7,74:$V8,75:$V9,76:$Va,77:$Vb,78:$Vc,79:$Vd,80:$Ve,81:$Vf,82:$Vg,83:$Vh,86:$Vi,87:$Vj,88:$Vk,89:$Vl,90:$Vm,91:$Vn,92:$Vo,93:$Vp,94:$Vq,95:$Vr,96:$Vs,97:$Vt,98:$Vu}),o($Vx,[2,52]),o($Vx,[2,51]),o($Vw,[2,9],{16:80,17:81,18:82,15:100,24:$VB,27:$VC,29:$VD}),{20:58,23:101,32:$V4},o($VJ,[2,11]),o($VJ,[2,12]),o($VJ,[2,13],{26:[1,102]}),o($VJ,[2,14]),{20:19,25:103,31:93,32:$V4,33:$V5,36:$VH,42:26,47:$V6,54:6,55:$V7,58:13,59:14,66:$VI,72:17,73:18,74:$V8,75:$V9,76:$Va,77:$Vb,78:$Vc,79:$Vd,80:$Ve,81:$Vf,82:$Vg,83:$Vh,84:20,86:$Vi,87:$Vj,88:$Vk,89:$Vl,90:$Vm,91:$Vn,92:$Vo,93:$Vp,94:$Vq,95:$Vr,96:$Vs,97:$Vt,98:$Vu},{28:[1,104]},{20:19,30:105,31:106,32:$V4,33:$V5,42:26,43:[1,107],47:$V6,54:6,55:$V7,58:13,59:14,72:17,73:18,74:$V8,75:$V9,76:$Va,77:$Vb,78:$Vc,79:$Vd,80:$Ve,81:$Vf,82:$Vg,83:$Vh,84:20,86:$Vi,87:$Vj,88:$Vk,89:$Vl,90:$Vm,91:$Vn,92:$Vo,93:$Vp,94:$Vq,95:$Vr,96:$Vs,97:$Vt,98:$Vu},o($VK,$VL,{22:108,40:110,36:$VM,41:$VN}),{20:112,32:$V4},o($VK,$VL,{40:110,22:113,36:$VM,41:$VN}),{20:19,25:114,31:93,32:$V4,33:$V5,36:$VH,42:26,47:$V6,54:6,55:$V7,58:13,59:14,66:$VI,72:17,73:18,74:$V8,75:$V9,76:$Va,77:$Vb,78:$Vc,79:$Vd,80:$Ve,81:$Vf,82:$Vg,83:$Vh,84:20,86:$Vi,87:$Vj,88:$Vk,89:$Vl,90:$Vm,91:$Vn,92:$Vo,93:$Vp,94:$Vq,95:$Vr,96:$Vs,97:$Vt,98:$Vu},{43:$VO,45:$VP,52:$VQ,56:$VR,62:[1,115],63:$VS,64:$VT,65:$VU,66:$VV,67:$VW,68:$VX,69:$VY,70:$VZ,71:$V_},{20:19,25:129,31:93,32:$V4,33:$V5,36:$VH,42:26,47:$V6,54:6,55:$V7,58:13,59:14,66:$VI,72:17,73:18,74:$V8,75:$V9,76:$Va,77:$Vb,78:$Vc,79:$Vd,80:$Ve,81:$Vf,82:$Vg,83:$Vh,84:20,86:$Vi,87:$Vj,88:$Vk,89:$Vl,90:$Vm,91:$Vn,92:$Vo,93:$Vp,94:$Vq,95:$Vr,96:$Vs,97:$Vt,98:$Vu},{20:19,25:130,31:93,32:$V4,33:$V5,36:$VH,42:26,47:$V6,54:6,55:$V7,58:13,59:14,66:$VI,72:17,73:18,74:$V8,75:$V9,76:$Va,77:$Vb,78:$Vc,79:$Vd,80:$Ve,81:$Vf,82:$Vg,83:$Vh,84:20,86:$Vi,87:$Vj,88:$Vk,89:$Vl,90:$Vm,91:$Vn,92:$Vo,93:$Vp,94:$Vq,95:$Vr,96:$Vs,97:$Vt,98:$Vu},o($V$,[2,74],{58:13,59:14,72:17,73:18,20:19,84:20,42:26,54:51,32:$V4,33:$V5,47:$V6,55:$V7,74:$V8,75:$V9,76:$Va,77:$Vb,78:$Vc,79:$Vd,80:$Ve,81:$Vf,82:$Vg,83:$Vh,86:$Vi,87:$Vj,88:$Vk,89:$Vl,90:$Vm,91:$Vn,92:$Vo,93:$Vp,94:$Vq,95:$Vr,96:$Vs,97:$Vt,98:$Vu}),o($Vx,[2,91]),o($Vx,$Vy,{60:62,57:131,61:$Vz}),o($VA,[2,87]),o($VA,[2,88]),o($VA,[2,89]),o($VA,[2,90]),o($VJ,[2,10]),o($VE,[2,23]),{20:19,25:132,31:93,32:$V4,33:$V5,36:$VH,42:26,47:$V6,54:6,55:$V7,58:13,59:14,66:$VI,72:17,73:18,74:$V8,75:$V9,76:$Va,77:$Vb,78:$Vc,79:$Vd,80:$Ve,81:$Vf,82:$Vg,83:$Vh,84:20,86:$Vi,87:$Vj,88:$Vk,89:$Vl,90:$Vm,91:$Vn,92:$Vo,93:$Vp,94:$Vq,95:$Vr,96:$Vs,97:$Vt,98:$Vu},o($VJ,[2,17],{43:$VO,45:$VP,52:$VQ,56:$VR,63:$VS,64:$VT,65:$VU,66:$VV,67:$VW,68:$VX,69:$VY,70:$VZ,71:$V_}),{20:19,25:133,31:93,32:$V4,33:$V5,36:$VH,42:26,47:$V6,54:6,55:$V7,58:13,59:14,66:$VI,72:17,73:18,74:$V8,75:$V9,76:$Va,77:$Vb,78:$Vc,79:$Vd,80:$Ve,81:$Vf,82:$Vg,83:$Vh,84:20,86:$Vi,87:$Vj,88:$Vk,89:$Vl,90:$Vm,91:$Vn,92:$Vo,93:$Vp,94:$Vq,95:$Vr,96:$Vs,97:$Vt,98:$Vu},o($VJ,[2,20]),o($VJ,[2,21],{58:13,59:14,72:17,73:18,20:19,84:20,42:26,54:51,32:$V4,33:$V5,47:$V6,55:$V7,74:$V8,75:$V9,76:$Va,77:$Vb,78:$Vc,79:$Vd,80:$Ve,81:$Vf,82:$Vg,83:$Vh,86:$Vi,87:$Vj,88:$Vk,89:$Vl,90:$Vm,91:$Vn,92:$Vo,93:$Vp,94:$Vq,95:$Vr,96:$Vs,97:$Vt,98:$Vu}),{33:[1,134]},o($V01,[2,25]),{20:19,25:135,31:93,32:$V4,33:$V5,36:$VH,39:136,42:26,47:$V6,54:6,55:$V7,58:13,59:14,66:$VI,72:17,73:18,74:$V8,75:$V9,76:$Va,77:$Vb,78:$Vc,79:$Vd,80:$Ve,81:$Vf,82:$Vg,83:$Vh,84:20,86:$Vi,87:$Vj,88:$Vk,89:$Vl,90:$Vm,91:$Vn,92:$Vo,93:$Vp,94:$Vq,95:$Vr,96:$Vs,97:$Vt,98:$Vu},{20:19,31:137,32:$V4,33:$V5,42:26,47:$V6,54:6,55:$V7,58:13,59:14,72:17,73:18,74:$V8,75:$V9,76:$Va,77:$Vb,78:$Vc,79:$Vd,80:$Ve,81:$Vf,82:$Vg,83:$Vh,84:20,86:$Vi,87:$Vj,88:$Vk,89:$Vl,90:$Vm,91:$Vn,92:$Vo,93:$Vp,94:$Vq,95:$Vr,96:$Vs,97:$Vt,98:$Vu},{36:[1,138]},{34:[1,139]},o($Vw,[2,15]),{43:$VO,45:$VP,52:$VQ,56:$VR,62:[1,140],63:$VS,64:$VT,65:$VU,66:$VV,67:$VW,68:$VX,69:$VY,70:$VZ,71:$V_},o($VA,[2,56]),{20:19,25:141,31:93,32:$V4,33:$V5,36:$VH,42:26,47:$V6,54:6,55:$V7,58:13,59:14,66:$VI,72:17,73:18,74:$V8,75:$V9,76:$Va,77:$Vb,78:$Vc,79:$Vd,80:$Ve,81:$Vf,82:$Vg,83:$Vh,84:20,86:$Vi,87:$Vj,88:$Vk,89:$Vl,90:$Vm,91:$Vn,92:$Vo,93:$Vp,94:$Vq,95:$Vr,96:$Vs,97:$Vt,98:$Vu},{20:19,25:142,31:93,32:$V4,33:$V5,36:$VH,42:26,47:$V6,54:6,55:$V7,58:13,59:14,66:$VI,72:17,73:18,74:$V8,75:$V9,76:$Va,77:$Vb,78:$Vc,79:$Vd,80:$Ve,81:$Vf,82:$Vg,83:$Vh,84:20,86:$Vi,87:$Vj,88:$Vk,89:$Vl,90:$Vm,91:$Vn,92:$Vo,93:$Vp,94:$Vq,95:$Vr,96:$Vs,97:$Vt,98:$Vu},{20:19,25:143,31:93,32:$V4,33:$V5,36:$VH,42:26,47:$V6,54:6,55:$V7,58:13,59:14,66:$VI,72:17,73:18,74:$V8,75:$V9,76:$Va,77:$Vb,78:$Vc,79:$Vd,80:$Ve,81:$Vf,82:$Vg,83:$Vh,84:20,86:$Vi,87:$Vj,88:$Vk,89:$Vl,90:$Vm,91:$Vn,92:$Vo,93:$Vp,94:$Vq,95:$Vr,96:$Vs,97:$Vt,98:$Vu},{20:19,25:144,31:93,32:$V4,33:$V5,36:$VH,42:26,47:$V6,54:6,55:$V7,58:13,59:14,66:$VI,72:17,73:18,74:$V8,75:$V9,76:$Va,77:$Vb,78:$Vc,79:$Vd,80:$Ve,81:$Vf,82:$Vg,83:$Vh,84:20,86:$Vi,87:$Vj,88:$Vk,89:$Vl,90:$Vm,91:$Vn,92:$Vo,93:$Vp,94:$Vq,95:$Vr,96:$Vs,97:$Vt,98:$Vu},{20:19,25:145,31:93,32:$V4,33:$V5,36:$VH,42:26,47:$V6,54:6,55:$V7,58:13,59:14,66:$VI,72:17,73:18,74:$V8,75:$V9,76:$Va,77:$Vb,78:$Vc,79:$Vd,80:$Ve,81:$Vf,82:$Vg,83:$Vh,84:20,86:$Vi,87:$Vj,88:$Vk,89:$Vl,90:$Vm,91:$Vn,92:$Vo,93:$Vp,94:$Vq,95:$Vr,96:$Vs,97:$Vt,98:$Vu},{20:19,25:146,31:93,32:$V4,33:$V5,36:$VH,42:26,47:$V6,54:6,55:$V7,58:13,59:14,66:$VI,72:17,73:18,74:$V8,75:$V9,76:$Va,77:$Vb,78:$Vc,79:$Vd,80:$Ve,81:$Vf,82:$Vg,83:$Vh,84:20,86:$Vi,87:$Vj,88:$Vk,89:$Vl,90:$Vm,91:$Vn,92:$Vo,93:$Vp,94:$Vq,95:$Vr,96:$Vs,97:$Vt,98:$Vu},{20:19,25:147,31:93,32:$V4,33:$V5,36:$VH,42:26,47:$V6,54:6,55:$V7,58:13,59:14,66:$VI,72:17,73:18,74:$V8,75:$V9,76:$Va,77:$Vb,78:$Vc,79:$Vd,80:$Ve,81:$Vf,82:$Vg,83:$Vh,84:20,86:$Vi,87:$Vj,88:$Vk,89:$Vl,90:$Vm,91:$Vn,92:$Vo,93:$Vp,94:$Vq,95:$Vr,96:$Vs,97:$Vt,98:$Vu},{20:19,25:148,31:93,32:$V4,33:$V5,36:$VH,42:26,47:$V6,54:6,55:$V7,58:13,59:14,66:$VI,72:17,73:18,74:$V8,75:$V9,76:$Va,77:$Vb,78:$Vc,79:$Vd,80:$Ve,81:$Vf,82:$Vg,83:$Vh,84:20,86:$Vi,87:$Vj,88:$Vk,89:$Vl,90:$Vm,91:$Vn,92:$Vo,93:$Vp,94:$Vq,95:$Vr,96:$Vs,97:$Vt,98:$Vu},{20:19,25:149,31:93,32:$V4,33:$V5,36:$VH,42:26,47:$V6,54:6,55:$V7,58:13,59:14,66:$VI,72:17,73:18,74:$V8,75:$V9,76:$Va,77:$Vb,78:$Vc,79:$Vd,80:$Ve,81:$Vf,82:$Vg,83:$Vh,84:20,86:$Vi,87:$Vj,88:$Vk,89:$Vl,90:$Vm,91:$Vn,92:$Vo,93:$Vp,94:$Vq,95:$Vr,96:$Vs,97:$Vt,98:$Vu},{20:19,25:150,31:93,32:$V4,33:$V5,36:$VH,42:26,47:$V6,54:6,55:$V7,58:13,59:14,66:$VI,72:17,73:18,74:$V8,75:$V9,76:$Va,77:$Vb,78:$Vc,79:$Vd,80:$Ve,81:$Vf,82:$Vg,83:$Vh,84:20,86:$Vi,87:$Vj,88:$Vk,89:$Vl,90:$Vm,91:$Vn,92:$Vo,93:$Vp,94:$Vq,95:$Vr,96:$Vs,97:$Vt,98:$Vu},{20:19,25:151,31:93,32:$V4,33:$V5,36:$VH,42:26,47:$V6,54:6,55:$V7,58:13,59:14,66:$VI,72:17,73:18,74:$V8,75:$V9,76:$Va,77:$Vb,78:$Vc,79:$Vd,80:$Ve,81:$Vf,82:$Vg,83:$Vh,84:20,86:$Vi,87:$Vj,88:$Vk,89:$Vl,90:$Vm,91:$Vn,92:$Vo,93:$Vp,94:$Vq,95:$Vr,96:$Vs,97:$Vt,98:$Vu},{20:19,25:152,31:93,32:$V4,33:$V5,36:$VH,42:26,47:$V6,54:6,55:$V7,58:13,59:14,66:$VI,72:17,73:18,74:$V8,75:$V9,76:$Va,77:$Vb,78:$Vc,79:$Vd,80:$Ve,81:$Vf,82:$Vg,83:$Vh,84:20,86:$Vi,87:$Vj,88:$Vk,89:$Vl,90:$Vm,91:$Vn,92:$Vo,93:$Vp,94:$Vq,95:$Vr,96:$Vs,97:$Vt,98:$Vu},{20:19,25:153,31:93,32:$V4,33:$V5,36:$VH,42:26,47:$V6,54:6,55:$V7,58:13,59:14,66:$VI,72:17,73:18,74:$V8,75:$V9,76:$Va,77:$Vb,78:$Vc,79:$Vd,80:$Ve,81:$Vf,82:$Vg,83:$Vh,84:20,86:$Vi,87:$Vj,88:$Vk,89:$Vl,90:$Vm,91:$Vn,92:$Vo,93:$Vp,94:$Vq,95:$Vr,96:$Vs,97:$Vt,98:$Vu},o($V$,[2,68]),{38:[1,154],43:$VO,45:$VP,52:$VQ,56:$VR,63:$VS,64:$VT,65:$VU,66:$VV,67:$VW,68:$VX,69:$VY,70:$VZ,71:$V_},o($Vx,[2,92]),o($V01,[2,18],{43:$VO,45:$VP,52:$VQ,56:$VR,63:$VS,64:$VT,65:$VU,66:$VV,67:$VW,68:$VX,69:$VY,70:$VZ,71:$V_}),o($V01,[2,19],{43:$VO,45:$VP,52:$VQ,56:$VR,63:$VS,64:$VT,65:$VU,66:$VV,67:$VW,68:$VX,69:$VY,70:$VZ,71:$V_}),o($V11,[2,44],{44:155,33:[1,156]}),o($V21,[2,33],{37:[1,157],43:$VO,45:$VP,52:$VQ,56:$VR,63:$VS,64:$VT,65:$VU,66:$VV,67:$VW,68:$VX,69:$VY,70:$VZ,71:$V_}),{26:[1,159],38:[1,158]},o($V01,[2,29],{58:13,59:14,72:17,73:18,20:19,84:20,42:26,54:51,32:$V4,33:$V5,47:$V6,55:$V7,74:$V8,75:$V9,76:$Va,77:$Vb,78:$Vc,79:$Vd,80:$Ve,81:$Vf,82:$Vg,83:$Vh,86:$Vi,87:$Vj,88:$Vk,89:$Vl,90:$Vm,91:$Vn,92:$Vo,93:$Vp,94:$Vq,95:$Vr,96:$Vs,97:$Vt,98:$Vu}),{42:160,78:$Vc,79:$Vd},o($VK,$VL,{40:110,22:161,36:$VM,41:$VN}),o($VA,[2,55]),o($V31,[2,59],{56:$VR,65:$VU,66:$VV,67:$VW,68:$VX}),o($V31,[2,60],{56:$VR,65:$VU,66:$VV,67:$VW,68:$VX}),o($V31,[2,61],{56:$VR,65:$VU,66:$VV,67:$VW,68:$VX}),o($V31,[2,62],{56:$VR,65:$VU,66:$VV,67:$VW,68:$VX}),o($V41,[2,63],{56:$VR,67:$VW,68:$VX}),o($V41,[2,64],{56:$VR,67:$VW,68:$VX}),o($V$,[2,65]),o($V$,[2,66]),o($V$,[2,67]),o([5,8,11,12,19,24,26,27,29,37,38,62,69],[2,70],{43:$VO,45:$VP,52:$VQ,56:$VR,63:$VS,64:$VT,65:$VU,66:$VV,67:$VW,68:$VX,70:$VZ,71:$V_}),o([5,8,11,12,19,24,26,27,29,37,38,62,69,70],[2,71],{43:$VO,45:$VP,52:$VQ,56:$VR,63:$VS,64:$VT,65:$VU,66:$VV,67:$VW,68:$VX,71:$V_}),o($V31,[2,72],{56:$VR,65:$VU,66:$VV,67:$VW,68:$VX}),o($V31,[2,73],{56:$VR,65:$VU,66:$VV,67:$VW,68:$VX}),o($V$,[2,69]),{45:[1,162],47:[1,163]},{52:[1,164]},{20:19,25:165,31:93,32:$V4,33:$V5,36:$VH,42:26,47:$V6,54:6,55:$V7,58:13,59:14,66:$VI,72:17,73:18,74:$V8,75:$V9,76:$Va,77:$Vb,78:$Vc,79:$Vd,80:$Ve,81:$Vf,82:$Vg,83:$Vh,84:20,86:$Vi,87:$Vj,88:$Vk,89:$Vl,90:$Vm,91:$Vn,92:$Vo,93:$Vp,94:$Vq,95:$Vr,96:$Vs,97:$Vt,98:$Vu},o($V01,[2,28]),{20:19,25:166,31:93,32:$V4,33:$V5,36:$VH,42:26,47:$V6,54:6,55:$V7,58:13,59:14,66:$VI,72:17,73:18,74:$V8,75:$V9,76:$Va,77:$Vb,78:$Vc,79:$Vd,80:$Ve,81:$Vf,82:$Vg,83:$Vh,84:20,86:$Vi,87:$Vj,88:$Vk,89:$Vl,90:$Vm,91:$Vn,92:$Vo,93:$Vp,94:$Vq,95:$Vr,96:$Vs,97:$Vt,98:$Vu},{38:[1,167]},o($V01,[2,26]),{33:$V51,43:[1,169],46:168,48:170,49:$V61},{45:[1,173]},{33:$V51,42:174,46:175,48:170,49:$V61,78:$Vc,79:$Vd},{38:[1,176],43:$VO,45:$VP,52:$VQ,56:$VR,63:$VS,64:$VT,65:$VU,66:$VV,67:$VW,68:$VX,69:$VY,70:$VZ,71:$V_},o($V21,[2,32],{43:$VO,45:$VP,52:$VQ,56:$VR,63:$VS,64:$VT,65:$VU,66:$VV,67:$VW,68:$VX,69:$VY,70:$VZ,71:$V_}),o($VK,[2,30]),{33:$V51,43:[1,177],48:178,49:$V61},{47:[1,179]},o($V71,[2,38]),o($V71,[2,39]),{20:19,31:180,32:$V4,33:$V5,42:26,47:$V6,51:[1,181],54:6,55:$V7,58:13,59:14,72:17,73:18,74:$V8,75:$V9,76:$Va,77:$Vb,78:$Vc,79:$Vd,80:$Ve,81:$Vf,82:$Vg,83:$Vh,84:20,86:$Vi,87:$Vj,88:$Vk,89:$Vl,90:$Vm,91:$Vn,92:$Vo,93:$Vp,94:$Vq,95:$Vr,96:$Vs,97:$Vt,98:$Vu},o($VJ,[2,36]),o($V11,[2,42]),o($V11,[2,43],{48:178,33:$V51,49:$V61}),o($V01,[2,27]),{47:[1,182]},o($V71,[2,37]),{33:[1,183]},{20:19,32:$V4,33:$V5,42:26,47:$V6,50:[1,184],54:51,55:$V7,58:13,59:14,72:17,73:18,74:$V8,75:$V9,76:$Va,77:$Vb,78:$Vc,79:$Vd,80:$Ve,81:$Vf,82:$Vg,83:$Vh,84:20,86:$Vi,87:$Vj,88:$Vk,89:$Vl,90:$Vm,91:$Vn,92:$Vo,93:$Vp,94:$Vq,95:$Vr,96:$Vs,97:$Vt,98:$Vu},{36:[1,185]},{33:[1,186]},{45:[1,187]},o($V71,[2,40]),{20:19,31:188,32:$V4,33:$V5,42:26,47:$V6,54:6,55:$V7,58:13,59:14,72:17,73:18,74:$V8,75:$V9,76:$Va,77:$Vb,78:$Vc,79:$Vd,80:$Ve,81:$Vf,82:$Vg,83:$Vh,84:20,86:$Vi,87:$Vj,88:$Vk,89:$Vl,90:$Vm,91:$Vn,92:$Vo,93:$Vp,94:$Vq,95:$Vr,96:$Vs,97:$Vt,98:$Vu},{45:[1,189]},o($VJ,[2,35]),{20:19,32:$V4,33:$V5,38:[1,190],42:26,47:$V6,54:51,55:$V7,58:13,59:14,72:17,73:18,74:$V8,75:$V9,76:$Va,77:$Vb,78:$Vc,79:$Vd,80:$Ve,81:$Vf,82:$Vg,83:$Vh,84:20,86:$Vi,87:$Vj,88:$Vk,89:$Vl,90:$Vm,91:$Vn,92:$Vo,93:$Vp,94:$Vq,95:$Vr,96:$Vs,97:$Vt,98:$Vu},o($VJ,[2,34]),{50:[1,191]},o($V71,[2,41])],
+defaultActions: {32:[2,93],33:[2,94],34:[2,95],35:[2,96],36:[2,97],37:[2,98],38:[2,99],39:[2,100],40:[2,101],41:[2,102],42:[2,103],43:[2,104],44:[2,105],47:[2,1],49:[2,2]},
 parseError: function parseError (str, hash) {
     if (hash.recoverable) {
         this.trace(str);
@@ -9398,8 +9405,8 @@ let re = /[^\n\t\r ]+/g
     var builder = new Objeto();
     var queryBuilder = new XQObjeto();
     // const getASTTree = require('./ast_xpath');
-	function insert_current(_variable, _linea, _columna) {
-		return builder.newAxis(builder.newExpression(builder.newCurrent(_variable, _linea, _columna), null, _linea, _columna), _linea, _columna)
+	function insert_current(_variable, _predicate, _linea, _columna) {
+		return builder.newAxis(builder.newExpression(builder.newCurrent(_variable, _linea, _columna), _predicate, _linea, _columna), _linea, _columna)
 	}
 /* generated by jison-lex 0.3.4 */
 var lexer = (function(){
@@ -9735,99 +9742,99 @@ case 1:// XQUERYComment
 break;
 case 2:// MultiLineComment
 break;
-case 3:return 72
+case 3:return 74
 break;
-case 4:return 61
+case 4:return 63
 break;
-case 5:return 62
+case 5:return 64
 break;
-case 6:return 40
+case 6:return 43
 break;
-case 7:return 42
+case 7:return 45
 break;
-case 8:return 53
+case 8:return 55
 break;
-case 9:return 44
+case 9:return 47
 break;
 case 10:return 21
 break;
-case 11:return 49
+case 11:return 52
 break;
-case 12:return 74
+case 12:return 76
 break;
-case 13:return 73
+case 13:return 75
 break;
-case 14:return 83
+case 14:return 85
 break;
-case 15:return 75
+case 15:return 77
 break;
 case 16:return 32
 break;
-case 17:return 59
+case 17:return 61
 break;
-case 18:return 60
+case 18:return 62
 break;
 case 19:return 36
 break;
 case 20:return 38
 break;
-case 21:return 46
+case 21:return 49
 break;
-case 22:return 47
+case 22:return 50
 break;
-case 23:return 54
+case 23:return 56
 break;
-case 24:return 65
+case 24:return 67
 break;
-case 25:return 85
+case 25:return 87
 break;
-case 26:return 84
+case 26:return 86
 break;
-case 27:return 86
+case 27:return 88
 break;
-case 28:return 87
+case 28:return 89
 break;
-case 29:return 89
+case 29:return 91
 break;
-case 30:return 88
+case 30:return 90
 break;
-case 31:return 91
+case 31:return 93
 break;
-case 32:return 90
+case 32:return 92
 break;
-case 33:return 92
+case 33:return 94
 break;
-case 34:return 93
+case 34:return 95
 break;
-case 35:return 95
+case 35:return 97
 break;
-case 36:return 94
+case 36:return 96
 break;
-case 37:return 96
+case 37:return 98
 break;
-case 38:return 81
+case 38:return 83
 break;
-case 39:return 79
+case 39:return 81
 break;
-case 40:return 78
+case 40:return 80
 break;
-case 41:return 80
+case 41:return 82
 break;
-case 42:return 51
+case 42:return 53
 break;
-case 43:return 63
+case 43:return 65
 break;
-case 44:return 64
+case 44:return 66
 break;
-case 45:return 69
+case 45:return 71
 break;
-case 46:return 67
+case 46:return 69
 break;
-case 47:return 68
+case 47:return 70
 break;
-case 48:return 66
+case 48:return 68
 break;
-case 49:return 'tk_doc'
+case 49:return 41
 break;
 case 50:return 12
 break;
@@ -9849,7 +9856,7 @@ case 58:return 37
 break;
 case 59:return 26
 break;
-case 60:return 48
+case 60:return 51
 break;
 case 61: attribute = ''; this.begin("string_doubleq"); 
 break;
@@ -9869,7 +9876,7 @@ case 68: attribute += "\'";
 break;
 case 69: attribute += "\r"; 
 break;
-case 70: yy_.yytext = attribute; this.popState(); return 76; 
+case 70: yy_.yytext = attribute; this.popState(); return 78; 
 break;
 case 71: attribute = ''; this.begin("string_singleq"); 
 break;
@@ -9889,7 +9896,7 @@ case 78: attribute += "\'";
 break;
 case 79: attribute += "\r"; 
 break;
-case 80: yy_.yytext = attribute; this.popState(); return 77; 
+case 80: yy_.yytext = attribute; this.popState(); return 79; 
 break;
 case 81:return 33
 break;
@@ -9930,6 +9937,60 @@ if ( true && __webpack_require__.c[__webpack_require__.s] === module) {
 }
 }
 /* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./../../../node_modules/webpack/buildin/module.js */ "YuTi")(module)))
+
+/***/ }),
+
+/***/ "mo2C":
+/*!*********************************************!*\
+  !*** ./src/js/controller/xquery/OrderBy.js ***!
+  \*********************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+const Expresion_1 = __importDefault(__webpack_require__(/*! ../xpath/Expresion/Expresion */ "gajf"));
+function OrderBy(_instruccion, _ambito, _iterators) {
+    var _a;
+    let sorted = [];
+    try {
+        for (let i = 0; i < _iterators.length; i++) { // [$x, $y, $z]
+            const iterator = _iterators[i]; // { Contexto }
+            let _x = Expresion_1.default(_instruccion, _ambito, iterator, (_a = iterator.variable) === null || _a === void 0 ? void 0 : _a.id); // _instruccion = [comparissons]
+            if (_x)
+                sorted.push(sortIterators(_x, iterator));
+        }
+    }
+    catch (error) {
+        console.log(error);
+    }
+    return sorted;
+}
+function sortIterators(_contexto, _root) {
+    let array = _contexto.removeDadDuplicates();
+    let swapped = true;
+    do {
+        swapped = false;
+        for (let j = 0; j < array.length; j++) {
+            if (array[j + 1])
+                if (array[j].value.charCodeAt(0) > array[j + 1].value.charCodeAt(0)) { // Compara valor inicial de ASCII
+                    let temp = array[j];
+                    let tmp = _root.elementos[j];
+                    array[j] = array[j + 1];
+                    _root.elementos[j] = _root.elementos[j + 1];
+                    array[j + 1] = temp;
+                    _root.elementos[j + 1] = tmp;
+                    swapped = true;
+                }
+        }
+    } while (swapped);
+    return _root;
+}
+module.exports = OrderBy;
+
 
 /***/ }),
 
@@ -11819,30 +11880,34 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 const Enum_1 = __webpack_require__(/*! ../../../../../model/xpath/Enum */ "MEUw");
 const Expresion_1 = __importDefault(__webpack_require__(/*! ../../../Expresion/Expresion */ "gajf"));
-const Funciones_1 = __importDefault(__webpack_require__(/*! ./Funciones */ "Dbnh"));
 const Predicate_1 = __webpack_require__(/*! ../Predicate */ "Iysv");
-function SelectAxis(_instruccion, _ambito, _contexto) {
-    let _404 = { notFound: "No se encontraron elementos." };
-    let contexto = (_contexto.elementos) ? (_contexto) : null;
-    let expresion = Expresion_1.default(_instruccion, _ambito, contexto);
-    if (expresion.error)
+const Contexto_1 = __webpack_require__(/*! ../../../../Contexto */ "ivfU");
+const Variable_1 = __webpack_require__(/*! ../../../../../model/xml/Ambito/Variable */ "C8dJ");
+function SelectAxis(_instruccion, _ambito, _contexto, id) {
+    let _404 = "No se encontraron elementos.";
+    let expresion = Expresion_1.default(_instruccion, _ambito, _contexto, id);
+    if (expresion === null || expresion.error)
         return expresion;
-    let root = getAxis(expresion.axisname, expresion.nodetest, expresion.predicate, contexto, _ambito, false);
-    if (root === null || root.error || root.elementos.error || (root.elementos.length === 0 && root.atributos.length === 0))
-        return _404;
+    let root = getAxis(expresion.axisname, expresion.nodetest, expresion.predicate, _contexto, _ambito, false, id);
+    if (root === null || root.error || root.getLength() === 0)
+        root.notFound = _404;
     return root;
 }
-function getAxis(_axisname, _nodetest, _predicate, _contexto, _ambito, _isDoubleBar) {
-    if (_contexto)
-        return firstFiler(_axisname, _nodetest, _predicate, _contexto, _ambito, _isDoubleBar);
-    else
-        return { error: "Indstrucción no procesada.", tipo: "Semántico", origen: "Query", linea: 1, columna: 1 };
+function getAxis(_axisname, _nodetest, _predicate, _contexto, _ambito, _isDoubleBar, id) {
+    if (_contexto.getLength() > 0)
+        return firstFiler(_axisname, _nodetest, _predicate, _contexto, _ambito, _isDoubleBar, id);
+    else {
+        _contexto.error = { error: "Instrucción no procesada.", tipo: "Semántico", origen: "Query", linea: 1, columna: 1 };
+        return _contexto;
+    }
 }
 // Revisa el axisname y extrae los elementos
-function firstFiler(_axisname, _nodetest, _predicate, _contexto, _ambito, _isDoubleBar) {
-    let elements = Array();
-    let attributes = Array();
-    let cadena = Enum_1.Tipos.ELEMENTOS;
+function firstFiler(_axisname, _nodetest, _predicate, _contexto, _ambito, _isDoubleBar, id) {
+    let retorno = new Contexto_1.Contexto();
+    if (id) {
+        retorno.variable = new Variable_1.Variable(id, Enum_1.Tipos.VARIABLE);
+    }
+    retorno.cadena = Enum_1.Tipos.ELEMENTOS;
     switch (_axisname) {
         case Enum_1.Tipos.AXIS_ANCESTOR: // Selects all ancestors (parent, grandparent, etc.) of the current node
         case Enum_1.Tipos.AXIS_ANCESTOR_OR_SELF: // Selects all ancestors (parent, grandparent, etc.) of the current node and the current node itself
@@ -11850,13 +11915,12 @@ function firstFiler(_axisname, _nodetest, _predicate, _contexto, _ambito, _isDou
                 const element = _contexto.elementos[i];
                 if (_axisname === Enum_1.Tipos.AXIS_ANCESTOR_OR_SELF) {
                     if (element.father)
-                        elements.push(element);
+                        retorno.elementos.push(element);
                     else
-                        elements.push(element.childs[0]);
+                        retorno.elementos.push(element.childs[0]);
                 }
-                let dad = element.father;
-                if (dad) {
-                    elements = _ambito.compareCurrent(element, elements, _axisname);
+                if (element.father) {
+                    retorno.elementos = _ambito.compareCurrent(element, retorno.elementos, _axisname);
                 }
             }
             break;
@@ -11864,24 +11928,27 @@ function firstFiler(_axisname, _nodetest, _predicate, _contexto, _ambito, _isDou
             for (let i = 0; i < _contexto.elementos.length; i++) {
                 const element = _contexto.elementos[i];
                 if (_isDoubleBar) {
-                    attributes = _ambito.searchAnyAttributes("*", element, attributes);
+                    retorno.atributos = _ambito.searchAnyAttributes("*", element, retorno.atributos);
                 }
                 else if (element.attributes)
                     element.attributes.forEach((attribute) => {
-                        attributes.push(attribute);
+                        retorno.atributos.push(attribute);
                     });
             }
-            cadena = Enum_1.Tipos.ATRIBUTOS;
+            retorno.cadena = Enum_1.Tipos.ATRIBUTOS;
             break;
         case Enum_1.Tipos.AXIS_CHILD: // Selects all children of the current node
             for (let i = 0; i < _contexto.elementos.length; i++) {
                 const element = _contexto.elementos[i];
-                // if (_isDoubleBar) {
-                //     elements = _ambito.searchNodes("*", element, elements);
-                // }
-                if (element.childs)
+                if (_isDoubleBar) {
+                    if (element.father)
+                        retorno.elementos = _ambito.searchNodes("*", element, retorno.elementos);
+                    else
+                        retorno.elementos = _ambito.searchNodes("*", element.childs[0], retorno.elementos);
+                }
+                else if (element.childs)
                     element.childs.forEach((child) => {
-                        elements.push(child);
+                        retorno.elementos.push(child);
                     });
             }
             break;
@@ -11891,13 +11958,13 @@ function firstFiler(_axisname, _nodetest, _predicate, _contexto, _ambito, _isDou
                 const element = _contexto.elementos[i];
                 if (_axisname === Enum_1.Tipos.AXIS_DESCENDANT_OR_SELF) {
                     if (element.father)
-                        elements.push(element);
+                        retorno.elementos.push(element);
                     // else elements.push(element.childs[0]);
                 }
                 if (element.father)
-                    elements = _ambito.searchNodes("*", element, elements);
+                    retorno.elementos = _ambito.searchNodes("*", element, retorno.elementos);
                 else
-                    elements = _ambito.searchNodes("*", element.childs[0], elements);
+                    retorno.elementos = _ambito.searchNodes("*", element.childs[0], retorno.elementos);
             }
             break;
         case Enum_1.Tipos.AXIS_FOLLOWING: // Selects everything in the document after the closing tag of the current node
@@ -11908,15 +11975,16 @@ function firstFiler(_axisname, _nodetest, _predicate, _contexto, _ambito, _isDou
                 const element = _contexto.elementos[i];
                 let dad = element.father;
                 if (dad && (_axisname === Enum_1.Tipos.AXIS_PRECEDING || _axisname === Enum_1.Tipos.AXIS_PRECEDING_SIBLING)) {
-                    elements = _ambito.compareCurrent(element, elements, _axisname);
+                    retorno.elementos = _ambito.compareCurrent(element, retorno.elementos, _axisname);
                 }
                 else if (_axisname === Enum_1.Tipos.AXIS_FOLLOWING || _axisname === Enum_1.Tipos.AXIS_FOLLOWING_SIBLING) {
-                    elements = _ambito.compareCurrent(element, elements, _axisname);
+                    retorno.elementos = _ambito.compareCurrent(element, retorno.elementos, _axisname);
                 }
             }
             break;
         case Enum_1.Tipos.AXIS_NAMESPACE: // Selects all namespace nodes of the current node
-            return { error: "Error: la funcionalidad 'namespace' no está disponible.", tipo: "Semántico", origen: "Query", linea: _nodetest.linea, columna: _nodetest.columna };
+            retorno.error = { error: "Error: la funcionalidad 'namespace' no está disponible.", tipo: "Semántico", origen: "Query", linea: _nodetest.linea, columna: _nodetest.columna };
+            break;
         case Enum_1.Tipos.AXIS_PARENT: // Selects the parent of the current node
             for (let i = 0; i < _contexto.elementos.length; i++) {
                 const element = _contexto.elementos[i];
@@ -11924,90 +11992,100 @@ function firstFiler(_axisname, _nodetest, _predicate, _contexto, _ambito, _isDou
                 if (dad)
                     _ambito.tablaSimbolos.forEach(elm => {
                         if (elm.id_open === dad.id && elm.line == dad.line && elm.column == dad.column)
-                            elements.push(elm);
+                            retorno.elementos.push(elm);
                         if (elm.childs)
                             elm.childs.forEach(child => {
-                                elements = _ambito.searchDad(child, dad.id, dad.line, dad.column, elements);
+                                retorno.elementos = _ambito.searchDad(child, dad.id, dad.line, dad.column, retorno.elementos);
                             });
                     });
             }
             break;
         case Enum_1.Tipos.AXIS_SELF: // Selects the current node
-            if (_contexto.atributos)
-                attributes = _contexto.atributos;
-            else
-                elements = _contexto.elementos;
+            retorno = _contexto;
             break;
         default:
-            return { error: "Error: axisname no válido.", tipo: "Semántico", origen: "Query", linea: _nodetest.linea, columna: _nodetest.columna };
+            retorno.error = { error: "Error: axisname no válido.", tipo: "Semántico", origen: "Query", linea: _nodetest.linea, columna: _nodetest.columna };
+            break;
     }
-    // return { elementos: elements, atributos: attributes, cadena: cadena };
-    return secondFilter(elements, attributes, _nodetest, _predicate, cadena, _ambito, _isDoubleBar);
+    return secondFilter(retorno, _nodetest, _predicate, _ambito, _isDoubleBar);
 }
 // Revisa el nodetest y busca hacer match
-function secondFilter(_elements, _atributos, _nodetest, _predicate, _cadena, _ambito, _isDoubleBar) {
-    let elements = Array();
-    let attributes = Array();
-    let text = Array();
+function secondFilter(_contexto, _nodetest, _predicate, _ambito, _isDoubleBar, id) {
     let valor = _nodetest.valor;
+    let retorno = new Contexto_1.Contexto();
+    if (id) {
+        retorno.variable = new Variable_1.Variable(id, Enum_1.Tipos.VARIABLE);
+    }
+    retorno.cadena = Enum_1.Tipos.ELEMENTOS;
     switch (_nodetest.tipo) {
         case Enum_1.Tipos.ELEMENTOS:
         case Enum_1.Tipos.ASTERISCO:
         case Enum_1.Tipos.FUNCION_TEXT:
-            if (_atributos.length > 0) {
-                for (let i = 0; i < _atributos.length; i++) {
-                    const attribute = _atributos[i];
+        case Enum_1.Tipos.FUNCION_NODE:
+            if (_contexto.atributos.length > 0) {
+                for (let i = 0; i < _contexto.atributos.length; i++) {
+                    const attribute = _contexto.atributos[i];
                     if (attribute.id == valor || valor === "*") {
-                        attributes.push(attribute);
+                        retorno.atributos.push(attribute);
                     }
-                    if (attribute.value == valor) {
-                        attributes.push(attribute);
+                    else if (attribute.value == valor) {
+                        retorno.atributos.push(attribute);
                     }
                 }
+                retorno.cadena = Enum_1.Tipos.ATRIBUTOS;
             }
-            for (let i = 0; i < _elements.length; i++) {
-                const element = _elements[i];
+            else if (_contexto.texto.length > 0) {
+                for (let i = 0; i < _contexto.texto.length; i++) {
+                    const text = _contexto.texto[i];
+                    if (text == valor || valor === "*") {
+                        retorno.texto.push(text);
+                    }
+                }
+                retorno.cadena = Enum_1.Tipos.TEXTOS;
+            }
+            else if (_contexto.nodos.length > 0) {
+                for (let i = 0; i < _contexto.nodos.length; i++) {
+                    const node = _contexto.nodos[i];
+                    if (node.textos == valor || valor === "*") {
+                        retorno.nodos.push(node);
+                    }
+                    else if (node.elementos.id_open == valor || node.elementos.value == valor) {
+                        retorno.nodos.push(node);
+                    }
+                }
+                retorno.cadena = Enum_1.Tipos.COMBINADO;
+            }
+            for (let i = 0; i < _contexto.elementos.length; i++) {
+                const element = _contexto.elementos[i];
                 if (_nodetest.tipo === Enum_1.Tipos.FUNCION_TEXT && element.value) {
-                    let x = Funciones_1.default.f1(element, elements, text, _isDoubleBar);
-                    elements.concat(x.elementos);
-                    text.concat(x.texto);
-                    _cadena = Enum_1.Tipos.TEXTOS;
-                    continue;
+                    _contexto.texto.push(element.value);
                 }
-                else if (_atributos.length > 0 && element.attributes) {
-                    let x = Funciones_1.default.f2(element, elements, attributes, valor, _isDoubleBar);
-                    elements.concat(x.elementos);
-                    attributes = attributes.concat(x.atributos);
-                    _cadena = Enum_1.Tipos.ATRIBUTOS;
-                    continue;
+                else if (element.id_open == valor || valor == "*" || _nodetest.tipo === Enum_1.Tipos.FUNCION_NODE) {
+                    retorno.elementos.push(element);
                 }
-                let x = Funciones_1.default.f3(element, elements, text, valor, _nodetest.tipo, _isDoubleBar);
-                if (x.elementos.length > 0 || x.texto.length > 0) {
-                    elements.concat(x.elementos);
-                    text.concat(x.texto);
-                    continue; // break;
+                else if (element.childs) {
+                    element.childs.forEach(child => {
+                        if (child.id_open == valor)
+                            retorno.elementos.push(child);
+                    });
                 }
-                x = Funciones_1.default.f4(element, elements, text, valor, _nodetest.tipo, _isDoubleBar);
-                if (x.elementos.length > 0 || x.texto.length > 0) {
-                    elements.concat(x.elementos);
-                    text.concat(x.texto);
-                    break; //continue;
-                }
+                retorno.removeDuplicates();
             }
             break;
         default:
-            return { error: "Error: nodetest no válido.", tipo: "Semántico", origen: "Query", linea: _nodetest.linea, columna: _nodetest.columna };
+            retorno.error = { error: "Error: nodetest no válido.", tipo: "Semántico", origen: "Query", linea: _nodetest.linea, columna: _nodetest.columna };
     }
     // En caso de tener algún predicado
     if (_predicate) {
-        let filter = new Predicate_1.Predicate(_predicate, _ambito, elements);
-        if (attributes.length > 0) {
-            attributes = filter.filterAttributes(attributes);
-            return { elementos: [], atributos: attributes, cadena: _cadena };
-        }
-        elements = filter.filterElements(elements);
+        let filter = new Predicate_1.Predicate(_predicate, _ambito, retorno);
+        if (retorno.atributos.length > 0)
+            retorno.atributos = filter.filterElements(retorno.atributos);
+        else if (retorno.texto.length > 0)
+            retorno.texto = filter.filterElements(retorno.texto);
+        else
+            retorno.elementos = filter.filterElements(retorno.elementos);
     }
-    return { elementos: elements, atributos: attributes, texto: text, cadena: _cadena };
+    return retorno;
 }
 module.exports = { SA: SelectAxis, GetAxis: getAxis };
 
@@ -12026,7 +12104,7 @@ module.exports = { SA: SelectAxis, GetAxis: getAxis };
 const Enum_1 = __webpack_require__(/*! ../../../../model/xpath/Enum */ "MEUw");
 function Aritmetica(_expresion, _ambito, _contexto) {
     let operators = init(_expresion.opIzq, _expresion.opDer, _ambito, _expresion.tipo, _contexto);
-    if (operators.error)
+    if (operators === null || operators.error)
         return operators;
     switch (operators.tipo) {
         case Enum_1.Tipos.OPERACION_SUMA:
@@ -12047,28 +12125,28 @@ function Aritmetica(_expresion, _ambito, _contexto) {
 }
 function init(_opIzq, _opDer, _ambito, _tipo, _contexto) {
     const Expresion = __webpack_require__(/*! ../Expresion */ "gajf");
-    let op1 = Expresion(_opIzq, _ambito, _contexto);
-    if (op1.error)
+    let op1 = Expresion((Array.isArray(_opIzq)) ? (_opIzq[0]) : (_opIzq), _ambito, _contexto);
+    if (op1 === null || op1.error)
         return op1;
-    let op2 = Expresion(_opDer, _ambito, _contexto);
-    if (op2.error)
+    let op2 = Expresion((Array.isArray(_opDer)) ? (_opDer[0]) : (_opDer), _ambito, _contexto);
+    if (op2 === null || op2.error)
         return op2;
     let tipo = _tipo;
     if (op1.tipo === Enum_1.Tipos.FUNCION_LAST && op2.tipo === Enum_1.Tipos.NUMBER) {
-        op1 = _contexto.length;
+        op1 = _contexto.getLength();
         op2 = Number(op2.valor);
     }
     else if (op1.tipo === Enum_1.Tipos.NUMBER && op2.tipo === Enum_1.Tipos.FUNCION_LAST) {
         op1 = Number(op1.valor);
-        op2 = _contexto.length;
+        op2 = _contexto.getLength();
     }
     else if (op1.tipo === Enum_1.Tipos.FUNCION_POSITION && op2.tipo === Enum_1.Tipos.NUMBER) {
-        op1 = _contexto.length;
+        op1 = _contexto.getLength();
         op2 = Number(op2.valor);
     }
     else if (op1.tipo === Enum_1.Tipos.NUMBER && op2.tipo === Enum_1.Tipos.FUNCION_POSITION) {
         op1 = Number(op1.valor);
-        op2 = _contexto.length;
+        op2 = _contexto.getLength();
     }
     else if (op1.tipo === Enum_1.Tipos.NUMBER && op2.tipo === Enum_1.Tipos.NUMBER) {
         op1 = Number(op1.valor);
@@ -12097,12 +12175,16 @@ function multiplicacion(_opIzq, _opDer) {
     };
 }
 function division(_opIzq, _opDer) {
+    if (_opDer == 0)
+        return { error: "No es permitida la división entre 0." };
     return {
         valor: (_opIzq / _opDer),
         tipo: Enum_1.Tipos.NUMBER,
     };
 }
 function modulo(_opIzq, _opDer) {
+    if (_opDer == 0)
+        return { error: "No es permitido módulo entre 0." };
     return {
         valor: (_opIzq % _opDer),
         tipo: Enum_1.Tipos.NUMBER,
@@ -12158,32 +12240,29 @@ function Relacional(_expresion, _ambito, _contexto, id) {
 }
 function init(_opIzq, _opDer, _ambito, _tipo, _contexto, id) {
     const Expresion = __webpack_require__(/*! ../Expresion */ "gajf");
-    // console.log(_opIzq,818181818118)
     let op1 = Expresion(_opIzq, _ambito, _contexto, id);
     if (op1 === null || op1.error)
         return op1;
-    let op2 = Expresion((Array.isArray(_opDer)) ? (_opDer[0]) : (_opDer), _ambito, _contexto, id);
-    if (op1 === null || op2.error)
+    let op2 = Expresion(_opDer, _ambito, _contexto, id);
+    if (op2 === null || op2.error)
         return op2;
     let tipo = _tipo;
-    // Numéricas
-    // console.log(op1, op2, tipo, 1010101010)
-    if (Array.isArray(op1) || Array.isArray(op2)) {
-        if (Array.isArray(op1) && (op2.tipo === Enum_1.Tipos.NUMBER || op2.tipo === Enum_1.Tipos.STRING)) {
-            _contexto = Match_1.default(op2.valor, tipo, _ambito, op1[0].elementos);
-            // console.log(_contexto, 6777777777);
-            return _contexto;
-        }
+    if (op1.elementos || op2.elementos) {
+        if (op1.elementos && (op2.tipo === Enum_1.Tipos.NUMBER || op2.tipo === Enum_1.Tipos.STRING))
+            return Match_1.default(op2.valor, tipo, op1, _contexto);
+        else
+            return null;
     }
+    // Numéricas
     if (tipo === Enum_1.Tipos.RELACIONAL_MAYOR || tipo === Enum_1.Tipos.RELACIONAL_MAYORIGUAL ||
         tipo === Enum_1.Tipos.RELACIONAL_MENOR || tipo === Enum_1.Tipos.RELACIONAL_MENORIGUAL) {
         if ((op1.tipo === Enum_1.Tipos.FUNCION_POSITION || op1.tipo === Enum_1.Tipos.FUNCION_LAST) && op2.tipo === Enum_1.Tipos.NUMBER) {
-            op1 = _contexto.length;
+            op1 = _contexto.getLength();
             op2 = Number(op2.valor);
         }
         else if (op1.tipo === Enum_1.Tipos.NUMBER && (op2.tipo === Enum_1.Tipos.FUNCION_POSITION || op2.tipo === Enum_1.Tipos.FUNCION_LAST)) {
             op2 = Number(op1.valor);
-            op1 = _contexto.length;
+            op1 = _contexto.getLength();
             if (_tipo === Enum_1.Tipos.RELACIONAL_MAYOR)
                 tipo = Enum_1.Tipos.RELACIONAL_MENOR;
             if (_tipo === Enum_1.Tipos.RELACIONAL_MAYORIGUAL)
@@ -12239,12 +12318,12 @@ function init(_opIzq, _opDer, _ambito, _tipo, _contexto, id) {
         let opIzq = { valor: 0, tipo: op1.tipo };
         let opDer = { valor: 0, tipo: op2.tipo };
         if ((op1.tipo === Enum_1.Tipos.FUNCION_POSITION || op1.tipo === Enum_1.Tipos.FUNCION_LAST) && op2.tipo === Enum_1.Tipos.NUMBER) {
-            opIzq.valor = _contexto.length;
+            opIzq.valor = _contexto.getLength();
             opDer.valor = Number(op2.valor);
         }
         else if (op1.tipo === Enum_1.Tipos.NUMBER && (op2.tipo === Enum_1.Tipos.FUNCION_POSITION || op2.tipo === Enum_1.Tipos.FUNCION_LAST)) {
             opIzq.valor = Number(op1.valor);
-            opDer.valor = _contexto.length;
+            opDer.valor = _contexto.getLength();
         }
         else if (op1.tipo === Enum_1.Tipos.ATRIBUTOS || op2.tipo === Enum_1.Tipos.ATRIBUTOS) {
             opIzq.tipo = Enum_1.Tipos.ATRIBUTOS;

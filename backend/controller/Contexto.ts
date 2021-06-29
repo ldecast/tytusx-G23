@@ -1,6 +1,7 @@
 import { Element } from "../model/xml/Element";
 import { Atributo } from "../model/xml/Atributo";
 import { Tipos } from "../model/xpath/Enum";
+import { Variable } from "../model/xml/Ambito/Variable";
 
 export class Contexto {
 
@@ -13,10 +14,13 @@ export class Contexto {
     notFound: any;
 
     // Numéricos
-    items: Array<any>;
+    items: Array<number>;
 
-    constructor() {
-        this.elementos = [];
+    // XQuery Vars
+    variable?: Variable;
+
+    constructor(_elementos?: Array<Element>) {
+        this.elementos = (_elementos) ? (_elementos) : [];
         this.atributos = [];
         this.texto = [];
         this.nodos = [];
@@ -41,15 +45,28 @@ export class Contexto {
         this.nodos.push(_v);
     }
 
-    pushItem(_v: any) {
+    pushItem(_v: number) {
         this.items.push(_v);
     }
 
     removeDuplicates() { // Elimina duplicados
-        this.elementos = this.elementos.filter((v, i, a) => a.findIndex(t => (t.line === v.line && t.column === v.column)) === i);
+        if (this.atributos.length > 0) {
+            this.atributos = this.atributos.filter((v, i, a) => a.findIndex(t => (t.line === v.line)) === i);
+        }
+        if (this.elementos.length > 0) {
+            this.elementos = this.elementos.filter((v, i, a) => a.findIndex(t => (t.line === v.line && t.column === v.column)) === i);
+        }
+    }
+
+    removeDadDuplicates(): Array<any> {
+        this.removeDuplicates();
+        this.elementos = this.elementos.filter((v, i, a) => a.findIndex(t => (t.father.line === v.father.line && t.father.column === v.father.column)) === i);
+        return this.getArray();
     }
 
     getLength(): number {
+        if (this.items.length > 0)
+            return this.items.length;
         if (this.atributos.length > 0)
             return this.atributos.length;
         if (this.elementos.length > 0)

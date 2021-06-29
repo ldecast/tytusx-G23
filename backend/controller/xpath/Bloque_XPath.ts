@@ -50,7 +50,7 @@ function writeOutput() {
     for (let i = 0; i < output.length; i++) {
         const path = output[i];
         if (path.cadena === Tipos.TEXTOS) {
-            let root: Array<string> = (path.texto) ? (path.texto) : [];
+            let root: Array<string> = path.texto;
             root.forEach(txt => {
                 cadena += concatText(txt);
             });

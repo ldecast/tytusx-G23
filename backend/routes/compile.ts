@@ -1,5 +1,5 @@
 import { Contexto } from '../controller/Contexto';
-import Bloque from '../controller/xpath/Instruccion/Bloque';
+import Bloque from '../controller/xquery/Bloque_XQuery';
 import XPath from '../controller/xpath/Bloque_XPath';
 import { Ambito } from '../model/xml/Ambito/Ambito';
 import { Global } from '../model/xml/Ambito/Global';

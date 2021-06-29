@@ -6,44 +6,47 @@ import { Atributo } from "../../../../model/xml/Atributo";
 import { Predicate } from "./Predicate";
 import Axis from "./Axis/Axis";
 import { Contexto } from "../../../Contexto";
+import { Variable } from "../../../../model/xml/Ambito/Variable";
 
 function Eje(_instruccion: any, _ambito: Ambito, _contexto: Contexto, id?: any): Contexto {
-    let _404 = { notFound: "No se encontraron elementos." };
+    let _404 = "No se encontraron elementos.";
     if (Array.isArray(_contexto))
         _contexto = _contexto[0];
-    let expresion = Expresion((_instruccion.expresion) ? (_instruccion.expresion) : (_instruccion), _ambito, _contexto, id);
+    let expresion = Expresion(_instruccion, _ambito, _contexto, id);
+    // console.log(_instruccion, expresion, 2222222222)
     if (expresion === null || expresion.error) return expresion;
     let predicate = _instruccion.predicate;
     let root: Contexto = new Contexto();
     if (expresion.tipo === Tipos.ELEMENTOS || expresion.tipo === Tipos.ASTERISCO) {
-        root = getSymbolFromRoot(expresion.valor, _contexto, _ambito, predicate);
+        root = getSymbolFromRoot(expresion.valor, _contexto, _ambito, predicate, id);
     }
     else if (expresion.tipo === Tipos.ATRIBUTOS) {
-        root = getSymbolFromRoot({ id: expresion.valor, tipo: "@" }, _contexto, _ambito, predicate);
+        root = getSymbolFromRoot({ id: expresion.valor, tipo: "@" }, _contexto, _ambito, predicate, id);
         if (root.atributos.length === 0) root.notFound = _404;
     }
     else if (expresion.tipo === Tipos.FUNCION_NODE) {
-        root = getSymbolFromRoot(expresion.valor, _contexto, _ambito, predicate);
+        root = getSymbolFromRoot(expresion.valor, _contexto, _ambito, predicate, id);
         if (root.nodos.length === 0) root.notFound = _404;
     }
     else if (expresion.tipo === Tipos.FUNCION_TEXT) {
-        root = getSymbolFromRoot(expresion.valor, _contexto, _ambito, predicate);
+        root = getSymbolFromRoot(expresion.valor, _contexto, _ambito, predicate, id);
         if (root.texto.length === 0) root.notFound = _404;
     }
     else if (expresion.tipo === Tipos.SELECT_AXIS) {
-        root = Axis.GetAxis(expresion.axisname, expresion.nodetest, expresion.predicate, _contexto, _ambito, false);
+        root = Axis.GetAxis(expresion.axisname, expresion.nodetest, expresion.predicate, _contexto, _ambito, false, id);
         return root;
     }
     else {
-        root.error = { error: "Expresión no válida.", tipo: "Semántico", origen: "Query", linea: _instruccion.linea, columna: _instruccion.columna };
+        return expresion;
+        // root.error = { error: "Expresión no válida.", tipo: "Semántico", origen: "Query", linea: _instruccion.linea, columna: _instruccion.columna };
     }
     if (root === null || root.error || root.getLength() === 0) root.notFound = _404;
     return root;
 }
 
-function getSymbolFromRoot(_nodename: any, _contexto: Contexto, _ambito: Ambito, _condicion: any): Contexto {
+function getSymbolFromRoot(_nodename: any, _contexto: Contexto, _ambito: Ambito, _condicion: any, id?: any): Contexto {
     if (_contexto.getLength() > 0)
-        return getFromCurrent(_nodename, _contexto, _ambito, _condicion);
+        return getFromCurrent(_nodename, _contexto, _ambito, _condicion, id);
     else {
         _contexto.error = { error: "Instrucción no procesada.", tipo: "Semántico", origen: "Query", linea: 1, columna: 1 };
         return _contexto;
@@ -51,8 +54,11 @@ function getSymbolFromRoot(_nodename: any, _contexto: Contexto, _ambito: Ambito,
 }
 
 // Desde el ámbito actual
-function getFromCurrent(_id: any, _contexto: Contexto, _ambito: Ambito, _condicion: any): Contexto {
+function getFromCurrent(_id: any, _contexto: Contexto, _ambito: Ambito, _condicion: any, id?: any): Contexto {
     let retorno = new Contexto();
+    if (id) {
+        retorno.variable = new Variable(id, Tipos.VARIABLE);
+    }
     // Selecciona el texto contenido únicamente en el nodo
     if (_id === "text()") {
         for (let i = 0; i < _contexto.elementos.length; i++) {

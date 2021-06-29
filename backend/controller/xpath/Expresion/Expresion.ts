@@ -1,12 +1,11 @@
 import { Ambito } from "../../../model/xml/Ambito/Ambito";
 import { Tipos } from "../../../model/xpath/Enum";
-import { Element } from "../../../model/xml/Element"
 import { Contexto } from "../../Contexto";
 
 function Expresion(_expresion: any, _ambito: Ambito, _contexto: Contexto, id?: any): any {
     // if (!_expresion) return null;
     let tipo: Tipos = (Array.isArray(_expresion)) ? Tipos.NONE : _expresion.tipo;
-    // console.log(tipo,89898989)
+
     if (tipo === Tipos.EXPRESION) {
         return Expresion(_expresion.expresion, _ambito, _contexto, id);
     }
@@ -18,7 +17,6 @@ function Expresion(_expresion: any, _ambito: Ambito, _contexto: Contexto, id?: a
     }
     else if (tipo === Tipos.SELECT_CURRENT) {
         if (id) {
-            // console.log(_expresion.expresion, id, 445);
             if (id === _expresion.expresion) return { valor: ".", tipo: Tipos.ELEMENTOS, linea: _expresion.linea, columna: _expresion.columna };
             else return null;
         }
