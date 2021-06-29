@@ -1,43 +1,25 @@
 import { Tipos } from "../../../../model/xpath/Enum";
-import { Element } from "../../../../model/xml/Element";
-import { Ambito } from "../../../../model/xml/Ambito/Ambito";
+import { Contexto } from "../../../Contexto";
 
-function filterElements(valor: any, desigualdad: Tipos, _ambito: Ambito, _contexto: Array<Element>): Array<Element> {
-    let condition: boolean = false;
-    let tmp: Array<any> = [];
-    for (let i = 0; i < _contexto.length; i++) {
-        const element = _contexto[i];
-        // console.log(element, 555555)
-        /* if (element.attributes) { // Hace match con un atributo
-            for (let j = 0; j < element.attributes.length; j++) {
-                const attribute = element.attributes[j];
-                condition = verificarDesigualdad(desigualdad, attribute.value, valor);
-                if (condition) {
-                    tmp.push(element);
-                    break; // Sale del ciclo de atributos para pasar al siguiente elemento
-                }
+function filterElements(valor: any, desigualdad: Tipos, _contexto: Contexto, _root: Contexto): Array<Contexto> {
+    try {
+        let condition: boolean = false;
+        let out: Array<Contexto> = [];
+        let array = _contexto.removeDadDuplicates();
+        for (let i = 0; i < array.length; i++) {
+            const obj = array[i];
+            condition = verificarDesigualdad(desigualdad, obj.value, valor);
+            if (condition) { // Si la condición cumple, apilar los elementos en esa posición
+                let context = new Contexto([_root.elementos[i]]);
+                context.variable = _root.variable;
+                out.push(context);
             }
         }
-        if (element.childs) { // Hace match con algún hijo
-            for (let j = 0; j < element.childs.length; j++) {
-                const child = element.childs[j];
-                condition = verificarDesigualdad(desigualdad, child.value, valor);
-                if (condition) {
-                    tmp.push(element);
-                    break;
-                }
-            }
-        } */
-        condition = verificarDesigualdad(desigualdad, element.value, valor); // Hace match con el elemento
-        if (condition) {
-            let dad = element.father;
-            if (dad)
-                tmp = tmp.concat(_ambito.searchDad(_ambito.tablaSimbolos[0], dad.id, dad.line, dad.column, []));
-        }
-
+        return out;
+    } catch (error) {
+        console.log(error);
+        return [];
     }
-    // console.log(tmp, 133333333333333)
-    return tmp;
 }
 
 function verificarDesigualdad(_tipo: Tipos, v1: any, e1: any): boolean {

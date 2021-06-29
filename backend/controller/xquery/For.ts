@@ -4,12 +4,12 @@ import { Tipos } from "../../model/xpath/Enum";
 import WhereClause from "./Where";
 import OrderBy from "./OrderBy";
 import returnQuery from "./Return";
+import { Contexto } from "../Contexto";
 
-function ForLoop(_instruccion: any, _ambito: Ambito, _contexto: any) {
+function ForLoop(_instruccion: any, _ambito: Ambito, _contexto: Contexto) {
     // console.log(_instruccion, 'instrucciones For')
-    let contexto: any = (_contexto.elementos) ? (_contexto.elementos) : null;
     let declaracion = _instruccion.cuerpo;
-    let iterators: Array<any> = [];
+    let iterators: Array<Contexto> = [];
     declaracion.forEach((_declaracion: any) => {
         let it = Expresion(_declaracion, _ambito, _contexto);
         iterators = iterators.concat(it);
@@ -17,16 +17,14 @@ function ForLoop(_instruccion: any, _ambito: Ambito, _contexto: any) {
     for (let i = 0; i < _instruccion.instrucciones.length; i++) {
         const instr = _instruccion.instrucciones[i];
         if (instr.tipo === Tipos.WHERE_CONDITION) { // Filtrar los elementos de cada variable
-            let filter = WhereClause(instr.condiciones, _ambito, iterators); //, contexto
-            if (filter) iterators = filter;
-            else iterators = [];
+            iterators = WhereClause(instr.condiciones, _ambito, iterators);
         }
         if (instr.tipo === Tipos.ORDER_BY_CLAUSE) { // Ordenar los elementos según los parámetros
-            let filter = OrderBy(instr.ordenes, _ambito, iterators); //, contexto
-            if (filter) iterators = filter;
+            let filter = OrderBy(instr.ordenes, _ambito, iterators);
+            if (filter.length > 0) iterators = filter;
         }
         if (instr.tipo === Tipos.RETURN_STATEMENT) { // Retorna la salida
-            return returnQuery(instr.expresion, _ambito, iterators) //, contexto);
+            return returnQuery(instr.expresion, _ambito, iterators);
         }
     }
 }

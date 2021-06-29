@@ -27,16 +27,17 @@ function Relacional(_expresion: any, _ambito: Ambito, _contexto: Contexto, id?: 
 
 function init(_opIzq: any, _opDer: any, _ambito: Ambito, _tipo: Tipos, _contexto: Contexto, id?: any) {
     const Expresion = require("../Expresion");
-    let op1 = Expresion((Array.isArray(_opIzq)) ? (_opIzq[0]) : (_opIzq), _ambito, _contexto, id);
+    let op1 = Expresion(_opIzq, _ambito, _contexto, id);
     if (op1 === null || op1.error) return op1;
-    let op2 = Expresion((Array.isArray(_opDer)) ? (_opDer[0]) : (_opDer), _ambito, _contexto, id);
+    let op2 = Expresion(_opDer, _ambito, _contexto, id);
     if (op2 === null || op2.error) return op2;
     let tipo: Tipos = _tipo;
-    if (Array.isArray(op1) || Array.isArray(op2)) {
-        if (Array.isArray(op1) && (op2.tipo === Tipos.NUMBER || op2.tipo === Tipos.STRING)) {
-            _contexto = filterElements(op2.valor, tipo, _ambito, op1[0].elementos);
-            return _contexto;
-        }
+
+    if (op1.elementos || op2.elementos) {
+        if (op1.elementos && (op2.tipo === Tipos.NUMBER || op2.tipo === Tipos.STRING))
+            return filterElements(op2.valor, tipo, op1, _contexto);
+        else
+            return null;
     }
     // Numéricas
     if (tipo === Tipos.RELACIONAL_MAYOR || tipo === Tipos.RELACIONAL_MAYORIGUAL ||

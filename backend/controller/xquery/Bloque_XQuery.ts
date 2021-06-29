@@ -1,22 +1,21 @@
-import { Ambito } from "../../../model/xml/Ambito/Ambito";
-import { Element } from "../../../model/xml/Element";
-import { Atributo } from "../../../model/xml/Atributo";
-import { Tipos } from "../../../model/xpath/Enum";
-import DobleEje from "./Selecting/DobleEje";
-import Eje from "./Selecting/Eje";
-import Axis from "./Selecting/Axis/Axis";
-import ForLoop from "../../xquery/For";
-import { Contexto } from "../../Contexto";
+import { Ambito } from "../../model/xml/Ambito/Ambito";
+import { Element } from "../../model/xml/Element";
+import { Atributo } from "../../model/xml/Atributo";
+import { Tipos } from "../../model/xpath/Enum";
+import DobleEje from "../xpath/Instruccion/Selecting/DobleEje";
+import Eje from "../xpath/Instruccion/Selecting/Eje";
+import Axis from "../xpath/Instruccion/Selecting/Axis/Axis";
+import ForLoop from "./For";
+import { Contexto } from "../Contexto";
 
 let reset: Contexto;
 let output: Array<Contexto> = [];
 
-function Bloque(_instruccion: Array<any>, _ambito: Ambito, _retorno: Contexto, id?: any) {
+function Bloque(_instruccion: Array<any>, _ambito: Ambito, _retorno: Contexto, id?: any): any {
     output = [];
     reset = _retorno;
     let tmp: Contexto;
     let i;
-    // console.log(_instruccion, 272727272727)
     for (i = 0; i < _instruccion.length; i++) {
         const instr = _instruccion[i];
         if (instr.tipo === Tipos.FOR_LOOP) {
@@ -24,13 +23,12 @@ function Bloque(_instruccion: Array<any>, _ambito: Ambito, _retorno: Contexto, i
         }
         else if (instr.tipo === Tipos.SELECT_FROM_ROOT || instr.tipo === Tipos.EXPRESION) {
             tmp = Eje(instr.expresion, _ambito, _retorno, id);
-            // console.log(tmp,8888888888)
         }
         else if (instr.tipo === Tipos.SELECT_FROM_CURRENT) {
-            tmp = DobleEje(instr, _ambito, _retorno);
+            tmp = DobleEje(instr.expresion, _ambito, _retorno, id);
         }
         else if (instr.tipo === Tipos.SELECT_AXIS) {
-            tmp = Axis.SA(instr, _ambito, _retorno);
+            tmp = Axis.SA(instr, _ambito, _retorno, id);
         }
         else {
             return { error: "Error: Instrucción no procesada.", tipo: "Semántico", origen: "Query", linea: instr.linea, columna: instr.columna };
@@ -44,17 +42,17 @@ function Bloque(_instruccion: Array<any>, _ambito: Ambito, _retorno: Contexto, i
 }
 
 function getOutput(_instruccion: Array<any>, _ambito: Ambito, _retorno: Contexto) {
-    Bloque(_instruccion, _ambito, _retorno);
-    let cadena = writeOutput();
+    let _bloque = Bloque(_instruccion, _ambito, _retorno);
+    let cadena = (_bloque.cadena) ? (_bloque.cadena) : writeOutput();
     let codigo3d = ""; // Agregar función que devuelva código tres direcciones
     return { cadena: cadena, codigo3d: codigo3d };
 }
 
-function getIterators(_instruccion: Array<any>, _ambito: Ambito, _retorno: any, _id: any): Contexto {
-    let _bloque = Bloque(_instruccion, _ambito, _retorno, _id);
-    // console.log(_bloque,22222222222)
-    if (_bloque) return output[0];
-    else return new Contexto();
+function getIterators(_instruccion: Array<any>, _ambito: Ambito, _retorno: Contexto, _id: any): any {
+    Bloque(_instruccion, _ambito, _retorno, _id);
+    if (output.length > 0)
+        return output[output.length - 1];
+    else return null;
 }
 
 function writeOutput() {
@@ -62,7 +60,7 @@ function writeOutput() {
     for (let i = 0; i < output.length; i++) {
         const path = output[i];
         if (path.cadena === Tipos.TEXTOS) {
-            let root: Array<string> = (path.texto) ? (path.texto) : [];
+            let root: Array<string> = path.texto;
             root.forEach(txt => {
                 cadena += concatText(txt);
             });

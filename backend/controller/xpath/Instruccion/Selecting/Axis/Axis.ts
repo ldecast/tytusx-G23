@@ -5,19 +5,20 @@ import { Element } from "../../../../../model/xml/Element";
 import { Atributo } from "../../../../../model/xml/Atributo";
 import { Predicate } from "../Predicate";
 import { Contexto } from "../../../../Contexto";
+import { Variable } from "../../../../../model/xml/Ambito/Variable";
 
-function SelectAxis(_instruccion: any, _ambito: Ambito, _contexto: Contexto): Contexto {
-    let _404 = { notFound: "No se encontraron elementos." };
-    let expresion = Expresion(_instruccion, _ambito, _contexto);
+function SelectAxis(_instruccion: any, _ambito: Ambito, _contexto: Contexto, id?: any): Contexto {
+    let _404 = "No se encontraron elementos.";
+    let expresion = Expresion(_instruccion, _ambito, _contexto, id);
     if (expresion === null || expresion.error) return expresion;
-    let root: Contexto = getAxis(expresion.axisname, expresion.nodetest, expresion.predicate, _contexto, _ambito, false);
+    let root: Contexto = getAxis(expresion.axisname, expresion.nodetest, expresion.predicate, _contexto, _ambito, false, id);
     if (root === null || root.error || root.getLength() === 0) root.notFound = _404;
     return root;
 }
 
-function getAxis(_axisname: Tipos, _nodetest: any, _predicate: any, _contexto: Contexto, _ambito: Ambito, _isDoubleBar: boolean): Contexto {
+function getAxis(_axisname: Tipos, _nodetest: any, _predicate: any, _contexto: Contexto, _ambito: Ambito, _isDoubleBar: boolean, id?: any): Contexto {
     if (_contexto.getLength() > 0)
-        return firstFiler(_axisname, _nodetest, _predicate, _contexto, _ambito, _isDoubleBar);
+        return firstFiler(_axisname, _nodetest, _predicate, _contexto, _ambito, _isDoubleBar, id);
     else {
         _contexto.error = { error: "Instrucción no procesada.", tipo: "Semántico", origen: "Query", linea: 1, columna: 1 };
         return _contexto;
@@ -25,8 +26,11 @@ function getAxis(_axisname: Tipos, _nodetest: any, _predicate: any, _contexto: C
 }
 
 // Revisa el axisname y extrae los elementos
-function firstFiler(_axisname: Tipos, _nodetest: any, _predicate: any, _contexto: Contexto, _ambito: Ambito, _isDoubleBar: boolean): Contexto {
+function firstFiler(_axisname: Tipos, _nodetest: any, _predicate: any, _contexto: Contexto, _ambito: Ambito, _isDoubleBar: boolean, id?: any): Contexto {
     let retorno = new Contexto();
+    if (id) {
+        retorno.variable = new Variable(id, Tipos.VARIABLE);
+    }
     retorno.cadena = Tipos.ELEMENTOS;
     switch (_axisname) {
         case Tipos.AXIS_ANCESTOR: // Selects all ancestors (parent, grandparent, etc.) of the current node
@@ -124,9 +128,12 @@ function firstFiler(_axisname: Tipos, _nodetest: any, _predicate: any, _contexto
 }
 
 // Revisa el nodetest y busca hacer match
-function secondFilter(_contexto: Contexto, _nodetest: any, _predicate: any, _ambito: Ambito, _isDoubleBar: boolean): Contexto {
+function secondFilter(_contexto: Contexto, _nodetest: any, _predicate: any, _ambito: Ambito, _isDoubleBar: boolean, id?: any): Contexto {
     let valor = _nodetest.valor;
     let retorno = new Contexto();
+    if (id) {
+        retorno.variable = new Variable(id, Tipos.VARIABLE);
+    }
     retorno.cadena = Tipos.ELEMENTOS;
     switch (_nodetest.tipo) {
         case Tipos.ELEMENTOS:
