@@ -125,8 +125,12 @@ element_content                     ([^<>&\"{}] | '&lt;' | '&gt;' | '&amp;' | '&
     var builder = new Objeto();
     var queryBuilder = new XQObjeto();
     // const getASTTree = require('./ast_xpath');
+
 	function insert_current(_variable, _predicate, _linea, _columna) {
 		return builder.newAxis(builder.newExpression(builder.newCurrent(_variable, _linea, _columna), _predicate, _linea, _columna), _linea, _columna)
+	}
+	function insert_text(_linea, _columna){
+		return builder.newDoubleAxis(builder.newExpression(builder.newValue("text()", Tipos.FUNCION_TEXT, _linea, _columna), null, _linea, _columna), _linea, _columna);
 	}
 %}
 
@@ -165,6 +169,12 @@ INSTR_QUERY: IF_ELSE_IF
             | FUNCIONES
 ;
 
+// IF_ELSE_IF:
+// ;
+
+// FUNCIONES:
+// ;
+
 // FLWOR: FOR_LOOP { $$ = $1; }
 //         | LET_CLAUSE { $$ = $1; }
 //         | WHERE_CONDITION { $$ = $1; }
@@ -198,6 +208,10 @@ ORDER_BY: ORDER_BY tk_coma E { $$=$3; }
 
 RETURN_STATEMENT: tk_return HTML { $$ = queryBuilder.nuevoReturn($2, this._$.first_line, this._$.first_column+1); }
                 | tk_return XPATH { $$ = queryBuilder.nuevoReturn($2, this._$.first_line, this._$.first_column+1); }
+                | tk_return tk_data tk_ParA XPATH tk_ParC {
+					$4.push(insert_text(this._$.first_line, this._$.first_column+1));
+					$$ = queryBuilder.nuevoReturn($4, this._$.first_line, this._$.first_column+1);
+				}
 ;
 
 VARIABLE: tk_dolar tk_id { $$=queryBuilder.nuevaVariable("$"+$2, this._$.first_line, this._$.first_column+1); }

@@ -18,6 +18,7 @@ export class Contexto {
 
     // XQuery Vars
     variable?: Variable;
+    atCounter?: Variable;
 
     constructor(_elementos?: Array<Element>) {
         this.elementos = (_elementos) ? (_elementos) : [];
@@ -50,9 +51,6 @@ export class Contexto {
     }
 
     removeDuplicates() { // Elimina duplicados
-        if (this.atributos.length > 0) {
-            this.atributos = this.atributos.filter((v, i, a) => a.findIndex(t => (t.line === v.line)) === i);
-        }
         if (this.elementos.length > 0) {
             this.elementos = this.elementos.filter((v, i, a) => a.findIndex(t => (t.line === v.line && t.column === v.column)) === i);
         }
@@ -60,6 +58,8 @@ export class Contexto {
 
     removeDadDuplicates(): Array<any> {
         this.removeDuplicates();
+        if (this.atributos.length > 0)
+            this.atributos = this.atributos.filter((v, i, a) => a.findIndex(t => (t.line === v.line)) === i);
         this.elementos = this.elementos.filter((v, i, a) => a.findIndex(t => (t.father.line === v.father.line && t.father.column === v.father.column)) === i);
         return this.getArray();
     }

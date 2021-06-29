@@ -18,7 +18,14 @@ function Expresion(_expresion: any, _ambito: Ambito, _contexto: Contexto, id?: a
     else if (tipo === Tipos.SELECT_CURRENT) {
         if (id) {
             if (id === _expresion.expresion) return { valor: ".", tipo: Tipos.ELEMENTOS, linea: _expresion.linea, columna: _expresion.columna };
-            else return null;
+            if (_contexto.atCounter?.id === _expresion.expresion) {
+                let length = _contexto.getLength();
+                for (let i = 1; i <= length; i++) {
+                    _contexto.items.push(i);
+                }
+                return { valor: ".", tipo: Tipos.ELEMENTOS, linea: _expresion.linea, columna: _expresion.columna };
+            }
+            return null;
         }
         return { valor: ".", tipo: Tipos.ELEMENTOS, linea: _expresion.linea, columna: _expresion.columna };
     }

@@ -1,21 +1,24 @@
+import { Element } from "../../../../model/xml/Element";
 import { Tipos } from "../../../../model/xpath/Enum";
 import { Contexto } from "../../../Contexto";
 
 function filterElements(valor: any, desigualdad: Tipos, _contexto: Contexto, _root: Contexto): Array<Contexto> {
     try {
         let condition: boolean = false;
-        let out: Array<Contexto> = [];
+        let out: Array<Element> = [];
         let array = _contexto.removeDadDuplicates();
         for (let i = 0; i < array.length; i++) {
             const obj = array[i];
             condition = verificarDesigualdad(desigualdad, obj.value, valor);
             if (condition) { // Si la condición cumple, apilar los elementos en esa posición
-                let context = new Contexto([_root.elementos[i]]);
+                /* let context = new Contexto([_root.elementos[i]]);
                 context.variable = _root.variable;
-                out.push(context);
+                out.push(context); */
+                out.push(_root.elementos[i]);
             }
         }
-        return out;
+        _root.elementos = out;
+        return [_root];
     } catch (error) {
         console.log(error);
         return [];
