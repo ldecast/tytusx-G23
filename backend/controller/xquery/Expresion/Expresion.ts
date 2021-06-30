@@ -37,6 +37,7 @@ function ExpresionQuery(_expresion: any, _ambito: Ambito, _contexto: Contexto, i
             contexto.items.push(i);
         }
         contexto.variable = new Variable(id, Tipos.VARIABLE);
+        contexto.cadena = Tipos.INTERVALO;
         return contexto;
     }
 
@@ -48,6 +49,7 @@ function ExpresionQuery(_expresion: any, _ambito: Ambito, _contexto: Contexto, i
                 contexto.items.push(parseInt(expresion.valor));
         });
         contexto.variable = new Variable(id, Tipos.VARIABLE);
+        contexto.cadena = Tipos.VALORES;
         return contexto;
     }
 
