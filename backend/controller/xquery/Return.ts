@@ -5,11 +5,10 @@ import Expresion from "../xpath/Expresion/Expresion";
 import pushIterators from "./BuildElement";
 
 function returnQuery(_expresion: any, _ambito: Ambito, _iterators: Array<Contexto>) {
-    let expresion: Array<any> = [];
+    let expresion: Array<Contexto> = [];
     for (let i = 0; i < _iterators.length; i++) { // [$x, $y, $z]
         const iterator = _iterators[i]; // { Contexto }
-        let _x = Expresion(_expresion, _ambito, iterator, iterator.variable?.id); // _expresion = [XPATH]
-        // console.log(iterator, 5555555555)
+        let _x: Contexto = Expresion(_expresion, _ambito, iterator, iterator.variable?.id); // _expresion = [XPATH]
         if (_x) expresion = expresion.concat(_x);
     }
 

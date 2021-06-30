@@ -34,7 +34,7 @@ export class XQObjeto {
     nuevoLet(_varName: any, _valor: any, _linea: number, _columna: number) {
         return {
             id: _varName, // $x, $y, $z
-            expresion: _valor, /* (1 to 5) || (substring($booktitle,1,4)) || ($p * $d) div 100 */
+            valor: _valor, /* (1 to 5) || (substring($booktitle,1,4)) || ($p * $d) div 100 */
             tipo: Tipos.LET_CLAUSE,
             linea: _linea,
             columna: _columna
@@ -136,6 +136,10 @@ export class XQObjeto {
             linea: _linea,
             columna: _columna
         }
+    }
+
+    nuevoIf() {
+
     }
 
 }

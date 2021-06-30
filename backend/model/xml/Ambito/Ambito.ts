@@ -22,6 +22,19 @@ export class Ambito {
         this.tablaSimbolos.push(_simbolo);
     }
 
+    addVariabe(_variable: Variable) {
+        this.tablaVariables.unshift(_variable);
+    }
+
+    getContextFromVar(_id: string) {
+        for (let i = 0; i < this.tablaVariables.length; i++) {
+            const variable = this.tablaVariables[i];
+            if (_id == variable.id && variable.contexto)
+                return variable.contexto;
+        }
+        return null;
+    }
+
     nodesFunction(_element: Element, _nodes: Array<any>): Array<any> { // Todos los descendientes (con textos)
         if (_element.childs) {
             _element.childs.forEach(child => {

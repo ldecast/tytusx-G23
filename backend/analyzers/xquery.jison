@@ -22,14 +22,14 @@ element_content                     ([^<>&\"{}] | '&lt;' | '&gt;' | '&amp;' | '&
 "<!--"[\s\S\n]*?"-->"	// MultiLineComment
 
 [0-9]+("."[0-9]+)?\b    return 'num'
-"<="					return 'tk_menorigual'
-">="                    return 'tk_mayorigual'
-"<"                     return 'tk_menor'
-">"                     return 'tk_mayor'
+("<="|"le")				return 'tk_menorigual'
+(">="|"ge")				return 'tk_mayorigual'
+("<"|"lt")				return 'tk_menor'
+(">"|"gt")				return 'tk_mayor'
 "//"                    return 'tk_2bar'
 "/"                     return 'tk_bar'
 ":="                    return 'tk_2puntos_igual'
-"="                     return 'tk_equal'
+("="|"eq")				return 'tk_equal'
 ".."                    return 'tk_2puntos'
 "."                     return 'tk_punto'
 "::"                    return 'tk_4puntos'
@@ -63,7 +63,7 @@ element_content                     ([^<>&\"{}] | '&lt;' | '&gt;' | '&amp;' | '&
 "|"                     return 'tk_line'
 "+"                     return 'tk_mas'
 "-"                     return 'tk_menos'
-"!="                    return 'tk_diferent'
+("!="|"ne")				return 'tk_diferent'
 "or"                    return 'tk_or'
 "and"                   return 'tk_and'
 "mod"                   return 'tk_mod'
@@ -79,6 +79,9 @@ element_content                     ([^<>&\"{}] | '&lt;' | '&gt;' | '&amp;' | '&
 "to"                    return 'tk_to'
 ","                     return 'tk_coma'
 "data"                  return 'tk_data'
+"if"					return 'tk_if'
+"then"					return 'tk_then'
+"else"					return 'tk_else'
 
 
 ["]                             { attribute = ''; this.begin("string_doubleq"); }
@@ -160,29 +163,32 @@ ini: XPATH_U EOF{   prod_1 = grammar_stack.pop();
 
 XQUERY: XQUERY INSTR_QUERY  { $1.push($2); $$=$1; }
         | INSTR_QUERY { $$=[$1]; }
-		// | LET_CLAUSE
 ;
 
-INSTR_QUERY: IF_ELSE_IF
+INSTR_QUERY: IF_THEN_ELSE { $$=$1; }
             | FOR_LOOP { $$=$1; }
-			| LET_CLAUSE
+			| LET_CLAUSE { $$=$1; }
             | FUNCIONES
 ;
 
-// IF_ELSE_IF:
-// ;
+IF_THEN_ELSE: IF THEN ELSE
+;
+
+IF: tk_if tk_ParA XPATH tk_ParC
+;
+
+THEN: tk_then XPATH
+;
+
+ELSE: tk_else XPATH
+	| tk_else tk_ParA tk_ParC
+;
 
 // FUNCIONES:
 // ;
 
-// FLWOR: FOR_LOOP { $$ = $1; }
-//         | LET_CLAUSE { $$ = $1; }
-//         | WHERE_CONDITION { $$ = $1; }
-//         | ORDER_BY { $$ = queryBuilder.nuevoOrderBy($1, this._$.first_line, this._$.first_column+1); }
-//         | RETURN_STATEMENT { $$ = $1; }
-// ;
-
-FOR_LOOP: tk_for DECLARACION INSTRUCCIONES_FOR { $$ = queryBuilder.nuevoFor($2, $3, this._$.first_line, this._$.first_column+1); }
+FOR_LOOP: tk_for DECLARACION INSTRUCCIONES_FOR RETURN_STATEMENT { $3.push($4); $$ = queryBuilder.nuevoFor($2, $3, this._$.first_line, this._$.first_column+1); }
+		| tk_for DECLARACION RETURN_STATEMENT { $$ = queryBuilder.nuevoFor($2, [$3], this._$.first_line, this._$.first_column+1); }
 ;
 
 INSTRUCCIONES_FOR: INSTRUCCIONES_FOR INSTR_FOR_P { $1.push($2); $$=$1; }
@@ -191,12 +197,11 @@ INSTRUCCIONES_FOR: INSTRUCCIONES_FOR INSTR_FOR_P { $1.push($2); $$=$1; }
 
 INSTR_FOR_P: WHERE_CONDITION { $$ = $1; }
             | ORDER_BY { $$ = queryBuilder.nuevoOrderBy($1, this._$.first_line, this._$.first_column+1); }
-            | RETURN_STATEMENT { $$ = $1; }
-			// | LET_CLAUSE
+			| LET_CLAUSE { $$=$1; }
 ;
 
 LET_CLAUSE: tk_let VARIABLE tk_2puntos_igual DECLARACIONPP { $$ = queryBuilder.nuevoLet($2, $4, this._$.first_line, this._$.first_column+1); }
-			| tk_let DECLARACIONP
+			// | tk_let VARIABLE tk_2puntos_igual E
 ;
 
 WHERE_CONDITION: tk_where E { $$ = queryBuilder.nuevoWhere($2, this._$.first_line, this._$.first_column+1); }
@@ -228,6 +233,7 @@ DECLARACIONP: VARIABLE tk_in DECLARACIONPP { $$ = queryBuilder.nuevaDeclaracion(
 DECLARACIONPP: tk_ParA E tk_to E tk_ParC { $$ = queryBuilder.nuevoIntervalo($2, $4, this._$.first_line, this._$.first_column+1); }
             | tk_ParA VALORES_COMA tk_ParC { $$ = queryBuilder.nuevosValores($2, this._$.first_line, this._$.first_column+1); }
             | DOC XPATH { $$=$2; }
+			// | VARIABLE
 ;
 
 DOC: tk_doc tk_ParA STRING tk_ParC
@@ -238,10 +244,6 @@ VALORES_COMA: VALORES_COMA tk_coma E { $1.push($3); $$=$1; }
             | E { $$=[$1]; }
 ;
 
-// EXP_HTML: EXP_HTML HTML { $1.push($2); $$=$1; }
-//         | HTML { $$=[$1]; }
-// ;
-
 HTML: tk_menor tk_id ATTRIBUTE_LIST tk_mayor CONTENT_LL tk_menor tk_bar tk_id tk_mayor { $$ = queryBuilder.nuevoHTML($2, $3, $5, $8, this._$.first_line, this._$.first_column+1); }
     | tk_menor tk_id ATTRIBUTE_LIST tk_mayor tk_menor tk_bar tk_id tk_mayor { $$ = queryBuilder.nuevoHTML($2, $3, null, $7, this._$.first_line, this._$.first_column+1); }
     | tk_menor tk_id ATTRIBUTE_LIST tk_bar tk_mayor { $$ = queryBuilder.nuevoHTML($2, $3, null, null, this._$.first_line, this._$.first_column+1); }
@@ -249,7 +251,7 @@ HTML: tk_menor tk_id ATTRIBUTE_LIST tk_mayor CONTENT_LL tk_menor tk_bar tk_id tk
 
 CONTENT_LL: CONTENT_LL CONTENT_TAG { $1.push($2); $$=$1; }
         | CONTENT_TAG { $$=[$1]; }
-        // | HTML
+        | HTML
 ;
 
 CONTENT_TAG: tk_id { $$ = queryBuilder.nuevoContenido($1, this._$.first_line, this._$.first_column+1); } // era tk_content

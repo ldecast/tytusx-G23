@@ -5,6 +5,7 @@ import WhereClause from "./Where";
 import OrderBy from "./OrderBy";
 import returnQuery from "./Return";
 import { Contexto } from "../Contexto";
+import LetClause from "./Let";
 
 function ForLoop(_instruccion: any, _ambito: Ambito, _contexto: Contexto) {
     // console.log(_instruccion, 'instrucciones For')
@@ -16,6 +17,9 @@ function ForLoop(_instruccion: any, _ambito: Ambito, _contexto: Contexto) {
     });
     for (let i = 0; i < _instruccion.instrucciones.length; i++) {
         const instr = _instruccion.instrucciones[i];
+        if (instr.tipo === Tipos.LET_CLAUSE) { // Declara una variable y la almacena de primero en el ámbito
+            LetClause(instr.id, instr.valor, _ambito, _contexto);
+        }
         if (instr.tipo === Tipos.WHERE_CONDITION) { // Filtrar los elementos de cada variable
             iterators = WhereClause(instr.condiciones, _ambito, iterators);
         }
