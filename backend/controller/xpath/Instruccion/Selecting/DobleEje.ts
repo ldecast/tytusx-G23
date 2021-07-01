@@ -12,6 +12,7 @@ function DobleEje(_instruccion: any, _ambito: Ambito, _contexto: Contexto, id?: 
         _contexto = _contexto[0];
     let expresion = Expresion(_instruccion, _ambito, _contexto, id);
     if (expresion === null || expresion.error) return expresion;
+    if (expresion.contextFromVar && _contexto.cadena === Tipos.NONE) _contexto = expresion.contextFromVar;
     let predicate = _instruccion.predicate;
     let root: Contexto = new Contexto();
     if (expresion.tipo === Tipos.ELEMENTOS || expresion.tipo === Tipos.ASTERISCO) {

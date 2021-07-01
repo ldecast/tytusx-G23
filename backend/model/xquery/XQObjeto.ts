@@ -138,7 +138,7 @@ export class XQObjeto {
         }
     }
 
-    nuevoIf_Then_Else(_condicionIf: any, _instruccionesThen: Array<any>, _instruccionesElse: Array<any>, _linea: number, _columna: number) {
+    nuevoIf_Then_Else(_condicionIf: any, _instruccionesThen: any, _instruccionesElse: any, _linea: number, _columna: number) {
         return {
             condicionIf: _condicionIf,
             instruccionesThen: _instruccionesThen,
