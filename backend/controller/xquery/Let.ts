@@ -5,8 +5,9 @@ import { Variable } from "../../model/xml/Ambito/Variable";
 
 function LetClause(_id: any, _valor: any, _ambito: Ambito, _contexto: Contexto, id?: any) {
     const Bloque_XQuery = require("./Bloque_XQuery");
+    let tmp = new Contexto(_contexto);
     let variable = new Variable(_id.variable, Tipos.VARIABLE);
-    let contexto = Bloque_XQuery.getIterators(_valor, _ambito, _contexto, id);
+    let contexto: Contexto = Bloque_XQuery.getIterators(_valor, _ambito, tmp, id);
     if (contexto) {
         variable.contexto = new Contexto(contexto);
         _ambito.addVariabe(variable);

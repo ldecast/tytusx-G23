@@ -8,6 +8,8 @@ import Axis from "../xpath/Instruccion/Selecting/Axis/Axis";
 import ForLoop from "./For";
 import { Contexto } from "../Contexto";
 import LetClause from "./Let";
+import IfConditional from "./If";
+import returnQuery from "./Return";
 
 let reset: Contexto;
 let output: Array<Contexto> = [];
@@ -21,9 +23,9 @@ function Bloque(_instruccion: Array<any>, _ambito: Ambito, _retorno: Contexto, i
         const instr = _instruccion[i];
         if (instr.tipo === Tipos.FOR_LOOP) {
             return ForLoop(instr, _ambito, _retorno);
-            /* let _for = ForLoop(instr, _ambito, _retorno);
-            if (_for) output = output.concat(_for?.parametros);
-            if (_for) output = _for?.parametros; */
+        }
+        else if (instr.tipo === Tipos.IF_THEN_ELSE) {
+            return IfConditional(instr.condicionIf, instr.instruccionesThen, instr.instruccionesElse, _ambito, _retorno);
         }
         else if (instr.tipo === Tipos.SELECT_FROM_ROOT || instr.tipo === Tipos.EXPRESION) {
             tmp = Eje(instr.expresion, _ambito, _retorno, id);
@@ -37,6 +39,9 @@ function Bloque(_instruccion: Array<any>, _ambito: Ambito, _retorno: Contexto, i
         else if (instr.tipo === Tipos.LET_CLAUSE) {
             LetClause(instr.id, instr.valor, _ambito, _retorno, id);
             continue;
+        }
+        else if (instr.tipo === Tipos.RETURN_STATEMENT) {
+            return returnQuery(instr.expresion, _ambito, [_retorno]);
         }
         else {
             return { error: "Error: Instrucción no procesada.", tipo: "Semántico", origen: "Query", linea: instr.linea, columna: instr.columna };

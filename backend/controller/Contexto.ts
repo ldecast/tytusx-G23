@@ -20,14 +20,26 @@ export class Contexto {
     variable?: Variable;
     atCounter?: Variable;
 
-    constructor(_elementos?: Array<Element>) {
-        this.elementos = (_elementos) ? (_elementos) : [];
-        this.atributos = [];
-        this.texto = [];
-        this.nodos = [];
-        this.cadena = Tipos.NONE;
+    constructor(_context?: Contexto) {
+        if (_context) {
+            this.elementos = _context.elementos;
+            this.atributos = _context.atributos;
+            this.texto = _context.texto;
+            this.nodos = _context.nodos;
+            this.cadena = _context.cadena;
+            this.items = _context.items;
+            if (_context.variable) this.variable = _context.variable;
+            if (_context.atCounter) this.atCounter = _context.atCounter;
+        }
+        else {
+            this.elementos = [];
+            this.atributos = [];
+            this.texto = [];
+            this.nodos = [];
+            this.items = [];
+            this.cadena = Tipos.NONE;
+        }
         this.error = this.notFound = null;
-        this.items = [];
     }
 
     pushElement(_v: Element) {
@@ -63,6 +75,17 @@ export class Contexto {
         this.elementos = this.elementos.filter((v, i, a) => a.findIndex(t => (t.father.line === v.father.line && t.father.column === v.father.column)) === i);
         return this.getArray();
     }
+
+    /* addArray(_array: Array<any>) {
+        if (this.atributos.length > 0)
+            this.atributos = _array;
+        else if (this.elementos.length > 0)
+            this.elementos = _array;
+        else if (this.texto.length > 0)
+            this.texto = _array;
+        else if (this.nodos.length > 0)
+            this.nodos = _array;
+    } */
 
     getLength(): number {
         if (this.items.length > 0)

@@ -16,9 +16,10 @@ function Expresion(_expresion: any, _ambito: Ambito, _contexto: Contexto, id?: a
         return _expresion;
     }
     else if (tipo === Tipos.SELECT_CURRENT) {
+        let exp = _expresion.expresion;
         if (id) {
-            if (id === _expresion.expresion) return { valor: ".", tipo: Tipos.ELEMENTOS, linea: _expresion.linea, columna: _expresion.columna };
-            if (_contexto.atCounter?.id === _expresion.expresion) {
+            if (id === exp) return { valor: ".", tipo: Tipos.ELEMENTOS, linea: _expresion.linea, columna: _expresion.columna };
+            if (_contexto.atCounter?.id === exp) {
                 let length = _contexto.getLength();
                 for (let i = 1; i <= length; i++) {
                     _contexto.items.push(i);
@@ -27,6 +28,12 @@ function Expresion(_expresion: any, _ambito: Ambito, _contexto: Contexto, id?: a
             }
             return null;
         }
+        if (_ambito.existeVariable(exp)) {
+            let contextFromVar = _ambito.getContextFromVar(exp);
+            _ambito.contextFromVar = contextFromVar;
+            return { valor: ".", tipo: Tipos.ELEMENTOS, linea: _expresion.linea, columna: _expresion.columna, contextFromVar: contextFromVar };
+        }
+        if (exp !== ".") return null;
         return { valor: ".", tipo: Tipos.ELEMENTOS, linea: _expresion.linea, columna: _expresion.columna };
     }
     else if (tipo === Tipos.SELECT_PARENT) {

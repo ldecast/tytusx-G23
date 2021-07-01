@@ -34,8 +34,14 @@ function init(_opIzq: any, _opDer: any, _ambito: Ambito, _tipo: Tipos, _contexto
     let tipo: Tipos = _tipo;
 
     if (op1.cadena || op2.cadena) {
-        if (op1.cadena && (op2.tipo === Tipos.NUMBER || op2.tipo === Tipos.STRING))
-            return filterElements(op2.valor, tipo, op1, _contexto);
+        if (op1.cadena && (op2.tipo === Tipos.NUMBER || op2.tipo === Tipos.STRING)) {
+            if (_ambito.contextFromVar) {
+                _contexto = _ambito.contextFromVar;
+                _ambito.contextFromVar = null;
+            }
+            let tmp = new Contexto(_contexto);
+            return filterElements(op2.valor, tipo, op1, tmp);
+        }
         else
             return null;
     }

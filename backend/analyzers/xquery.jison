@@ -22,6 +22,7 @@ element_content                     ([^<>&\"{}] | '&lt;' | '&gt;' | '&amp;' | '&
 "<!--"[\s\S\n]*?"-->"	// MultiLineComment
 
 [0-9]+("."[0-9]+)?\b    return 'num'
+"let"                   return 'tk_let'
 ("<="|"le")				return 'tk_menorigual'
 (">="|"ge")				return 'tk_mayorigual'
 ("<"|"lt")				return 'tk_menor'
@@ -71,7 +72,6 @@ element_content                     ([^<>&\"{}] | '&lt;' | '&gt;' | '&amp;' | '&
 "for"                   return 'tk_for'
 "at"                    return 'tk_at'
 "in"                    return 'tk_in'
-"let"                   return 'tk_let'
 "where"                 return 'tk_where'
 "order"                 return 'tk_order'
 "by"                    return 'tk_by'
@@ -190,6 +190,7 @@ XQUERY: XQUERY INSTR_QUERY  { $1.push($2); $$=$1; }
 
 INSTR_QUERY: FOR_LOOP { $$=$1; }
 			| LET_CLAUSE { $$=$1; }
+			| RETURN_STATEMENT { $$=$1; }
             | FUNCIONES { $$=$1; }
 			| LLAMADA { $$=$1; }
 			| IF_THEN_ELSE { $$=$1; }

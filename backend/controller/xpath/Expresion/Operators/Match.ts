@@ -15,6 +15,7 @@ function filterElements(valor: any, desigualdad: Tipos, _contexto: Contexto, _ro
             }
         }
         _root.elementos = out;
+        // console.log(_root,33333333333333)
         return [_root];
     } catch (error) {
         console.log(error);
@@ -35,7 +36,7 @@ function verificarDesigualdad(_tipo: Tipos, v1: any, e1: any): boolean {
         case Tipos.RELACIONAL_IGUAL:
             return (v1.value == e1) || (v1.id == e1);
         case Tipos.RELACIONAL_DIFERENTE:
-            return (v1.value != e1) || (v1.id != e1);
+            return (v1.value != e1) && (v1.id != e1);
         default:
             return false;
     }

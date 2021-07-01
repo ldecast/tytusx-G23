@@ -1,3 +1,4 @@
+import { Contexto } from "../../../controller/Contexto";
 import { Tipos } from "../../xpath/Enum";
 import { Atributo } from "../Atributo";
 import { Element } from "../Element";
@@ -9,6 +10,7 @@ export class Ambito {
     tipo: string;
     tablaSimbolos: Array<Element>;
     tablaVariables: Array<Variable>;
+    contextFromVar?: any;
     // tablaFunciones: Array<Funcion>;
 
     constructor(_anterior: any, _tipo: string) {
@@ -26,13 +28,22 @@ export class Ambito {
         this.tablaVariables.unshift(_variable);
     }
 
-    getContextFromVar(_id: string) {
+    existeVariable(_id: string): boolean {
+        for (let i = 0; i < this.tablaVariables.length; i++) {
+            const variable = this.tablaVariables[i];
+            if (_id == variable.id && variable.contexto)
+                return true;
+        }
+        return false;
+    }
+
+    getContextFromVar(_id: string): Contexto {
         for (let i = 0; i < this.tablaVariables.length; i++) {
             const variable = this.tablaVariables[i];
             if (_id == variable.id && variable.contexto)
                 return variable.contexto;
         }
-        return null;
+        return new Contexto();
     }
 
     nodesFunction(_element: Element, _nodes: Array<any>): Array<any> { // Todos los descendientes (con textos)
