@@ -40,16 +40,21 @@ export class XQueryTranslator {
 
     private  FOR_LOOP(obj: object, env: Environment): void{
         if(this.debug){console.log("FOR_LOOP" + (this.show_obj? "\n"+obj:""));}
-
         for (let i:number = 0; i < obj['cuerpo'].length; i++){
             switch (obj['cuerpo'][i]['tipo']) {
                 case 'DECLARACION':
                     this.DECLARACION(obj['cuerpo'][i], env);
                     break;
+
                 default:
                     console.log("ERROR 2:\n" + obj);
             }
         }
+
+        for (let i:number = 0; i < obj['instrucciones'].length; i++){
+            //TODO
+        }
+
         /*
         switch () {
         }*/
@@ -66,27 +71,31 @@ export class XQueryTranslator {
     }
 
     private DECLARACION(obj, env: Environment){
+        console.log(obj)
+
+        console.log("\n************")
         if(this.debug){console.log('DECLARATION' + (this.show_obj? "\n"+obj:""));}
         if(obj['variable'] !=null){
             env.addVariable(obj['variable']['variable']);
         }else {
             console.log("ERROR 4");
         }
-
+        let length = obj['iterators'].length;
         for (let i: number = 0; i < obj['iterators'].length; i++){
             switch (obj['iterators'][i]['tipo']){
                 case 'SELECT_FROM_CURRENT':
                     //console.log('SELECT_FROM_CURRENT');
                     //console.log(obj['iterators'][i]);
+                    this.EXPRESION(obj['iterators'][i]['expresion'], (i ==0), (i == length -1));
                     break;
                 case 'SELECT_FROM_ROOT':
                     //console.log('SELECT_FROM_ROOT');
                     //console.log(obj['iterators'][i]);
-                    this.EXPRESION(obj['iterators'][i]['expresion'], (i ==0));
+                    this.EXPRESION(obj['iterators'][i]['expresion'], (i ==0), (i == length -1));
                     break;
                 case 'EXPRESION':
                     console.log('EXPRESION');
-                    this.EXPRESION(obj['iterators'][i], (i ==0));
+                    this.EXPRESION(obj['iterators'][i], (i ==0), (i == length -1));
                     break;
                 default:
                     console.log(obj)
@@ -96,23 +105,24 @@ export class XQueryTranslator {
         }
     }
     //fromStack if its the first iteration will look on stack
-    private EXPRESION(obj: object, fromStack: boolean){
+    private EXPRESION(obj: object, fromStack: boolean, lastOne: boolean){
         let predicate: Object = obj['predicate'];
         if (predicate == null){}
-
-        this.expresion_(obj['expresion'], fromStack, (predicate == null?null: this.predicate(obj['predicate']) ));
+        console.log(obj)
+        this.expresion_(obj['expresion'], fromStack, (predicate == null?null: this.predicate(obj['predicate']) ), lastOne);
 
     }
 
 
 
-    private expresion_(obj: object, fromRoot: boolean, predicate_f?: string){
+    private expresion_(obj: object, fromRoot: boolean, predicate_f: string, lastOne: boolean){
+
         switch (obj['tipo']) {
             case 'NODENAME':
                 //console.log(obj);
                 //console.log(obj['nodename']);
                 if (fromRoot){
-                    this.setSearchMethodFromStack(obj['nodename'], predicate_f);
+                    this.setSearchMethodFromStack(obj['nodename'], predicate_f, lastOne);
                 }
                 /*buscar en el stack todos los que coincidan con nodeName obj['nodename']
                 // push obj['nodename'] en un the heap while increasing heap counter
@@ -122,8 +132,10 @@ export class XQueryTranslator {
                 // to keep it like index*/
                 break;
             case 'SELECT_CURRENT':
-                console.log(obj);
-                console.log(obj['expresion']);
+                //si es from root tambien usar
+                console.log("Error 5")
+                //console.log(obj);
+                //console.log(obj['expresion']);
                 break;
             default:
                 console.log("Error 4");
@@ -134,14 +146,14 @@ export class XQueryTranslator {
 
 
     private predicate(obj: object) : string{
-        console.log(obj);
+        //console.log(obj);
 
         let function_name: string = this.getNextFun();
         return function_name;
     }
 
-    private setSearchMethodFromStack(node_name: string, predicate_f?: string){
-        let function_name: string = this.getNextFun();
+    private setSearchMethodFromStack(node_name: string, predicate_f: string, lastOne: boolean){
+
         let main_var = this.getNextVar();
 
         let var1 = this.getNextVar();
@@ -212,9 +224,13 @@ void ${function_name}(){
 
     }
 
-    private setSearchNodeDoubleBar(node_name: string, predicate_f?: string){}
+    private setSearchNodeDoubleBar(node_name: string, predicate_f?: string){
 
-    private setSearchNodeOneBar(node_name: string, predicate_f?: string){}
+    }
+
+    private setSearchNodeOneBar(node_name: string, predicate_f?: string){
+
+    }
 
 
 
