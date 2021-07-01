@@ -33,8 +33,8 @@ function init(_opIzq: any, _opDer: any, _ambito: Ambito, _tipo: Tipos, _contexto
     if (op2 === null || op2.error) return op2;
     let tipo: Tipos = _tipo;
 
-    if (op1.elementos || op2.elementos) {
-        if (op1.elementos && (op2.tipo === Tipos.NUMBER || op2.tipo === Tipos.STRING))
+    if (op1.cadena || op2.cadena) {
+        if (op1.cadena && (op2.tipo === Tipos.NUMBER || op2.tipo === Tipos.STRING))
             return filterElements(op2.valor, tipo, op1, _contexto);
         else
             return null;

@@ -70,6 +70,10 @@ function Expresion(_expresion: any, _ambito: Ambito, _contexto: Contexto, id?: a
         const Logica = require("./Operators/Logica");
         return Logica(_expresion, _ambito, _contexto);
     }
+    else if (tipo === Tipos.IF_THEN_ELSE) {
+        const IfConditional = require("../../xquery/If");
+        return IfConditional(_expresion.condicionIf, _expresion.instruccionesThen, _expresion.instruccionesElse, _ambito, _contexto, id);
+    }
     else {
         const ExpresionQuery = require('../../xquery/Expresion/Expresion');
         return ExpresionQuery(_expresion, _ambito, _contexto, id);
