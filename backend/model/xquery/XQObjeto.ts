@@ -138,8 +138,44 @@ export class XQObjeto {
         }
     }
 
-    nuevoIf() {
+    nuevoIf_Then_Else(_condicionIf: any, _instruccionesThen: Array<any>, _instruccionesElse: Array<any>, _linea: number, _columna: number) {
+        return {
+            condicionIf: _condicionIf,
+            instruccionesThen: _instruccionesThen,
+            instruccionesElse: _instruccionesElse,
+            tipo: Tipos.IF_THEN_ELSE,
+            linea: _linea,
+            columna: _columna
+        }
+    }
 
+    nuevoParametro(_id: any, _tipado: Tipos, _linea: number, _columna: number) {
+        return {
+            id: _id,
+            tipado: _tipado,
+            linea: _linea,
+            columna: _columna
+        }
+    }
+
+    nuevaFuncion(_name: string, _parametros: Array<any>, _tipado: Tipos, _instrucciones: any, _linea: number, _columna: number) {
+        return {
+            name: _name,
+            parametros: _parametros,
+            tipado: _tipado,
+            instrucciones: _instrucciones,
+            linea: _linea,
+            columna: _columna
+        }
+    }
+
+    nuevaLlamada(_name: string, _parametros: Array<any>, _linea: number, _columna: number) {
+        return {
+            name: _name,
+            parametros: _parametros,
+            linea: _linea,
+            columna: _columna
+        }
     }
 
 }
