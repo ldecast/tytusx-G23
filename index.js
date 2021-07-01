@@ -76,11 +76,17 @@ const main = ()=>{
     let xquery_content = fs.readFileSync(__dirname + '/test/files/input.xquery', 'utf8');
     let ast_xml = XML.parse(xml_content);
     let ast_xquery = parser.parse(xquery_content);
-    //let xml_root = ast_xml.ast[0];
-    //xml_root.set3DCode();
     let xQueryTranslator = new XQueryTranslator(ast_xquery.ast, ast_xml.ast[0]);
     xQueryTranslator.translate();
-    console.log(xQueryTranslator.getCode())
+    let code = xQueryTranslator.getCode();
+
+    fs.writeFile('test/files/main.c', code, (err) => {
+        // throws an error, you could also catch it here
+        if (err) throw err;
+        // success case, the file was saved
+        console.log('Code saved!');
+    });
+
 }
 
 var files = {

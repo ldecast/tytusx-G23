@@ -212,8 +212,6 @@ export class XMLTranslator{
     }
 
 
-
-
     public static getNextTemp():string{
         XMLTranslator.temp_counter++;
         let temp: number = XMLTranslator.temp_counter;

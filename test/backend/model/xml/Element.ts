@@ -136,7 +136,7 @@ export class Element {
         let temp_att_index: number = Element.heap_index;
         Element.heap_index = Element.heap_index + 4;// 1) key 2) value 3) type 4) NULL
         let temp: string = Element.getNextTemp();
-        let attr_id_index = Element.setAttributeKey(attr.id.slice(0,-1));
+        let attr_id_index = Element.setAttributeKey(attr.id);
         Element.code_definition = Element.code_definition + `
         /*Start single attribute*/
         int ${temp} = ${temp_att_index};
@@ -144,24 +144,26 @@ export class Element {
                 `;
         temp_att_index++;
 
-        let attr_val: string = attr.value.slice(0,-1).substring(1);
+        let attr_val: string = attr.value;
         if(isNaN(Number(attr_val))){// Is string
             Element.code_definition = Element.code_definition + `${temp} = ${temp_att_index};
             HEAP[${temp}] = 2;
             `;
             temp_att_index++;
-            let attr_val_index = Element.setAttributeValue(attr.value.slice(0,-1).substring(1));
+            //let attr_val_index = Element.setAttributeValue(attr.value.slice(0,-1).substring(1));
+            let attr_val_index= Element.setAttributeValue(attr.value);
             Element.code_definition = Element.code_definition + `${temp} = ${temp_att_index};
-        HEAP[(int) ${temp}] = ${attr_val_index};  
+        HEAP[(int) ${temp}] = ${attr_val_index}; // index_val_attr = ${attr_val}   
                 `;
             temp_att_index++;
+
         }else { // Is number
             Element.code_definition = Element.code_definition + `${temp} = ${temp_att_index};
             HEAP[${temp}] = 1;
             `;
             temp_att_index++;
             Element.code_definition = Element.code_definition + `${temp} = ${temp_att_index};
-        HEAP[(int) ${temp}] = ${attr_val};  
+        HEAP[(int) ${temp}] = ${attr_val};// val_attr = ${attr_val}  
                 `;
             temp_att_index++;
         }
@@ -217,7 +219,7 @@ export class Element {
         for(let i = 0; i < str_val.length; i++){
             let temp = Element.getNextTemp();
             Element.code_definition = Element.code_definition + `float ${temp} = ${Element.heap_index};
-            HEAP[(int)${temp}] = (float) ${str_val[i].charCodeAt(0)};
+            HEAP[(int)${temp}] = (float) ${str_val[i].charCodeAt(0)}; // PSH = ${str_val[i]} 
             `;
             Element.heap_index ++;
             Element.code_definition = Element.code_definition + `HP = ${Element.heap_index};

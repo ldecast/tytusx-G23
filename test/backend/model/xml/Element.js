@@ -81,21 +81,22 @@ var Element = /** @class */ (function () {
         var temp_att_index = Element.heap_index;
         Element.heap_index = Element.heap_index + 4; // 1) key 2) value 3) type 4) NULL
         var temp = Element.getNextTemp();
-        var attr_id_index = Element.setAttributeKey(attr.id.slice(0, -1));
+        var attr_id_index = Element.setAttributeKey(attr.id);
         Element.code_definition = Element.code_definition + ("\n        /*Start single attribute*/\n        int " + temp + " = " + temp_att_index + ";\n        HEAP[ " + temp + "] = " + attr_id_index + ";  \n                ");
         temp_att_index++;
-        var attr_val = attr.value.slice(0, -1).substring(1);
+        var attr_val = attr.value;
         if (isNaN(Number(attr_val))) { // Is string
             Element.code_definition = Element.code_definition + (temp + " = " + temp_att_index + ";\n            HEAP[" + temp + "] = 2;\n            ");
             temp_att_index++;
-            var attr_val_index = Element.setAttributeValue(attr.value.slice(0, -1).substring(1));
-            Element.code_definition = Element.code_definition + (temp + " = " + temp_att_index + ";\n        HEAP[(int) " + temp + "] = " + attr_val_index + ";  \n                ");
+            //let attr_val_index = Element.setAttributeValue(attr.value.slice(0,-1).substring(1));
+            var attr_val_index = Element.setAttributeValue(attr.value);
+            Element.code_definition = Element.code_definition + (temp + " = " + temp_att_index + ";\n        HEAP[(int) " + temp + "] = " + attr_val_index + "; // index_val_attr = " + attr_val + "   \n                ");
             temp_att_index++;
         }
         else { // Is number
             Element.code_definition = Element.code_definition + (temp + " = " + temp_att_index + ";\n            HEAP[" + temp + "] = 1;\n            ");
             temp_att_index++;
-            Element.code_definition = Element.code_definition + (temp + " = " + temp_att_index + ";\n        HEAP[(int) " + temp + "] = " + attr_val + ";  \n                ");
+            Element.code_definition = Element.code_definition + (temp + " = " + temp_att_index + ";\n        HEAP[(int) " + temp + "] = " + attr_val + ";// val_attr = " + attr_val + "  \n                ");
             temp_att_index++;
         }
         Element.code_definition = Element.code_definition + (temp + " = " + temp_att_index + ";\n        HEAP[(int) " + temp + "] = 0;\n        /*End single attribute*/\n                "); //TODO \\0
@@ -133,7 +134,7 @@ var Element = /** @class */ (function () {
     Element.pushStringToHeap = function (str_val) {
         for (var i = 0; i < str_val.length; i++) {
             var temp_1 = Element.getNextTemp();
-            Element.code_definition = Element.code_definition + ("float " + temp_1 + " = " + Element.heap_index + ";\n            HEAP[(int)" + temp_1 + "] = (float) " + str_val[i].charCodeAt(0) + ";\n            ");
+            Element.code_definition = Element.code_definition + ("float " + temp_1 + " = " + Element.heap_index + ";\n            HEAP[(int)" + temp_1 + "] = (float) " + str_val[i].charCodeAt(0) + "; // PSH = " + str_val[i] + " \n            ");
             Element.heap_index++;
             Element.code_definition = Element.code_definition + ("HP = " + Element.heap_index + ";\n            ");
         }
@@ -152,7 +153,7 @@ var Element = /** @class */ (function () {
         var temp = Element.temp_counter;
         return "t" + temp;
     };
-    /*************************************************/
+    /*********************End of 3D code ****************************/
     Element.prototype.verificateNames = function () {
         if ((this.id_close !== null) && (this.id_open !== this.id_close))
             return "La etiqueta de apertura no coincide con la de cierre.";
