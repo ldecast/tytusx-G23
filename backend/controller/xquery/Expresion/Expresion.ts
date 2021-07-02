@@ -4,25 +4,25 @@ import Expresion from "../../xpath/Expresion/Expresion";
 import { Contexto } from "../../Contexto";
 import { Variable } from "../../../model/xml/Ambito/Variable";
 
-function ExpresionQuery(_expresion: any, _ambito: Ambito, _contexto: Contexto, id?: any): any {
+function ExpresionQuery(_expresion: any, _ambito: Ambito, _contexto: Contexto, _id?: any): any {
     let tipo: Tipos = _expresion.tipo;
 
     if (tipo === Tipos.DECLARACION) {
         let contexto = new Contexto();
-        let id = Expresion(_expresion.variable, _ambito, _contexto);
-        let it = Expresion(_expresion.iterators, _ambito, _contexto);
+        let id = Expresion(_expresion.variable, _ambito, _contexto, _id);
+        let it = Expresion(_expresion.iterators, _ambito, _contexto, _id);
         if (id.valor && it) {
             contexto = it;
-            contexto.variable = new Variable(id.valor, Tipos.VARIABLE);
+            contexto.variable = new Variable(id.valor, Tipos.VARIABLE, _expresion.linea, _expresion.columna);
             if (_expresion.atKey)
-                contexto.atCounter = new Variable(_expresion.atKey.variable, Tipos.VARIABLE);
+                contexto.atCounter = new Variable(_expresion.atKey.variable, Tipos.VARIABLE, _expresion.linea, _expresion.columna + 5);
         }
         return contexto;
     }
 
     if (tipo === Tipos.VARIABLE) {
-        if (id && _contexto.cadena != Tipos.NONE) {
-            if (id === _expresion.variable)
+        if (_id && _contexto.cadena != Tipos.NONE) {
+            if (_id === _expresion.variable)
                 return _contexto;
             else return null;
         }
@@ -31,13 +31,13 @@ function ExpresionQuery(_expresion: any, _ambito: Ambito, _contexto: Contexto, i
 
     if (tipo === Tipos.INTERVALO) {
         let contexto = new Contexto();
-        let val_1 = Expresion(_expresion.valor1, _ambito, _contexto); if (!val_1 || val_1.error) return val_1;
-        let val_2 = Expresion(_expresion.valor2, _ambito, _contexto); if (!val_2 || val_2.error) return val_2;
+        let val_1 = Expresion(_expresion.valor1, _ambito, _contexto, _id); if (!val_1 || val_1.error) return val_1;
+        let val_2 = Expresion(_expresion.valor2, _ambito, _contexto, _id); if (!val_2 || val_2.error) return val_2;
         for (let i = parseInt(val_1.valor); i <= parseInt(val_2.valor); i++) {
             contexto.items.push(i);
         }
-        if (id)
-            contexto.variable = new Variable(id, Tipos.VARIABLE);
+        if (_id)
+            contexto.variable = new Variable(_id, Tipos.VARIABLE, _expresion.linea, _expresion.columna);
         contexto.cadena = Tipos.INTERVALO;
         return contexto;
     }
@@ -45,12 +45,12 @@ function ExpresionQuery(_expresion: any, _ambito: Ambito, _contexto: Contexto, i
     if (tipo === Tipos.VALORES) {
         let contexto = new Contexto();
         _expresion.valores.forEach((valor: any) => {
-            const expresion = Expresion(valor, _ambito, _contexto);
+            const expresion = Expresion(valor, _ambito, _contexto, _id);
             if (expresion && !expresion.error)
                 contexto.items.push(parseInt(expresion.valor));
         });
-        if (id)
-            contexto.variable = new Variable(id, Tipos.VARIABLE);
+        if (_id)
+            contexto.variable = new Variable(_id, Tipos.VARIABLE, _expresion.linea, _expresion.columna);
         contexto.cadena = Tipos.VALORES;
         return contexto;
     }
@@ -58,7 +58,7 @@ function ExpresionQuery(_expresion: any, _ambito: Ambito, _contexto: Contexto, i
     if (tipo === Tipos.HTML) {
         let content: Array<any> = [];
         for (let i = 0; i < _expresion.value.length; i++) {
-            const value = Expresion(_expresion.value[i], _ambito, _contexto, id);
+            const value = Expresion(_expresion.value[i], _ambito, _contexto, _id);
             if (value) content = content.concat(value);
             // else content.pop();
         }
@@ -70,13 +70,12 @@ function ExpresionQuery(_expresion: any, _ambito: Ambito, _contexto: Contexto, i
     }
 
     if (tipo === Tipos.INYECCION) {
-        let e_0 = Expresion(_expresion.path[0], _ambito, _contexto, id);
+        let e_0 = Expresion(_expresion.path[0], _ambito, _contexto, _id);
         if (!e_0) return null;
         if (_contexto.items.length > 0) return _contexto;
         const Bloque = require("../Bloque_XQuery");
-        let elements: Array<any> = [];
-        /* elements.push(e_0); */
-        let _x = Bloque.getIterators(_expresion.path, _ambito, _contexto, id);
+        let elements: Array<any> = []; /* elements.push(e_0); */
+        let _x = Bloque.getIterators(_expresion.path, _ambito, _contexto, _id);
         if (_x && _x.length > 0) {
             _contexto = _x;
             elements = elements.concat(_x);
@@ -87,7 +86,7 @@ function ExpresionQuery(_expresion: any, _ambito: Ambito, _contexto: Contexto, i
     else {
         // console.log(_expresion, 4444);
         const Bloque = require('../Bloque_XQuery');
-        let _iterators = Bloque.getIterators(_expresion, _ambito, _contexto, id);
+        let _iterators = Bloque.getIterators(_expresion, _ambito, _contexto, _id);
         if (_iterators === null) return null;
         return _iterators;
     }

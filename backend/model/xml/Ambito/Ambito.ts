@@ -1,4 +1,5 @@
 import { Contexto } from "../../../controller/Contexto";
+import { Funcion } from "../../../controller/Funcion";
 import { Tipos } from "../../xpath/Enum";
 import { Atributo } from "../Atributo";
 import { Element } from "../Element";
@@ -11,13 +12,14 @@ export class Ambito {
     tablaSimbolos: Array<Element>;
     tablaVariables: Array<Variable>;
     contextFromVar?: Variable | null;
-    // tablaFunciones: Array<Funcion>;
+    tablaFunciones: Array<Funcion>;
 
     constructor(_anterior: any, _tipo: string) {
         this.anterior = _anterior
         this.tipo = _tipo
         this.tablaSimbolos = [];
         this.tablaVariables = [];
+        this.tablaFunciones = [];
     }
 
     addSimbolo(_simbolo: Element) {
@@ -26,6 +28,10 @@ export class Ambito {
 
     addVariabe(_variable: Variable) {
         this.tablaVariables.unshift(_variable);
+    }
+
+    addFunction(_function: Funcion) {
+        this.tablaFunciones.unshift(_function);
     }
 
     existeVariable(_id: string): boolean {
@@ -250,7 +256,7 @@ export class Ambito {
 
     // Métodos para obtener la tabla de símbolos
     getArraySymbols() {
-        let simbolos: any = [];
+        let simbolos: Array<any> = [];
         try {
             this.tablaSimbolos.forEach(element => {
                 if (element.attributes || element.childs) {
@@ -269,6 +275,14 @@ export class Ambito {
                     let symb = this.createSymbolElement(element, (element.father === null ? "global" : element.father));
                     simbolos.push(symb);
                 }
+            });
+            this.tablaFunciones.forEach(funcion => {
+                let symb = this.createSymbolFuncion(funcion, "global");
+                simbolos.push(symb);
+            });
+            this.tablaVariables.forEach(variable => {
+                let symb = this.createSymbolVariable(variable, "global");
+                simbolos.push(symb);
             });
             return simbolos;
         } catch (error) {
@@ -301,20 +315,18 @@ export class Ambito {
     }
 
     createSymbolElement(_element: Element, _entorno: string) {
-        let type = (_element.id_close === null ? 'Tag simple' : 'Tag doble');
-        var symb = {
+        return {
             id: _element.id_open,
             value: _element.value,
-            tipo: type,
+            tipo: (_element.id_close === null ? 'Tag simple' : 'Tag doble'),
             entorno: _entorno,
             linea: _element.line,
             columna: _element.column
         }
-        return symb;
     }
 
     createSymbolAttribute(_attribute: Atributo, _entorno: string) {
-        var symb = {
+        return {
             id: _attribute.id,
             value: _attribute.value,
             tipo: "Atributo",
@@ -322,7 +334,42 @@ export class Ambito {
             linea: _attribute.line,
             columna: _attribute.column
         }
-        return symb;
+    }
+
+    createSymbolVariable(_variable: Variable, _entorno: string) {
+        let value = (_variable.contexto) ? this.buildPath(_variable.contexto) : (_variable.valor ? _variable.valor.valor : '');
+        return {
+            id: _variable.id,
+            value: value,
+            tipo: "Variable",
+            entorno: _entorno,
+            linea: _variable.linea,
+            columna: _variable.columna
+        }
+    }
+
+    createSymbolFuncion(_funcion: Funcion, _entorno: string) {
+        return {
+            id: _funcion.name,
+            value: "Función creada por el usuario",
+            tipo: "Function",
+            entorno: _entorno,
+            linea: _funcion.linea,
+            columna: _funcion.columna
+        }
+    }
+
+    buildPath(_contexto: Contexto) {
+        if (_contexto.elementos.length > 0)
+            return "ref://" + _contexto.elementos[0].id_open;
+        if (_contexto.atributos.length > 0)
+            return "ref://@" + _contexto.atributos[0].id;
+        if (_contexto.nodos.length > 0)
+            return "ref://node()";
+        if (_contexto.texto.length > 0)
+            return _contexto.texto.toString();
+        if (_contexto.items.length > 0)
+            return _contexto.items.toString();
     }
 
 }

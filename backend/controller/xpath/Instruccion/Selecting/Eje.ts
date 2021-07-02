@@ -172,7 +172,7 @@ function getFromCurrent(_id: any, _contexto: Contexto, _ambito: Ambito, _condici
             let filter = new Predicate(_condicion, _ambito, retorno);
             retorno.elementos = filter.filterElements(retorno.elementos);
         }
-        retorno.cadena = Tipos.ELEMENTOS;
+        /* retorno.cadena = Tipos.ELEMENTOS; */
         return retorno;
     }
     // Búsqueda en los hijos por id
