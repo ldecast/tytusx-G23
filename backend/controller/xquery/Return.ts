@@ -2,7 +2,7 @@ import { Ambito } from "../../model/xml/Ambito/Ambito";
 import { Tipos } from "../../model/xpath/Enum";
 import { Contexto } from "../Contexto";
 import Expresion from "../xpath/Expresion/Expresion";
-import pushIterators from "./BuildElement";
+import pushIterators from "./Expresion/BuildElement";
 
 function returnQuery(_expresion: any, _ambito: Ambito, _iterators: Array<Contexto>) {
     let expresion: Array<any> = [];

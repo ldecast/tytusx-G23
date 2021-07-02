@@ -29,7 +29,7 @@ function Expresion(_expresion: any, _ambito: Ambito, _contexto: Contexto, _id?: 
             return null;
         }
         if (_ambito.existeVariable(exp)) {
-            let valueFromVar = _ambito.getContextFromVar(exp);
+            let valueFromVar = _ambito.getVar(exp);
             if (valueFromVar?.contexto) {
                 _ambito.contextFromVar = valueFromVar;
                 return { valor: ".", tipo: Tipos.ELEMENTOS, linea: _expresion.linea, columna: _expresion.columna, contextFromVar: valueFromVar.contexto };

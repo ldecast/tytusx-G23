@@ -26,8 +26,14 @@ export class Ambito {
         this.tablaSimbolos.push(_simbolo);
     }
 
-    addVariabe(_variable: Variable) {
-        this.tablaVariables.unshift(_variable);
+    addVariable(_variable: Variable) {
+        let exists = this.getVar(_variable.id);
+        if (exists) {
+            exists = _variable;
+        }
+        else {
+            this.tablaVariables.unshift(_variable);
+        }
     }
 
     addFunction(_function: Funcion) {
@@ -43,11 +49,21 @@ export class Ambito {
         return false;
     }
 
-    getContextFromVar(_id: string): Variable | null {
+    getVar(_id: string): Variable | null {
         for (let i = 0; i < this.tablaVariables.length; i++) {
             const variable = this.tablaVariables[i];
             if (_id == variable.id && (variable.contexto || variable.valor))
                 return variable;
+        }
+        return null;
+    }
+
+    getFunction(_name: string): Funcion | null {
+        for (let i = 0; i < this.tablaFunciones.length; i++) {
+            const funcion = this.tablaFunciones[i];
+            if (_name == funcion.name) {
+                return funcion;
+            }
         }
         return null;
     }

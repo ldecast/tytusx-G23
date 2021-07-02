@@ -21,7 +21,7 @@ export class Funcion {
     createParam(_params: Array<any>): Array<Parametro> {
         let parametros: Array<Parametro> = [];
         _params.forEach(param => {
-            parametros.push(new Parametro(param.id, param.tipado, param.linea, param.columna));
+            parametros.push(new Parametro(param.id.variable, param.tipado, param.linea, param.columna));
         });
         return parametros;
     }

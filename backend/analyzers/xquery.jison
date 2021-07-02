@@ -213,6 +213,7 @@ PARAMETRO: VARIABLE tk_as DATATPYE { $$=queryBuilder.nuevoParametro($1, $3, this
 ;
 
 DATATPYE: tk_xs tk_dospts RESERVED_TYPES tk_interrogacion { $$=$3; }
+		| tk_xs tk_dospts RESERVED_TYPES { $$=$3; }
 ;
 
 INSTR_FUNCIONES: XQUERY { $$=$1; }
