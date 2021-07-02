@@ -11,6 +11,7 @@ import LetClause from "./Let";
 import IfConditional from "./If";
 import returnQuery from "./Return";
 import NewFunction from "./Funciones/NewFunction";
+import Exec from "./Funciones/Exec";
 
 let reset: Contexto;
 let output: Array<Contexto> = [];
@@ -25,9 +26,6 @@ function Bloque(_instruccion: Array<any>, _ambito: Ambito, _retorno: Contexto, i
         if (instr.tipo === Tipos.FOR_LOOP) {
             return ForLoop(instr, _ambito, _retorno);
         }
-        else if (instr.tipo === Tipos.IF_THEN_ELSE) {
-            return IfConditional(instr.condicionIf, instr.instruccionesThen, instr.instruccionesElse, _ambito, _retorno);
-        }
         else if (instr.tipo === Tipos.SELECT_FROM_ROOT || instr.tipo === Tipos.EXPRESION) {
             tmp = Eje(instr.expresion, _ambito, _retorno, id);
         }
@@ -37,17 +35,22 @@ function Bloque(_instruccion: Array<any>, _ambito: Ambito, _retorno: Contexto, i
         else if (instr.tipo === Tipos.SELECT_AXIS) {
             tmp = Axis.SA(instr, _ambito, _retorno, id);
         }
+        else if (instr.tipo === Tipos.IF_THEN_ELSE) {
+            tmp = IfConditional(instr.condicionIf, instr.instruccionesThen, instr.instruccionesElse, _ambito, _retorno);
+        }
         else if (instr.tipo === Tipos.LET_CLAUSE) {
             LetClause(instr.id, instr.valor, _ambito, _retorno, id);
             continue;
         }
-        else if (instr.tipo === Tipos.RETURN_STATEMENT) {
-            return returnQuery(instr.expresion, _ambito, [_retorno]);
-        }
         else if (instr.tipo === Tipos.DECLARACION_FUNCION) {
             NewFunction(instr, _ambito, _retorno);
-            console.log(_ambito.tablaFunciones);
             continue;
+        }
+        else if (instr.tipo === Tipos.LLAMADA_FUNCION) {
+            return Exec(instr, _ambito, _retorno);
+        }
+        else if (instr.tipo === Tipos.RETURN_STATEMENT) {
+            return returnQuery(instr.expresion, _ambito, [_retorno]);
         }
         else {
             return { error: "Error: Instrucción no procesada.", tipo: "Semántico", origen: "Query", linea: instr.linea, columna: instr.columna };
@@ -68,8 +71,10 @@ function getOutput(_instruccion: Array<any>, _ambito: Ambito, _retorno: Contexto
     return { cadena: cadena, codigo3d: codigo3d };
 }
 
-function getIterators(_instruccion: Array<any>, _ambito: Ambito, _retorno: Contexto, _id: any): any {
-    Bloque(_instruccion, _ambito, _retorno, _id);
+function getIterators(_instruccion: Array<any>, _ambito: Ambito, _retorno: Contexto, _id?: any): any {
+    let _bloque = Bloque(_instruccion, _ambito, _retorno, _id);
+    if (_bloque)
+        return _bloque;
     if (output.length > 0)
         return output[output.length - 1];
     else return null;
