@@ -43,12 +43,10 @@ function compile(req: any) {
         let xml_parse = xml_ast.ast; // AST que genera Jison
         let global = new Ambito(null, "global"); // Ámbito global
         let cadena = new Global(xml_parse, global); // Llena la tabla de símbolos
-        let simbolos = cadena.ambito.getArraySymbols(); // Arreglo con los símbolos
 
         // Análisis de xQuery
         let xQuery_ast = parser_xQuery.parse(xQuery);
         let ast = (xQuery_ast.xquery) ? (xQuery_ast.xquery) : (xQuery_ast.xpath); // AST que genera Jison
-        // console.log(xQuery_ast.ast, "ast");
         if (xQuery_ast.errors.length > 0 || ast === null || xQuery_ast === true) {
             if (xQuery_ast.errors.length > 0) errors = xQuery_ast.errors;
             if (ast === null || xQuery_ast === true) {
@@ -66,6 +64,8 @@ function compile(req: any) {
         else if (xQuery_ast.xpath) {
             bloque = XPath(xQuery_ast.xpath, cadena.ambito, root); // Procesa las instrucciones si sólo viene XPath (fase 1)
         }
+        let simbolos = cadena.ambito.getArraySymbols(); // Arreglo con los símbolos
+
         let output = {
             arreglo_simbolos: simbolos,
             arreglo_errores: errors,

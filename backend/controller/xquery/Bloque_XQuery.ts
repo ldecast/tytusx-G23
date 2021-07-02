@@ -10,6 +10,7 @@ import { Contexto } from "../Contexto";
 import LetClause from "./Let";
 import IfConditional from "./If";
 import returnQuery from "./Return";
+import NewFunction from "./Funciones/NewFunction";
 
 let reset: Contexto;
 let output: Array<Contexto> = [];
@@ -42,6 +43,11 @@ function Bloque(_instruccion: Array<any>, _ambito: Ambito, _retorno: Contexto, i
         }
         else if (instr.tipo === Tipos.RETURN_STATEMENT) {
             return returnQuery(instr.expresion, _ambito, [_retorno]);
+        }
+        else if (instr.tipo === Tipos.DECLARACION_FUNCION) {
+            NewFunction(instr, _ambito, _retorno);
+            console.log(_ambito.tablaFunciones);
+            continue;
         }
         else {
             return { error: "Error: Instrucción no procesada.", tipo: "Semántico", origen: "Query", linea: instr.linea, columna: instr.columna };

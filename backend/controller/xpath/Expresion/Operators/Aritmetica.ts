@@ -2,8 +2,8 @@ import { Ambito } from "../../../../model/xml/Ambito/Ambito";
 import { Tipos } from "../../../../model/xpath/Enum";
 import { Contexto } from "../../../Contexto";
 
-function Aritmetica(_expresion: any, _ambito: Ambito, _contexto: Contexto) {
-    let operators = init(_expresion.opIzq, _expresion.opDer, _ambito, _expresion.tipo, _contexto);
+function Aritmetica(_expresion: any, _ambito: Ambito, _contexto: Contexto, _id?: any) {
+    let operators = init(_expresion.opIzq, _expresion.opDer, _ambito, _expresion.tipo, _contexto, _id);
     if (operators === null || operators.error) return operators;
     switch (operators.tipo) {
         case Tipos.OPERACION_SUMA:
@@ -23,11 +23,11 @@ function Aritmetica(_expresion: any, _ambito: Ambito, _contexto: Contexto) {
     }
 }
 
-function init(_opIzq: any, _opDer: any, _ambito: Ambito, _tipo: Tipos, _contexto: Contexto) {
+function init(_opIzq: any, _opDer: any, _ambito: Ambito, _tipo: Tipos, _contexto: Contexto, _id?: any) {
     const Expresion = require("../Expresion");
-    let op1 = Expresion(_opIzq, _ambito, _contexto);
+    let op1 = Expresion(_opIzq, _ambito, _contexto, _id);
     if (op1 === null || op1.error) return op1;
-    let op2 = Expresion(_opDer, _ambito, _contexto);
+    let op2 = Expresion(_opDer, _ambito, _contexto, _id);
     if (op2 === null || op2.error) return op2;
     let tipo: Tipos = _tipo;
     if (op1.tipo === Tipos.FUNCION_LAST && op2.tipo === Tipos.NUMBER) {
