@@ -10,7 +10,7 @@ export class Ambito {
     tipo: string;
     tablaSimbolos: Array<Element>;
     tablaVariables: Array<Variable>;
-    contextFromVar?: any;
+    contextFromVar?: Variable | null;
     // tablaFunciones: Array<Funcion>;
 
     constructor(_anterior: any, _tipo: string) {
@@ -31,19 +31,19 @@ export class Ambito {
     existeVariable(_id: string): boolean {
         for (let i = 0; i < this.tablaVariables.length; i++) {
             const variable = this.tablaVariables[i];
-            if (_id == variable.id && variable.contexto)
+            if (_id == variable.id && (variable.contexto || variable.valor))
                 return true;
         }
         return false;
     }
 
-    getContextFromVar(_id: string): Contexto {
+    getContextFromVar(_id: string): Variable | null {
         for (let i = 0; i < this.tablaVariables.length; i++) {
             const variable = this.tablaVariables[i];
-            if (_id == variable.id && variable.contexto)
-                return variable.contexto;
+            if (_id == variable.id && (variable.contexto || variable.valor))
+                return variable;
         }
-        return new Contexto();
+        return null;
     }
 
     nodesFunction(_element: Element, _nodes: Array<any>): Array<any> { // Todos los descendientes (con textos)

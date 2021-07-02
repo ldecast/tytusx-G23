@@ -152,9 +152,9 @@ element_content                     ([^<>&\"{}] | '&lt;' | '&gt;' | '&amp;' | '&
     // const getASTTree = require('./ast_xpath');
 
 	function insert_current(_variable, _predicate, _linea, _columna) {
-		return builder.newAxis(builder.newExpression(builder.newCurrent(_variable, _linea, _columna), _predicate, _linea, _columna), _linea, _columna)
+		return builder.newAxis(builder.newExpression(builder.newCurrent(_variable, _linea, _columna), _predicate, _linea, _columna), _linea, _columna);
 	}
-	function insert_text(_linea, _columna){
+	function insert_text(_linea, _columna) {
 		return builder.newDoubleAxis(builder.newExpression(builder.newValue("text()", Tipos.FUNCION_TEXT, _linea, _columna), null, _linea, _columna), _linea, _columna);
 	}
 %}
@@ -244,7 +244,11 @@ INSTR_FOR_P: WHERE_CONDITION { $$ = $1; }
 ;
 
 LET_CLAUSE: tk_let VARIABLE tk_2puntos_igual DECLARACIONPP { $$ = queryBuilder.nuevoLet($2, $4, this._$.first_line, this._$.first_column+1); }
-			| tk_let VARIABLE tk_2puntos_igual LLAMADA { $$ = queryBuilder.nuevoLet($2, $4, this._$.first_line, this._$.first_column+1); }
+			// | tk_let VARIABLE tk_2puntos_igual E { $$ = queryBuilder.nuevoLet($2, $4, this._$.first_line, this._$.first_column+1); }
+;
+
+COMA_AUX: COMA_AUX tk_coma E { $1.push($3); $$=$1; }
+        | E { $$=[$1]; }
 ;
 
 WHERE_CONDITION: tk_where E { $$ = queryBuilder.nuevoWhere($2, this._$.first_line, this._$.first_column+1); }
@@ -271,8 +275,8 @@ DECLARACIONP: VARIABLE tk_in DECLARACIONPP { $$ = queryBuilder.nuevaDeclaracion(
 ;
 
 DECLARACIONPP: tk_ParA E tk_to E tk_ParC { $$ = queryBuilder.nuevoIntervalo($2, $4, this._$.first_line, this._$.first_column+1); }
-            | tk_ParA VALORES tk_ParC { $$ = queryBuilder.nuevosValores($2, this._$.first_line, this._$.first_column+1); }
-            | DOC XPATH { $$=$2; }
+            | tk_ParA E tk_coma COMA_AUX tk_ParC { $4.unshift($2); $$ = queryBuilder.nuevosValores($4, this._$.first_line, this._$.first_column+1); }
+            | E { $$=$1; }
 ;
 
 DOC: tk_doc tk_ParA STRING tk_ParC
@@ -316,7 +320,7 @@ XPATH: XPATH QUERY  { $1.push($2); $$=$1;
 					  prod_1 = grammar_stack.pop();
 					  prod_2 = grammar_stack.pop();
 			 		  grammar_stack.push({'XPATH -> XPATH QUERY {S1.push(S2); SS = S1;}': [prod_2, prod_1]}); }
-	| QUERY  { $$=[$1];
+	| DOC QUERY  { $$=[$2];
 			   prod_1 = grammar_stack.pop();
 			   grammar_stack.push({'XPATH -> QUERY {SS = [S1]}': [prod_1]}); }
 ;

@@ -6,6 +6,7 @@ import OrderBy from "./OrderBy";
 import returnQuery from "./Return";
 import { Contexto } from "../Contexto";
 import LetClause from "./Let";
+import IfConditional from "./If";
 
 function ForLoop(_instruccion: any, _ambito: Ambito, _contexto: Contexto) {
     // console.log(_instruccion, 'instrucciones For')
@@ -26,6 +27,9 @@ function ForLoop(_instruccion: any, _ambito: Ambito, _contexto: Contexto) {
         if (instr.tipo === Tipos.ORDER_BY_CLAUSE) { // Ordenar los elementos según los parámetros
             let filter = OrderBy(instr.ordenes, _ambito, iterators);
             if (filter.length > 0) iterators = filter;
+        }
+        if (instr.tipo === Tipos.IF_THEN_ELSE) { // En caso venga un if dentro del for
+            return IfConditional(instr.condicionIf, instr.instruccionesThen, instr.instruccionesElse, _ambito, _contexto);
         }
         if (instr.tipo === Tipos.RETURN_STATEMENT) { // Retorna la salida
             return returnQuery(instr.expresion, _ambito, iterators);
