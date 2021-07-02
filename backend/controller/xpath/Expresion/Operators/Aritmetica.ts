@@ -25,9 +25,9 @@ function Aritmetica(_expresion: any, _ambito: Ambito, _contexto: Contexto) {
 
 function init(_opIzq: any, _opDer: any, _ambito: Ambito, _tipo: Tipos, _contexto: Contexto) {
     const Expresion = require("../Expresion");
-    let op1 = Expresion((Array.isArray(_opIzq)) ? (_opIzq[0]) : (_opIzq), _ambito, _contexto);
+    let op1 = Expresion(_opIzq, _ambito, _contexto);
     if (op1 === null || op1.error) return op1;
-    let op2 = Expresion((Array.isArray(_opDer)) ? (_opDer[0]) : (_opDer), _ambito, _contexto);
+    let op2 = Expresion(_opDer, _ambito, _contexto);
     if (op2 === null || op2.error) return op2;
     let tipo: Tipos = _tipo;
     if (op1.tipo === Tipos.FUNCION_LAST && op2.tipo === Tipos.NUMBER) {
@@ -50,6 +50,10 @@ function init(_opIzq: any, _opDer: any, _ambito: Ambito, _tipo: Tipos, _contexto
         op1 = Number(op1.valor);
         op2 = Number(op2.valor);
     }
+    else if ((op1.tipo === Tipos.STRING || op2.tipo === Tipos.STRING) && tipo === Tipos.OPERACION_SUMA) {
+        op1 = String(op1.valor);
+        op2 = String(op2.valor);
+    }
     else return { error: "Solamente se pueden operar aritméticamente valores numéricos.", tipo: "Semántico", origen: "Query", linea: _opIzq.linea, columna: _opIzq.columna }
     return { op1: op1, op2: op2, tipo: tipo };
 }
@@ -57,7 +61,7 @@ function init(_opIzq: any, _opDer: any, _ambito: Ambito, _tipo: Tipos, _contexto
 function suma(_opIzq: any, _opDer: any) {
     return {
         valor: (_opIzq + _opDer),
-        tipo: Tipos.NUMBER,
+        tipo: (typeof (_opIzq) === "number" && typeof (_opDer) === "number") ? (Tipos.NUMBER) : (Tipos.STRING)
     }
 }
 

@@ -31,12 +31,13 @@ function ExpresionQuery(_expresion: any, _ambito: Ambito, _contexto: Contexto, i
 
     if (tipo === Tipos.INTERVALO) {
         let contexto = new Contexto();
-        let val_1 = Expresion(_expresion.valor1[0], _ambito, _contexto); if (!val_1 || val_1.error) return val_1;
-        let val_2 = Expresion(_expresion.valor2[0], _ambito, _contexto); if (!val_2 || val_2.error) return val_2;
+        let val_1 = Expresion(_expresion.valor1, _ambito, _contexto); if (!val_1 || val_1.error) return val_1;
+        let val_2 = Expresion(_expresion.valor2, _ambito, _contexto); if (!val_2 || val_2.error) return val_2;
         for (let i = parseInt(val_1.valor); i <= parseInt(val_2.valor); i++) {
             contexto.items.push(i);
         }
-        contexto.variable = new Variable(id, Tipos.VARIABLE);
+        if (id)
+            contexto.variable = new Variable(id, Tipos.VARIABLE);
         contexto.cadena = Tipos.INTERVALO;
         return contexto;
     }
@@ -44,11 +45,12 @@ function ExpresionQuery(_expresion: any, _ambito: Ambito, _contexto: Contexto, i
     if (tipo === Tipos.VALORES) {
         let contexto = new Contexto();
         _expresion.valores.forEach((valor: any) => {
-            const expresion = Expresion(valor[0], _ambito, _contexto);
+            const expresion = Expresion(valor, _ambito, _contexto);
             if (expresion && !expresion.error)
                 contexto.items.push(parseInt(expresion.valor));
         });
-        contexto.variable = new Variable(id, Tipos.VARIABLE);
+        if (id)
+            contexto.variable = new Variable(id, Tipos.VARIABLE);
         contexto.cadena = Tipos.VALORES;
         return contexto;
     }
@@ -57,10 +59,8 @@ function ExpresionQuery(_expresion: any, _ambito: Ambito, _contexto: Contexto, i
         let content: Array<any> = [];
         for (let i = 0; i < _expresion.value.length; i++) {
             const value = Expresion(_expresion.value[i], _ambito, _contexto, id);
-            if (value)
-                content = content.concat(value);
-            // else
-            //     content.pop();
+            if (value) content = content.concat(value);
+            // else content.pop();
         }
         return content;
     }

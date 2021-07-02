@@ -56,8 +56,9 @@ function Bloque(_instruccion: Array<any>, _ambito: Ambito, _retorno: Contexto, i
 
 function getOutput(_instruccion: Array<any>, _ambito: Ambito, _retorno: Contexto) {
     let _bloque = Bloque(_instruccion, _ambito, _retorno);
-    let cadena = (_bloque.cadena) ? (_bloque.cadena) : writeOutput();
+    let cadena = (_bloque && _bloque.salida) ? (_bloque.salida) : writeOutput();
     let codigo3d = ""; // Agregar función que devuelva código tres direcciones
+    console.log(cadena);
     return { cadena: cadena, codigo3d: codigo3d };
 }
 

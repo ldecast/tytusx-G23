@@ -29,9 +29,13 @@ function Expresion(_expresion: any, _ambito: Ambito, _contexto: Contexto, id?: a
             return null;
         }
         if (_ambito.existeVariable(exp)) {
-            let contextFromVar = _ambito.getContextFromVar(exp);
-            _ambito.contextFromVar = contextFromVar;
-            return { valor: ".", tipo: Tipos.ELEMENTOS, linea: _expresion.linea, columna: _expresion.columna, contextFromVar: contextFromVar };
+            let valueFromVar = _ambito.getContextFromVar(exp);
+            if (valueFromVar?.contexto) {
+                _ambito.contextFromVar = valueFromVar;
+                return { valor: ".", tipo: Tipos.ELEMENTOS, linea: _expresion.linea, columna: _expresion.columna, contextFromVar: valueFromVar.contexto };
+            }
+            else if (valueFromVar?.valor)
+                return valueFromVar?.valor
         }
         if (exp !== ".") return null;
         return { valor: ".", tipo: Tipos.ELEMENTOS, linea: _expresion.linea, columna: _expresion.columna };
