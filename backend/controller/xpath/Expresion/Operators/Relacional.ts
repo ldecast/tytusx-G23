@@ -9,7 +9,7 @@ function Relacional(_expresion: any, _ambito: Ambito, _contexto: Contexto, _id?:
     if (Array.isArray(operators)) return operators;
     switch (operators.tipo) {
         case Tipos.RELACIONAL_MAYOR:
-            return mayor(operators.op1, operators.op2);
+            return mayor(operators.op1, operators.op2, operators.exp);
         case Tipos.RELACIONAL_MAYORIGUAL:
             return mayorigual(operators.op1, operators.op2);
         case Tipos.RELACIONAL_MENOR:
@@ -17,7 +17,7 @@ function Relacional(_expresion: any, _ambito: Ambito, _contexto: Contexto, _id?:
         case Tipos.RELACIONAL_MENORIGUAL:
             return menorigual(operators.op1, operators.op2);
         case Tipos.RELACIONAL_IGUAL:
-            return igual(operators.op1, operators.op2);
+            return igual(operators.op1, operators.op2, operators.exp);
         case Tipos.RELACIONAL_DIFERENTE:
             return diferente(operators.op1, operators.op2);
         default:
@@ -77,8 +77,10 @@ function init(_opIzq: any, _opDer: any, _ambito: Ambito, _tipo: Tipos, _contexto
             return { op1: opIzq, op2: opDer, tipo: tipo };
         }
         else if (op1.tipo === Tipos.NUMBER && op2.tipo === Tipos.NUMBER) {
-            op1 = Number(op1.valor);
-            op2 = Number(op2.valor);
+            // op1 = Number(op1.valor);
+            // op2 = Number(op2.valor);
+            // console.log(op1, 8989888, op2)
+            return { op1: op1, op2: op2, tipo: tipo, exp: Tipos.BOOLEANO };
         }
         else if (op1.tipo === Tipos.ELEMENTOS || op2.tipo === Tipos.ELEMENTOS) {
             if (op1.tipo === Tipos.ELEMENTOS && (op2.tipo === Tipos.STRING || op2.tipo === Tipos.NUMBER)) {
@@ -155,14 +157,17 @@ function init(_opIzq: any, _opDer: any, _ambito: Ambito, _tipo: Tipos, _contexto
             }
         }
         else {
-            return { error: "Igualdad no compatible.", tipo: "Semántico", origen: "Query", linea: _opIzq.linea, columna: _opIzq.columna }
+            return { op1: op1, op2: op2, tipo: tipo, exp: Tipos.BOOLEANO };
+            // return { error: "Igualdad no compatible.", tipo: "Semántico", origen: "Query", linea: _opIzq.linea, columna: _opIzq.columna }
         }
         return { op1: op1, op2: op2, tipo: tipo };
     }
     return { error: "Relación no procesada.", tipo: "Semántico", origen: "Query", linea: _opIzq.linea, columna: _opIzq.columna }
 }
 
-function mayor(_opIzq: any, _opDer: any) {
+function mayor(_opIzq: any, _opDer: any, _exp?: any) {
+    if (_exp === Tipos.BOOLEANO)
+        return [{ valor: (_opIzq.valor > _opDer.valor), tipo: _exp }]
     if (_opIzq.id)
         return { e1: _opIzq.valor, e2: _opDer, tipo: Tipos.ELEMENTOS, desigualdad: Tipos.RELACIONAL_MAYOR }
     if (_opIzq.tipo === Tipos.ATRIBUTOS)
@@ -214,7 +219,9 @@ function menorigual(_opIzq: any, _opDer: any) {
     }
 }
 
-function igual(_opIzq: any, _opDer: any) {
+function igual(_opIzq: any, _opDer: any, _exp?: any) {
+    if (_exp === Tipos.BOOLEANO)
+        return [{ valor: (_opIzq.valor == _opDer.valor), tipo: _exp }]
     if (_opIzq.tipo === Tipos.ELEMENTOS)
         return { e1: _opIzq, e2: _opDer, tipo: Tipos.ELEMENTOS, desigualdad: Tipos.RELACIONAL_IGUAL }
     if (_opIzq.tipo === Tipos.FUNCION_POSITION || _opDer.tipo === Tipos.FUNCION_POSITION)

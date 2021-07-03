@@ -19,7 +19,7 @@ function returnQuery(_expresion: any, _ambito: Ambito, _iterators: Array<Context
         _str.push({ valor: '</' + _expresion.id_close + '>' })
     }
 
-    return { salida: writeReturn(_str), parametros: expresion };
+    return { valor: writeReturn(_str), parametros: expresion };
 }
 
 function writeReturn(_expresion: any): string {

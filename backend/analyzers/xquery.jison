@@ -212,8 +212,12 @@ LISTA_PARAMETROS: LISTA_PARAMETROS tk_coma PARAMETRO { $1.push($3); $$=$1; }
 PARAMETRO: VARIABLE tk_as DATATPYE { $$=queryBuilder.nuevoParametro($1, $3, this._$.first_line, this._$.first_column+1); }
 ;
 
-DATATPYE: tk_xs tk_dospts RESERVED_TYPES tk_interrogacion { $$=$3; }
-		| tk_xs tk_dospts RESERVED_TYPES { $$=$3; }
+DATATPYE: tk_xs tk_dospts RESERVED_TYPES TERM { $$=$3; }
+;
+
+TERM: tk_interrogacion
+	| tk_asterisco
+	|
 ;
 
 INSTR_FUNCIONES: XQUERY { $$=$1; }

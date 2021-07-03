@@ -26,7 +26,7 @@ function init(_opIzq: any, _opDer: any, _ambito: Ambito, _contexto: Contexto, _t
     // console.log(op1, 888, op2)
     if (Array.isArray(op1) && Array.isArray(op2)) {
         let _or = (tipo === Tipos.LOGICA_OR) ? true : false;
-        return filterContext(op1[0], op2[0], _or);
+        return operate(op1[0], op2[0], _or);
     }
     if (op1.tipo === Tipos.ELEMENTOS && op2.tipo === Tipos.ELEMENTOS) {
         return { op1: op1, op2: op2, tipo: tipo };
@@ -104,6 +104,28 @@ function filterElements(e1: any, e2: any, desigualdad: Tipos, _contexto: Context
         }
     }
     return tmp;
+}
+
+function operate(op1: any, op2: any, _or: boolean) {
+    if (op1.constructor.name === "Contexto") {
+        return filterContext(op1, op2, _or)
+    }
+    else if (op1.tipo === Tipos.BOOLEANO && op2.tipo === Tipos.BOOLEANO) {
+        return returnBoolean(op1, op2, _or);
+    }
+    else return null;
+}
+
+function returnBoolean(_val1: any, _val2: any, _or: boolean) {
+    // console.log(_val1, _val2)
+    switch (_or) {
+        case true:
+            return [{ valor: (_val1.valor || _val2.valor), tipo: Tipos.BOOLEANO }]
+        case false:
+            return [{ valor: (_val1.valor && _val2.valor), tipo: Tipos.BOOLEANO }]
+        default:
+            return null;
+    }
 }
 
 function filterContext(_context1: Contexto, _context2: Contexto, _or: boolean) {
