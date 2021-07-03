@@ -28,7 +28,7 @@ function Expresion(_expresion: any, _ambito: Ambito, _contexto: Contexto, _id?: 
             }
             return null;
         }
-        if (_ambito.existeVariable(exp)) {
+        if (_ambito.existeVariable(exp) !== -1) {
             let valueFromVar = _ambito.getVar(exp);
             if (valueFromVar?.contexto) {
                 _ambito.contextFromVar = valueFromVar;

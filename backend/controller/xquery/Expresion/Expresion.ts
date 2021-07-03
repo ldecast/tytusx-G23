@@ -83,6 +83,12 @@ function ExpresionQuery(_expresion: any, _ambito: Ambito, _contexto: Contexto, _
         return elements;
     }
 
+    else if (tipo === Tipos.LLAMADA_FUNCION) {
+        const Exec = require("../Funciones/Exec");
+        // console.log(_expresion.parametros,5555555555)
+        return Exec(_expresion, _ambito, _contexto, _id);
+    }
+
     else {
         // console.log(_expresion, 4444);
         const Bloque = require('../Bloque_XQuery');

@@ -3,7 +3,7 @@ import { Ambito } from "../../../model/xml/Ambito/Ambito";
 import Expresion from "../../xpath/Expresion/Expresion";
 import { Variable } from "../../../model/xml/Ambito/Variable";
 
-function Exec(_instr: any, _ambito: Ambito, _contexto: Contexto) {
+function Exec(_instr: any, _ambito: Ambito, _contexto: Contexto, _id?: any) {
     let name: string = _instr.name;
     let parametros: Array<any> = _instr.parametros;
     // Buscar la función, asignar los nuevos parámetros y ejecutarla.
@@ -14,18 +14,20 @@ function Exec(_instr: any, _ambito: Ambito, _contexto: Contexto) {
     // Declaración de parámetros
     for (let i = 0; i < parametros.length; i++) {
         const parametro = parametros[i];
-        const val = Expresion(parametros[i], _ambito, _contexto)
-        // console.log(val, 87878)
+        const val = Expresion(parametros[i], _ambito, _contexto, _id)
+        console.log(val, 87878)
         if (parametro) {
             let newVar = new Variable(funcion.parametros[i].id, funcion.parametros[i].tipado, parametro.linea, parametro.columna);
+            // console.log(val)
             newVar.setValue(val);
             _ambito.addVariable(newVar);
         }
     }
     // Ejecutar código
     const Bloque_XQuery = require("../Bloque_XQuery");
-    let _bloque = Bloque_XQuery.getIterators(funcion.sentencias, _ambito, _contexto);
-    // console.log(_bloque);
+    let _bloque = Bloque_XQuery.getIterators(funcion.sentencias, _ambito, _contexto, _id);
+    console.log(_bloque, 339393939);
+    if (_bloque.parametros) return _bloque.parametros[0];
     return _bloque;
 
 }
