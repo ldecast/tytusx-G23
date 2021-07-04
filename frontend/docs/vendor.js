@@ -273,7 +273,7 @@ function InternalDecoderCesu8(options, codec) {
 }
 
 InternalDecoderCesu8.prototype.write = function(buf) {
-    var acc = this.acc, contBytes = this.contBytes, accBytes = this.accBytes,
+    var acc = this.acc, contBytes = this.contBytes, accBytes = this.accBytes, 
         res = '';
     for (var i = 0; i < buf.length; i++) {
         var curByte = buf[i];
@@ -1909,7 +1909,7 @@ const CHECKBOX_VALUE_ACCESSOR = {
 };
 /**
  * @description
- * A `ControlValueAccessor` for writing a value and listening to changes on a checkbox input.xquery
+ * A `ControlValueAccessor` for writing a value and listening to changes on a checkbox input
  * element.
  *
  * @usageNotes
@@ -1923,7 +1923,7 @@ const CHECKBOX_VALUE_ACCESSOR = {
  * ```
  *
  * ```
- * <input.xquery type="checkbox" [formControl]="rememberLoginControl">
+ * <input type="checkbox" [formControl]="rememberLoginControl">
  * ```
  *
  * @ngModule ReactiveFormsModule
@@ -1936,18 +1936,18 @@ class CheckboxControlValueAccessor extends BuiltInControlValueAccessor {
         this._renderer = _renderer;
         this._elementRef = _elementRef;
         /**
-         * The registered callback function called when a change event occurs on the input.xquery element.
+         * The registered callback function called when a change event occurs on the input element.
          * @nodoc
          */
         this.onChange = (_) => { };
         /**
-         * The registered callback function called when a blur event occurs on the input.xquery element.
+         * The registered callback function called when a blur event occurs on the input element.
          * @nodoc
          */
         this.onTouched = () => { };
     }
     /**
-     * Sets the "checked" property on the input.xquery element.
+     * Sets the "checked" property on the input element.
      * @nodoc
      */
     writeValue(value) {
@@ -1968,7 +1968,7 @@ class CheckboxControlValueAccessor extends BuiltInControlValueAccessor {
         this.onTouched = fn;
     }
     /**
-     * Sets the "disabled" property on the input.xquery element.
+     * Sets the "disabled" property on the input element.
      * @nodoc
      */
     setDisabledState(isDisabled) {
@@ -1986,7 +1986,7 @@ CheckboxControlValueAccessor.ctorParameters = () => [
 (function () { (typeof ngDevMode === "undefined" || ngDevMode) && _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵsetClassMetadata"](CheckboxControlValueAccessor, [{
         type: _angular_core__WEBPACK_IMPORTED_MODULE_0__["Directive"],
         args: [{
-                selector: 'input.xquery[type=checkbox][formControlName],input.xquery[type=checkbox][formControl],input.xquery[type=checkbox][ngModel]',
+                selector: 'input[type=checkbox][formControlName],input[type=checkbox][formControl],input[type=checkbox][ngModel]',
                 host: { '(change)': 'onChange($event.target.checked)', '(blur)': 'onTouched()' },
                 providers: [CHECKBOX_VALUE_ACCESSOR]
             }]
@@ -2014,13 +2014,13 @@ function _isAndroid() {
 }
 /**
  * @description
- * Provide this token to control if form directives buffer IME input.xquery until
+ * Provide this token to control if form directives buffer IME input until
  * the "compositionend" event occurs.
  * @publicApi
  */
 const COMPOSITION_BUFFER_MODE = new _angular_core__WEBPACK_IMPORTED_MODULE_0__["InjectionToken"]('CompositionEventMode');
 /**
- * The default `ControlValueAccessor` for writing a value and listening to changes on input.xquery
+ * The default `ControlValueAccessor` for writing a value and listening to changes on input
  * elements. The accessor is used by the `FormControlDirective`, `FormControlName`, and
  * `NgModel` directives.
  *
@@ -2030,7 +2030,7 @@ const COMPOSITION_BUFFER_MODE = new _angular_core__WEBPACK_IMPORTED_MODULE_0__["
  *
  * ### Using the default value accessor
  *
- * The following example shows how to use an input.xquery element that activates the default value accessor
+ * The following example shows how to use an input element that activates the default value accessor
  * (in this case, a text field).
  *
  * ```ts
@@ -2038,16 +2038,16 @@ const COMPOSITION_BUFFER_MODE = new _angular_core__WEBPACK_IMPORTED_MODULE_0__["
  * ```
  *
  * ```
- * <input.xquery type="text" [formControl]="firstNameControl">
+ * <input type="text" [formControl]="firstNameControl">
  * ```
  *
- * This value accessor is used by default for `<input.xquery type="text">` and `<textarea>` elements, but
+ * This value accessor is used by default for `<input type="text">` and `<textarea>` elements, but
  * you could also use it for custom components that have similar behavior and do not require special
  * processing. In order to attach the default value accessor to a custom element, add the
  * `ngDefaultControl` attribute as shown below.
  *
  * ```
- * <custom-input.xquery-component ngDefaultControl [(ngModel)]="value"></custom-input.xquery-component>
+ * <custom-input-component ngDefaultControl [(ngModel)]="value"></custom-input-component>
  * ```
  *
  * @ngModule ReactiveFormsModule
@@ -2060,12 +2060,12 @@ class DefaultValueAccessor {
         this._elementRef = _elementRef;
         this._compositionMode = _compositionMode;
         /**
-         * The registered callback function called when an input.xquery event occurs on the input.xquery element.
+         * The registered callback function called when an input event occurs on the input element.
          * @nodoc
          */
         this.onChange = (_) => { };
         /**
-         * The registered callback function called when a blur event occurs on the input.xquery element.
+         * The registered callback function called when a blur event occurs on the input element.
          * @nodoc
          */
         this.onTouched = () => { };
@@ -2076,7 +2076,7 @@ class DefaultValueAccessor {
         }
     }
     /**
-     * Sets the "value" property on the input.xquery element.
+     * Sets the "value" property on the input element.
      * @nodoc
      */
     writeValue(value) {
@@ -2098,7 +2098,7 @@ class DefaultValueAccessor {
         this.onTouched = fn;
     }
     /**
-     * Sets the "disabled" property on the input.xquery element.
+     * Sets the "disabled" property on the input element.
      * @nodoc
      */
     setDisabledState(isDisabled) {
@@ -2132,7 +2132,7 @@ DefaultValueAccessor.ctorParameters = () => [
 (function () { (typeof ngDevMode === "undefined" || ngDevMode) && _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵsetClassMetadata"](DefaultValueAccessor, [{
         type: _angular_core__WEBPACK_IMPORTED_MODULE_0__["Directive"],
         args: [{
-                selector: 'input.xquery:not([type=checkbox])[formControlName],textarea[formControlName],input.xquery:not([type=checkbox])[formControl],textarea[formControl],input.xquery:not([type=checkbox])[ngModel],textarea[ngModel],[ngDefaultControl]',
+                selector: 'input:not([type=checkbox])[formControlName],textarea[formControlName],input:not([type=checkbox])[formControl],textarea[formControl],input:not([type=checkbox])[ngModel],textarea[ngModel],[ngDefaultControl]',
                 // TODO: vsavkin replace the above selector with the one below it once
                 // https://github.com/angular/angular/issues/3011 is implemented
                 // selector: '[ngModel],[formControl],[formControlName]',
@@ -2401,7 +2401,7 @@ class Validators {
      * ```
      *
      * ```html
-     * <input.xquery minlength="5">
+     * <input minlength="5">
      * ```
      *
      * @returns A validator function that returns an error map with the
@@ -2431,7 +2431,7 @@ class Validators {
      * ```
      *
      * ```html
-     * <input.xquery maxlength="5">
+     * <input maxlength="5">
      * ```
      *
      * @returns A validator function that returns an error map with the
@@ -2459,13 +2459,13 @@ class Validators {
      * ```
      *
      * ```html
-     * <input.xquery pattern="[a-zA-Z ]*">
+     * <input pattern="[a-zA-Z ]*">
      * ```
      *
      * ### Pattern matching with the global or sticky flag
      *
      * `RegExp` objects created with the `g` or `y` flags that are passed into `Validators.pattern`
-     * can produce different results on the same input.xquery when validations are run consecutively. This is
+     * can produce different results on the same input when validations are run consecutively. This is
      * due to how the behavior of `RegExp.prototype.test` is
      * specified in [ECMA-262](https://tc39.es/ecma262/#sec-regexpbuiltinexec)
      * (`RegExp` preserves the index of the last match when the global or sticky flag is used).
@@ -2802,7 +2802,7 @@ class AbstractControlDirective {
     }
     /**
      * @description
-     * Reports whether the control is invalid, meaning that an error exists in the input.xquery value.
+     * Reports whether the control is invalid, meaning that an error exists in the input value.
      * If the control is not present, null is returned.
      */
     get invalid() {
@@ -2811,7 +2811,7 @@ class AbstractControlDirective {
     /**
      * @description
      * Reports whether a control is pending, meaning that that async validation is occurring and
-     * errors are not yet available for the input.xquery value. If the control is not present, null is
+     * errors are not yet available for the input value. If the control is not present, null is
      * returned.
      */
     get pending() {
@@ -3437,7 +3437,7 @@ function setUpDisabledChangeHandler(control, dir) {
  * @param control Form control where directive validators should be setup.
  * @param dir Directive instance that contains validators to be setup.
  * @param handleOnValidatorChange Flag that determines whether directive validators should be setup
- *     to handle validator input.xquery change.
+ *     to handle validator input change.
  */
 function setUpValidators(control, dir, handleOnValidatorChange) {
     const validators = getControlValidators(control);
@@ -3476,7 +3476,7 @@ function setUpValidators(control, dir, handleOnValidatorChange) {
  * @param control Form control from where directive validators should be removed.
  * @param dir Directive instance that contains validators to be removed.
  * @param handleOnValidatorChange Flag that determines whether directive validators should also be
- *     cleaned up to stop handling validator input.xquery change (if previously configured to do so).
+ *     cleaned up to stop handling validator input change (if previously configured to do so).
  * @returns true if a control was updated as a result of this action.
  */
 function cleanUpValidators(control, dir, handleOnValidatorChange) {
@@ -3674,20 +3674,20 @@ function _ngModelWarning(name, type, instance, warningConfig) {
  * found in the LICENSE file at https://angular.io/license
  */
 /**
- * Reports that a FormControl is valid, meaning that no errors exist in the input.xquery value.
+ * Reports that a FormControl is valid, meaning that no errors exist in the input value.
  *
  * @see `status`
  */
 const VALID = 'VALID';
 /**
- * Reports that a FormControl is invalid, meaning that an error exists in the input.xquery value.
+ * Reports that a FormControl is invalid, meaning that an error exists in the input value.
  *
  * @see `status`
  */
 const INVALID = 'INVALID';
 /**
  * Reports that a FormControl is pending, meaning that that async validation is occurring and
- * errors are not yet available for the input.xquery value.
+ * errors are not yet available for the input value.
  *
  * @see `markAsPending`
  * @see `status`
@@ -5599,7 +5599,7 @@ const resolvedPromise = (ɵ0)();
  *
  * ```html
  * <form [ngFormOptions]="{updateOn: 'blur'}">
- *    <input.xquery name="one" ngModel>  <!-- this ngModel will update on blur -->
+ *    <input name="one" ngModel>  <!-- this ngModel will update on blur -->
  * </form>
  * ```
  *
@@ -6067,10 +6067,10 @@ const ɵ0$1 = () => Promise.resolve(null);
  * E.g.:
  * ```
  * <div>{{myModel.valid}}</div>
- * <input.xquery [(ngModel)]="myValue" #myModel="ngModel">
+ * <input [(ngModel)]="myValue" #myModel="ngModel">
  * ```
  * I.e. `ngModel` can export itself on the element and then be used in the template.
- * Normally, this would result in expressions before the `input.xquery` that use the exported directive
+ * Normally, this would result in expressions before the `input` that use the exported directive
  * to have an old value as they have been
  * dirty checked before. As this is a very common case for `ngModel`, we added this second change
  * detection run.
@@ -6142,8 +6142,8 @@ const resolvedPromise$1 = (ɵ0$1)();
  *
  * ```html
  * <form>
- *   <input.xquery name="login" ngModel placeholder="Login">
- *   <input.xquery type="checkbox" ngModel [ngModelOptions]="{standalone: true}"> Show more options?
+ *   <input name="login" ngModel placeholder="Login">
+ *   <input type="checkbox" ngModel [ngModelOptions]="{standalone: true}"> Show more options?
  * </form>
  * <!-- form value: {login: ''} -->
  * ```
@@ -6152,7 +6152,7 @@ const resolvedPromise$1 = (ɵ0$1)();
  *
  * The following example shows you an alternate way to set the name attribute. Here,
  * an attribute identified as name is used within a custom form control component. To still be able
- * to specify the NgModel's name, you must specify it using the `ngModelOptions` input.xquery instead.
+ * to specify the NgModel's name, you must specify it using the `ngModelOptions` input instead.
  *
  * ```html
  * <form>
@@ -6396,22 +6396,22 @@ const NUMBER_VALUE_ACCESSOR = {
 };
 /**
  * @description
- * The `ControlValueAccessor` for writing a number value and listening to number input.xquery changes.
+ * The `ControlValueAccessor` for writing a number value and listening to number input changes.
  * The value accessor is used by the `FormControlDirective`, `FormControlName`, and `NgModel`
  * directives.
  *
  * @usageNotes
  *
- * ### Using a number input.xquery with a reactive form.
+ * ### Using a number input with a reactive form.
  *
- * The following example shows how to use a number input.xquery with a reactive form.
+ * The following example shows how to use a number input with a reactive form.
  *
  * ```ts
  * const totalCountControl = new FormControl();
  * ```
  *
  * ```
- * <input.xquery type="number" [formControl]="totalCountControl">
+ * <input type="number" [formControl]="totalCountControl">
  * ```
  *
  * @ngModule ReactiveFormsModule
@@ -6424,19 +6424,19 @@ class NumberValueAccessor extends BuiltInControlValueAccessor {
         this._renderer = _renderer;
         this._elementRef = _elementRef;
         /**
-         * The registered callback function called when a change or input.xquery event occurs on the input.xquery
+         * The registered callback function called when a change or input event occurs on the input
          * element.
          * @nodoc
          */
         this.onChange = (_) => { };
         /**
-         * The registered callback function called when a blur event occurs on the input.xquery element.
+         * The registered callback function called when a blur event occurs on the input element.
          * @nodoc
          */
         this.onTouched = () => { };
     }
     /**
-     * Sets the "value" property on the input.xquery element.
+     * Sets the "value" property on the input element.
      * @nodoc
      */
     writeValue(value) {
@@ -6461,7 +6461,7 @@ class NumberValueAccessor extends BuiltInControlValueAccessor {
         this.onTouched = fn;
     }
     /**
-     * Sets the "disabled" property on the input.xquery element.
+     * Sets the "disabled" property on the input element.
      * @nodoc
      */
     setDisabledState(isDisabled) {
@@ -6479,7 +6479,7 @@ NumberValueAccessor.ctorParameters = () => [
 (function () { (typeof ngDevMode === "undefined" || ngDevMode) && _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵsetClassMetadata"](NumberValueAccessor, [{
         type: _angular_core__WEBPACK_IMPORTED_MODULE_0__["Directive"],
         args: [{
-                selector: 'input.xquery[type=number][formControlName],input.xquery[type=number][formControl],input.xquery[type=number][ngModel]',
+                selector: 'input[type=number][formControlName],input[type=number][formControl],input[type=number][ngModel]',
                 host: { '(input)': 'onChange($event.target.value)', '(blur)': 'onTouched()' },
                 providers: [NUMBER_VALUE_ACCESSOR]
             }]
@@ -6596,12 +6596,12 @@ class RadioControlValueAccessor extends BuiltInControlValueAccessor {
         this._registry = _registry;
         this._injector = _injector;
         /**
-         * The registered callback function called when a change event occurs on the input.xquery element.
+         * The registered callback function called when a change event occurs on the input element.
          * @nodoc
          */
         this.onChange = () => { };
         /**
-         * The registered callback function called when a blur event occurs on the input.xquery element.
+         * The registered callback function called when a blur event occurs on the input element.
          * @nodoc
          */
         this.onTouched = () => { };
@@ -6617,7 +6617,7 @@ class RadioControlValueAccessor extends BuiltInControlValueAccessor {
         this._registry.remove(this);
     }
     /**
-     * Sets the "checked" property value on the radio input.xquery element.
+     * Sets the "checked" property value on the radio input element.
      * @nodoc
      */
     writeValue(value) {
@@ -6636,7 +6636,7 @@ class RadioControlValueAccessor extends BuiltInControlValueAccessor {
         };
     }
     /**
-     * Sets the "value" on the radio input.xquery element and unchecks it.
+     * Sets the "value" on the radio input element and unchecks it.
      *
      * @param value
      */
@@ -6651,7 +6651,7 @@ class RadioControlValueAccessor extends BuiltInControlValueAccessor {
         this.onTouched = fn;
     }
     /**
-     * Sets the "disabled" property on the input.xquery element.
+     * Sets the "disabled" property on the input element.
      * @nodoc
      */
     setDisabledState(isDisabled) {
@@ -6684,7 +6684,7 @@ RadioControlValueAccessor.propDecorators = {
 (function () { (typeof ngDevMode === "undefined" || ngDevMode) && _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵsetClassMetadata"](RadioControlValueAccessor, [{
         type: _angular_core__WEBPACK_IMPORTED_MODULE_0__["Directive"],
         args: [{
-                selector: 'input.xquery[type=radio][formControlName],input.xquery[type=radio][formControl],input.xquery[type=radio][ngModel]',
+                selector: 'input[type=radio][formControlName],input[type=radio][formControl],input[type=radio][ngModel]',
                 host: { '(change)': 'onChange()', '(blur)': 'onTouched()' },
                 providers: [RADIO_VALUE_ACCESSOR]
             }]
@@ -6710,22 +6710,22 @@ const RANGE_VALUE_ACCESSOR = {
 };
 /**
  * @description
- * The `ControlValueAccessor` for writing a range value and listening to range input.xquery changes.
+ * The `ControlValueAccessor` for writing a range value and listening to range input changes.
  * The value accessor is used by the `FormControlDirective`, `FormControlName`, and  `NgModel`
  * directives.
  *
  * @usageNotes
  *
- * ### Using a range input.xquery with a reactive form
+ * ### Using a range input with a reactive form
  *
- * The following example shows how to use a range input.xquery with a reactive form.
+ * The following example shows how to use a range input with a reactive form.
  *
  * ```ts
  * const ageControl = new FormControl();
  * ```
  *
  * ```
- * <input.xquery type="range" [formControl]="ageControl">
+ * <input type="range" [formControl]="ageControl">
  * ```
  *
  * @ngModule ReactiveFormsModule
@@ -6738,19 +6738,19 @@ class RangeValueAccessor extends BuiltInControlValueAccessor {
         this._renderer = _renderer;
         this._elementRef = _elementRef;
         /**
-         * The registered callback function called when a change or input.xquery event occurs on the input.xquery
+         * The registered callback function called when a change or input event occurs on the input
          * element.
          * @nodoc
          */
         this.onChange = (_) => { };
         /**
-         * The registered callback function called when a blur event occurs on the input.xquery element.
+         * The registered callback function called when a blur event occurs on the input element.
          * @nodoc
          */
         this.onTouched = () => { };
     }
     /**
-     * Sets the "value" property on the input.xquery element.
+     * Sets the "value" property on the input element.
      * @nodoc
      */
     writeValue(value) {
@@ -6773,7 +6773,7 @@ class RangeValueAccessor extends BuiltInControlValueAccessor {
         this.onTouched = fn;
     }
     /**
-     * Sets the "disabled" property on the range input.xquery element.
+     * Sets the "disabled" property on the range input element.
      * @nodoc
      */
     setDisabledState(isDisabled) {
@@ -6791,7 +6791,7 @@ RangeValueAccessor.ctorParameters = () => [
 (function () { (typeof ngDevMode === "undefined" || ngDevMode) && _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵsetClassMetadata"](RangeValueAccessor, [{
         type: _angular_core__WEBPACK_IMPORTED_MODULE_0__["Directive"],
         args: [{
-                selector: 'input.xquery[type=range][formControlName],input.xquery[type=range][formControl],input.xquery[type=range][ngModel]',
+                selector: 'input[type=range][formControlName],input[type=range][formControl],input[type=range][ngModel]',
                 host: {
                     '(change)': 'onChange($event.target.value)',
                     '(input)': 'onChange($event.target.value)',
@@ -6820,7 +6820,7 @@ const formControlBinding$1 = {
  * @description
  * Synchronizes a standalone `FormControl` instance to a form control element.
  *
- * Note that support for using the `ngModel` input.xquery property and `ngModelChange` event with reactive
+ * Note that support for using the `ngModel` input property and `ngModelChange` event with reactive
  * form directives was deprecated in Angular v6 and is scheduled for removal in
  * a future version of Angular.
  * For details, see [Deprecated features](guide/deprecations#ngmodel-with-reactive-forms).
@@ -6858,7 +6858,7 @@ class FormControlDirective extends NgControl {
     }
     /**
      * @description
-     * Triggers a warning in dev mode that this input.xquery should not be used with reactive forms.
+     * Triggers a warning in dev mode that this input should not be used with reactive forms.
      */
     set isDisabled(isDisabled) {
         if (typeof ngDevMode === 'undefined' || ngDevMode) {
@@ -7596,7 +7596,7 @@ const controlNameBinding = {
  *
  * ### Use with ngModel is deprecated
  *
- * Support for using the `ngModel` input.xquery property and `ngModelChange` event with reactive
+ * Support for using the `ngModel` input property and `ngModelChange` event with reactive
  * form directives has been deprecated in Angular v6 and is scheduled for removal in
  * a future version of Angular.
  *
@@ -7627,7 +7627,7 @@ class FormControlName extends NgControl {
     }
     /**
      * @description
-     * Triggers a warning in dev mode that this input.xquery should not be used with reactive forms.
+     * Triggers a warning in dev mode that this input should not be used with reactive forms.
      */
     set isDisabled(isDisabled) {
         if (typeof ngDevMode === 'undefined' || ngDevMode) {
@@ -7821,7 +7821,7 @@ function _extractId(valueString) {
  * from an RPC to the server, and that RPC is re-run. Even if the data hasn't changed, the
  * second response will produce objects with different identities.
  *
- * To customize the default option comparison algorithm, `<select>` supports `compareWith` input.xquery.
+ * To customize the default option comparison algorithm, `<select>` supports `compareWith` input.
  * `compareWith` takes a **function** which has two arguments: `option1` and `option2`.
  * If `compareWith` is given, Angular selects option by the return value of the function.
  *
@@ -7841,7 +7841,7 @@ function _extractId(valueString) {
  * }
  * ```
  *
- * **Note:** We listen to the 'change' event because 'input.xquery' events aren't fired
+ * **Note:** We listen to the 'change' event because 'input' events aren't fired
  * for selects in IE, see:
  * https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/input_event#browser_compatibility
  *
@@ -7859,12 +7859,12 @@ class SelectControlValueAccessor extends BuiltInControlValueAccessor {
         /** @internal */
         this._idCounter = 0;
         /**
-         * The registered callback function called when a change event occurs on the input.xquery element.
+         * The registered callback function called when a change event occurs on the input element.
          * @nodoc
          */
         this.onChange = (_) => { };
         /**
-         * The registered callback function called when a blur event occurs on the input.xquery element.
+         * The registered callback function called when a blur event occurs on the input element.
          * @nodoc
          */
         this.onTouched = () => { };
@@ -7882,7 +7882,7 @@ class SelectControlValueAccessor extends BuiltInControlValueAccessor {
         this._compareWith = fn;
     }
     /**
-     * Sets the "value" property on the input.xquery element. The "selectedIndex"
+     * Sets the "value" property on the input element. The "selectedIndex"
      * property is also set if an ID is provided on the option element.
      * @nodoc
      */
@@ -7913,7 +7913,7 @@ class SelectControlValueAccessor extends BuiltInControlValueAccessor {
         this.onTouched = fn;
     }
     /**
-     * Sets the "disabled" property on the select input.xquery element.
+     * Sets the "disabled" property on the select input element.
      * @nodoc
      */
     setDisabledState(isDisabled) {
@@ -7991,7 +7991,7 @@ class NgSelectOption {
     /**
      * @description
      * Tracks simple string values bound to the option element.
-     * For objects, use the `ngValue` input.xquery binding.
+     * For objects, use the `ngValue` input binding.
      */
     set value(value) {
         this._setElementValue(value);
@@ -8091,7 +8091,7 @@ class HTMLCollection {
  *
  * ### Customizing option selection
  *
- * To customize the default option comparison algorithm, `<select>` supports `compareWith` input.xquery.
+ * To customize the default option comparison algorithm, `<select>` supports `compareWith` input.
  * See the `SelectControlValueAccessor` for usage.
  *
  * @ngModule ReactiveFormsModule
@@ -8108,12 +8108,12 @@ class SelectMultipleControlValueAccessor extends BuiltInControlValueAccessor {
         /** @internal */
         this._idCounter = 0;
         /**
-         * The registered callback function called when a change event occurs on the input.xquery element.
+         * The registered callback function called when a change event occurs on the input element.
          * @nodoc
          */
         this.onChange = (_) => { };
         /**
-         * The registered callback function called when a blur event occurs on the input.xquery element.
+         * The registered callback function called when a blur event occurs on the input element.
          * @nodoc
          */
         this.onTouched = () => { };
@@ -8190,7 +8190,7 @@ class SelectMultipleControlValueAccessor extends BuiltInControlValueAccessor {
         this.onTouched = fn;
     }
     /**
-     * Sets the "disabled" property on the select input.xquery element.
+     * Sets the "disabled" property on the select input element.
      * @nodoc
      */
     setDisabledState(isDisabled) {
@@ -8271,7 +8271,7 @@ class ɵNgSelectMultipleOption {
     /**
      * @description
      * Tracks simple string values bound to the option element.
-     * For objects, use the `ngValue` input.xquery binding.
+     * For objects, use the `ngValue` input binding.
      */
     set value(value) {
         if (this._select) {
@@ -8362,7 +8362,7 @@ const CHECKBOX_REQUIRED_VALIDATOR = {
  * ### Adding a required validator using template-driven forms
  *
  * ```
- * <input.xquery name="fullName" ngModel required>
+ * <input name="fullName" ngModel required>
  * ```
  *
  * @ngModule FormsModule
@@ -8428,11 +8428,11 @@ RequiredValidator.propDecorators = {
  *
  * ### Adding a required checkbox validator using template-driven forms
  *
- * The following example shows how to add a checkbox required validator to an input.xquery attached to an
+ * The following example shows how to add a checkbox required validator to an input attached to an
  * ngModel binding.
  *
  * ```
- * <input.xquery type="checkbox" name="active" ngModel required>
+ * <input type="checkbox" name="active" ngModel required>
  * ```
  *
  * @publicApi
@@ -8457,7 +8457,7 @@ const ɵCheckboxRequiredValidator_BaseFactory = /*@__PURE__*/ _angular_core__WEB
 (function () { (typeof ngDevMode === "undefined" || ngDevMode) && _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵsetClassMetadata"](CheckboxRequiredValidator, [{
         type: _angular_core__WEBPACK_IMPORTED_MODULE_0__["Directive"],
         args: [{
-                selector: 'input.xquery[type=checkbox][required][formControlName],input.xquery[type=checkbox][required][formControl],input.xquery[type=checkbox][required][ngModel]',
+                selector: 'input[type=checkbox][required][formControlName],input[type=checkbox][required][formControl],input[type=checkbox][required][ngModel]',
                 providers: [CHECKBOX_REQUIRED_VALIDATOR],
                 host: { '[attr.required]': 'required ? "" : null' }
             }]
@@ -8481,13 +8481,13 @@ const EMAIL_VALIDATOR = {
  *
  * ### Adding an email validator
  *
- * The following example shows how to add an email validator to an input.xquery attached to an ngModel
+ * The following example shows how to add an email validator to an input attached to an ngModel
  * binding.
  *
  * ```
- * <input.xquery type="email" name="email" ngModel email>
- * <input.xquery type="email" name="email" ngModel email="true">
- * <input.xquery type="email" name="email" ngModel [email]="true">
+ * <input type="email" name="email" ngModel email>
+ * <input type="email" name="email" ngModel email="true">
+ * <input type="email" name="email" ngModel [email]="true">
  * ```
  *
  * @publicApi
@@ -8556,11 +8556,11 @@ const MIN_LENGTH_VALIDATOR = {
  *
  * ### Adding a minimum length validator
  *
- * The following example shows how to add a minimum length validator to an input.xquery attached to an
+ * The following example shows how to add a minimum length validator to an input attached to an
  * ngModel binding.
  *
  * ```html
- * <input.xquery name="firstName" ngModel minlength="4">
+ * <input name="firstName" ngModel minlength="4">
  * ```
  *
  * @ngModule ReactiveFormsModule
@@ -8634,11 +8634,11 @@ const MAX_LENGTH_VALIDATOR = {
  *
  * ### Adding a maximum length validator
  *
- * The following example shows how to add a maximum length validator to an input.xquery attached to an
+ * The following example shows how to add a maximum length validator to an input attached to an
  * ngModel binding.
  *
  * ```html
- * <input.xquery name="firstName" ngModel maxlength="25">
+ * <input name="firstName" ngModel maxlength="25">
  * ```
  *
  * @ngModule ReactiveFormsModule
@@ -8713,11 +8713,11 @@ const PATTERN_VALIDATOR = {
  *
  * ### Adding a pattern validator
  *
- * The following example shows how to add a pattern validator to an input.xquery attached to an
+ * The following example shows how to add a pattern validator to an input attached to an
  * ngModel binding.
  *
  * ```html
- * <input.xquery name="firstName" ngModel pattern="[a-zA-Z ]*">
+ * <input name="firstName" ngModel pattern="[a-zA-Z ]*">
  * ```
  *
  * @ngModule ReactiveFormsModule
@@ -11522,11 +11522,11 @@ function getPromiseCtor(promiseCtor) {
 // require()-s are direct to support Browserify.
 
 module.exports = {
-
+    
     // == Japanese/ShiftJIS ====================================================
     // All japanese encodings are based on JIS X set of standards:
     // JIS X 0201 - Single-byte encoding of ASCII + ¥ + Kana chars at 0xA1-0xDF.
-    // JIS X 0208 - Main set of 6879 characters, placed in 94x94 plane, to be encoded by 2 bytes.
+    // JIS X 0208 - Main set of 6879 characters, placed in 94x94 plane, to be encoded by 2 bytes. 
     //              Has several variations in 1978, 1983, 1990 and 1997.
     // JIS X 0212 - Supplementary plane of 6067 chars in 94x94 plane. 1990. Effectively dead.
     // JIS X 0213 - Extension and modern replacement of 0208 and 0212. Total chars: 11233.
@@ -11544,7 +11544,7 @@ module.exports = {
     //               0x8F, (0xA1-0xFE)x2 - 0212 plane (94x94).
     //  * JIS X 208: 7-bit, direct encoding of 0208. Byte ranges: 0x21-0x7E (94 values). Uncommon.
     //               Used as-is in ISO2022 family.
-    //  * ISO2022-JP: Stateful encoding, with escape sequences to switch between ASCII,
+    //  * ISO2022-JP: Stateful encoding, with escape sequences to switch between ASCII, 
     //                0201-1976 Roman, 0208-1978, 0208-1983.
     //  * ISO2022-JP-1: Adds esc seq for 0212-1990.
     //  * ISO2022-JP-2: Adds esc seq for GB2313-1980, KSX1001-1992, ISO8859-1, ISO8859-7.
@@ -11656,7 +11656,7 @@ module.exports = {
     //  * Windows CP 951: Microsoft variant of Big5-HKSCS-2001. Seems to be never public. http://me.abelcheung.org/articles/research/what-is-cp951/
     //  * Big5-2003 (Taiwan standard) almost superset of cp950.
     //  * Unicode-at-on (UAO) / Mozilla 1.8. Falling out of use on the Web. Not supported by other browsers.
-    //  * Big5-HKSCS (-2001, -2004, -2008). Hong Kong standard.
+    //  * Big5-HKSCS (-2001, -2004, -2008). Hong Kong standard. 
     //    many unicode code points moved from PUA to Supplementary plane (U+2XXXX) over the years.
     //    Plus, it has 4 combining sequences.
     //    Seems that Mozilla refused to support it for 10 yrs. https://bugzilla.mozilla.org/show_bug.cgi?id=162431 https://bugzilla.mozilla.org/show_bug.cgi?id=310299
@@ -11667,7 +11667,7 @@ module.exports = {
     //    In the encoder, it might make sense to support encoding old PUA mappings to Big5 bytes seq-s.
     //    Official spec: http://www.ogcio.gov.hk/en/business/tech_promotion/ccli/terms/doc/2003cmp_2008.txt
     //                   http://www.ogcio.gov.hk/tc/business/tech_promotion/ccli/terms/doc/hkscs-2008-big5-iso.txt
-    //
+    // 
     // Current understanding of how to deal with Big5(-HKSCS) is in the Encoding Standard, http://encoding.spec.whatwg.org/#big5-encoder
     // Unicode mapping (http://www.unicode.org/Public/MAPPINGS/OBSOLETE/EASTASIA/OTHER/BIG5.TXT) is said to be wrong.
 
@@ -15317,17 +15317,17 @@ const subscribeToPromise = (promise) => (subscriber) => {
 var Buffer = __webpack_require__(/*! safer-buffer */ "xZGU").Buffer;
 
 // Single-byte codec. Needs a 'chars' string parameter that contains 256 or 128 chars that
-// correspond to encoded bytes (if 128 - then lower half is ASCII).
+// correspond to encoded bytes (if 128 - then lower half is ASCII). 
 
 exports._sbcs = SBCSCodec;
 function SBCSCodec(codecOptions, iconv) {
     if (!codecOptions)
         throw new Error("SBCS codec is called without the data.")
-
+    
     // Prepare char buffer for decoding.
     if (!codecOptions.chars || (codecOptions.chars.length !== 128 && codecOptions.chars.length !== 256))
         throw new Error("Encoding '"+codecOptions.type+"' has incorrect 'chars' (must be of len 128 or 256)");
-
+    
     if (codecOptions.chars.length === 128) {
         var asciiString = "";
         for (var i = 0; i < 128; i++)
@@ -15336,7 +15336,7 @@ function SBCSCodec(codecOptions, iconv) {
     }
 
     this.decodeBuf = Buffer.from(codecOptions.chars, 'ucs2');
-
+    
     // Encoding buffer.
     var encodeBuf = Buffer.alloc(65536, iconv.defaultCharSingleByte.charCodeAt(0));
 
@@ -15358,7 +15358,7 @@ SBCSEncoder.prototype.write = function(str) {
     var buf = Buffer.alloc(str.length);
     for (var i = 0; i < str.length; i++)
         buf[i] = this.encodeBuf[str.charCodeAt(i)];
-
+    
     return buf;
 }
 
@@ -19591,7 +19591,7 @@ class NodeInjectorFactory {
     /**
      * Factory to invoke in order to create a new instance.
      */
-    factory,
+    factory, 
     /**
      * Set to `true` if the token is declared in `viewProviders` (or if it is component).
      */
@@ -19650,7 +19650,7 @@ const unusedValueExportToPlacateAjd$4 = 1;
  * ```
  *
  * In the above case it is necessary to write the reconciled styling information into the
- * directive's input.xquery.
+ * directive's input.
  *
  * @param tNode
  */
@@ -19674,7 +19674,7 @@ function hasClassInput(tNode) {
  * ```
  *
  * In the above case it is necessary to write the reconciled styling information into the
- * directive's input.xquery.
+ * directive's input.
  *
  * @param tNode
  */
@@ -20528,7 +20528,7 @@ function bloomHashBitOrFactory(token) {
     if (typeof token === 'string') {
         return token.charCodeAt(0) || 0;
     }
-    const tokenId =
+    const tokenId = 
     // First check with `hasOwnProperty` so we don't get an inherited ID.
     token.hasOwnProperty(NG_ELEMENT_ID) ? token[NG_ELEMENT_ID] : undefined;
     // Negative token IDs are used for special objects such as `Injector`
@@ -21831,7 +21831,7 @@ makeParamDecorator('Inject', ɵ0$3), -1 /* Inject */);
  * @Annotation
  * @publicApi
  */
-const Optional =
+const Optional = 
 // Disable tslint because `InternalInjectFlags` is a const enum which gets inlined.
 // tslint:disable-next-line: no-toplevel-property-access
 attachInjectFlag(makeParamDecorator('Optional'), 8 /* Optional */);
@@ -21841,7 +21841,7 @@ attachInjectFlag(makeParamDecorator('Optional'), 8 /* Optional */);
  * @Annotation
  * @publicApi
  */
-const Self =
+const Self = 
 // Disable tslint because `InternalInjectFlags` is a const enum which gets inlined.
 // tslint:disable-next-line: no-toplevel-property-access
 attachInjectFlag(makeParamDecorator('Self'), 2 /* Self */);
@@ -21851,7 +21851,7 @@ attachInjectFlag(makeParamDecorator('Self'), 2 /* Self */);
  * @Annotation
  * @publicApi
  */
-const SkipSelf =
+const SkipSelf = 
 // Disable tslint because `InternalInjectFlags` is a const enum which gets inlined.
 // tslint:disable-next-line: no-toplevel-property-access
 attachInjectFlag(makeParamDecorator('SkipSelf'), 4 /* SkipSelf */);
@@ -21861,7 +21861,7 @@ attachInjectFlag(makeParamDecorator('SkipSelf'), 4 /* SkipSelf */);
  * @Annotation
  * @publicApi
  */
-const Host =
+const Host = 
 // Disable tslint because `InternalInjectFlags` is a const enum which gets inlined.
 // tslint:disable-next-line: no-toplevel-property-access
 attachInjectFlag(makeParamDecorator('Host'), 1 /* Host */);
@@ -22779,7 +22779,7 @@ function _sanitizeHtml(defaultDoc, unsafeHtmlInput) {
         let parsedHtml = unsafeHtml;
         do {
             if (mXSSAttempts === 0) {
-                throw new Error('Failed to sanitize html because the input.xquery is unstable');
+                throw new Error('Failed to sanitize html because the input is unstable');
             }
             mXSSAttempts--;
             unsafeHtml = parsedHtml;
@@ -26985,7 +26985,7 @@ function setNgReflectProperty(lView, element, type, attrName, value) {
 function setNgReflectProperties(lView, element, type, dataValue, value) {
     if (type & (3 /* AnyRNode */ | 4 /* Container */)) {
         /**
-         * dataValue is an array containing runtime input.xquery or output names for the directives:
+         * dataValue is an array containing runtime input or output names for the directives:
          * i+0: directive instance index
          * i+1: privateName
          *
@@ -27382,7 +27382,7 @@ function setElementAttribute(renderer, element, namespace, tagName, name, value,
     }
 }
 /**
- * Sets initial input.xquery properties on directive instances from attribute data
+ * Sets initial input properties on directive instances from attribute data
  *
  * @param lView Current LView that is being processed.
  * @param directiveIndex Index of the directive in directives array
@@ -27415,7 +27415,7 @@ function setInputsFromAttrs(lView, directiveIndex, instance, def, tNode, initial
  * Generates initialInputData for a node and stores it in the template's static storage
  * so subsequent template invocations don't have to recalculate it.
  *
- * initialInputData is an array containing values that need to be set as input.xquery properties
+ * initialInputData is an array containing values that need to be set as input properties
  * for directives on this node, but only once on creation. We need this array to support
  * the case where you set an @Input property of a directive using attribute-like syntax.
  * e.g. if you have a `name` @Input, you can set it once like this:
@@ -27853,7 +27853,7 @@ function handleError(lView, error) {
  *
  * @param tView The current TView
  * @param lView the `LView` which contains the directives.
- * @param inputs mapping between the public "input.xquery" name and privately-known,
+ * @param inputs mapping between the public "input" name and privately-known,
  *        possibly minified, property names to write to.
  * @param value Value to set.
  */
@@ -27994,7 +27994,7 @@ function tick(component) {
  *
  * @publicApi
  */
-const INJECTOR$1 = new InjectionToken('INJECTOR',
+const INJECTOR$1 = new InjectionToken('INJECTOR', 
 // Dissable tslint because this is const enum which gets inlined not top level prop access.
 // tslint:disable-next-line: no-toplevel-property-access
 -1 /* Injector */);
@@ -28728,12 +28728,12 @@ function resolveToken(token, record, records, parent, notFoundValue, flags) {
                     const childRecord = options & 2 /* CheckSelf */ ? records.get(depRecord.token) : undefined;
                     deps.push(tryResolveToken(
                     // Current Token to resolve
-                    depRecord.token,
+                    depRecord.token, 
                     // A record which describes how to resolve the token.
                     // If undefined, this means we don't have such a record
-                    childRecord,
+                    childRecord, 
                     // Other records we know about.
-                    records,
+                    records, 
                     // If we don't know how to resolve dependency and we should not check parent for it,
                     // than pass in Null injector.
                     !childRecord && !(options & 4 /* CheckParent */) ? Injector.NULL : parent, options & 1 /* Optional */ ? null : Injector.THROW_IF_NOT_FOUND, InjectFlags.Default));
@@ -31102,7 +31102,7 @@ class ResolvedReflectiveFactory {
     /**
      * Factory function which can return an instance of an object represented by a key.
      */
-    factory,
+    factory, 
     /**
      * Arguments (dependencies) to the `factory` function.
      */
@@ -31631,7 +31631,7 @@ function ɵɵinvalidFactory() {
  *
  * Operates on the element selected by index via the {@link select} instruction.
  *
- * If the property name also exists as an input.xquery property on one of the element's directives,
+ * If the property name also exists as an input property on one of the element's directives,
  * the component property will be set instead of the element property. This check must
  * be conducted at runtime so child components that add new `@Inputs` don't have to be re-compiled
  *
@@ -31657,7 +31657,7 @@ function ɵɵproperty(propName, value, sanitizer) {
 }
 /**
  * Given `<div style="..." my-dir>` and `MyDir` with `@Input('style')` we need to write to
- * directive input.xquery.
+ * directive input.
  */
 function setDirectiveInputsWhichShadowsStyling(tView, tNode, lView, value, isClassBased) {
     const inputs = tNode.inputs;
@@ -31812,7 +31812,7 @@ function logUnknownElementError(tView, element, tNode, hasDirectives) {
         // The element is unknown if it's an instance of HTMLUnknownElement or it isn't registered
         // as a custom element. Note that unknown elements with a dash in their name won't be instances
         // of HTMLUnknownElement in browsers that support web components.
-        const isUnknown =
+        const isUnknown = 
         // Note that we can't check for `typeof HTMLUnknownElement === 'function'`,
         // because while most browsers return 'function', IE returns 'object'.
         (typeof HTMLUnknownElement !== 'undefined' && HTMLUnknownElement &&
@@ -32388,7 +32388,7 @@ function ɵɵprojection(nodeIndex, selectorIndex = 0, attrs) {
  * ɵɵpropertyInterpolate('title', v0);
  * ```
  *
- * If the property name also exists as an input.xquery property on one of the element's directives,
+ * If the property name also exists as an input property on one of the element's directives,
  * the component property will be set instead of the element property. This check must
  * be conducted at runtime so child components that add new `@Inputs` don't have to be re-compiled.
  *
@@ -32420,7 +32420,7 @@ function ɵɵpropertyInterpolate(propName, v0, sanitizer) {
  * ɵɵpropertyInterpolate1('title', 'prefix', v0, 'suffix');
  * ```
  *
- * If the property name also exists as an input.xquery property on one of the element's directives,
+ * If the property name also exists as an input property on one of the element's directives,
  * the component property will be set instead of the element property. This check must
  * be conducted at runtime so child components that add new `@Inputs` don't have to be re-compiled.
  *
@@ -32460,7 +32460,7 @@ function ɵɵpropertyInterpolate1(propName, prefix, v0, suffix, sanitizer) {
  * ɵɵpropertyInterpolate2('title', 'prefix', v0, '-', v1, 'suffix');
  * ```
  *
- * If the property name also exists as an input.xquery property on one of the element's directives,
+ * If the property name also exists as an input property on one of the element's directives,
  * the component property will be set instead of the element property. This check must
  * be conducted at runtime so child components that add new `@Inputs` don't have to be re-compiled.
  *
@@ -32503,7 +32503,7 @@ function ɵɵpropertyInterpolate2(propName, prefix, v0, i0, v1, suffix, sanitize
  * 'title', 'prefix', v0, '-', v1, '-', v2, 'suffix');
  * ```
  *
- * If the property name also exists as an input.xquery property on one of the element's directives,
+ * If the property name also exists as an input property on one of the element's directives,
  * the component property will be set instead of the element property. This check must
  * be conducted at runtime so child components that add new `@Inputs` don't have to be re-compiled.
  *
@@ -32548,7 +32548,7 @@ function ɵɵpropertyInterpolate3(propName, prefix, v0, i0, v1, i1, v2, suffix, 
  * 'title', 'prefix', v0, '-', v1, '-', v2, '-', v3, 'suffix');
  * ```
  *
- * If the property name also exists as an input.xquery property on one of the element's directives,
+ * If the property name also exists as an input property on one of the element's directives,
  * the component property will be set instead of the element property. This check must
  * be conducted at runtime so child components that add new `@Inputs` don't have to be re-compiled.
  *
@@ -32595,7 +32595,7 @@ function ɵɵpropertyInterpolate4(propName, prefix, v0, i0, v1, i1, v2, i2, v3, 
  * 'title', 'prefix', v0, '-', v1, '-', v2, '-', v3, '-', v4, 'suffix');
  * ```
  *
- * If the property name also exists as an input.xquery property on one of the element's directives,
+ * If the property name also exists as an input property on one of the element's directives,
  * the component property will be set instead of the element property. This check must
  * be conducted at runtime so child components that add new `@Inputs` don't have to be re-compiled.
  *
@@ -32644,7 +32644,7 @@ function ɵɵpropertyInterpolate5(propName, prefix, v0, i0, v1, i1, v2, i2, v3, 
  *    'title', 'prefix', v0, '-', v1, '-', v2, '-', v3, '-', v4, '-', v5, 'suffix');
  * ```
  *
- * If the property name also exists as an input.xquery property on one of the element's directives,
+ * If the property name also exists as an input property on one of the element's directives,
  * the component property will be set instead of the element property. This check must
  * be conducted at runtime so child components that add new `@Inputs` don't have to be re-compiled.
  *
@@ -32695,7 +32695,7 @@ function ɵɵpropertyInterpolate6(propName, prefix, v0, i0, v1, i1, v2, i2, v3, 
  *    'title', 'prefix', v0, '-', v1, '-', v2, '-', v3, '-', v4, '-', v5, '-', v6, 'suffix');
  * ```
  *
- * If the property name also exists as an input.xquery property on one of the element's directives,
+ * If the property name also exists as an input property on one of the element's directives,
  * the component property will be set instead of the element property. This check must
  * be conducted at runtime so child components that add new `@Inputs` don't have to be re-compiled.
  *
@@ -32748,7 +32748,7 @@ function ɵɵpropertyInterpolate7(propName, prefix, v0, i0, v1, i1, v2, i2, v3, 
  *  'title', 'prefix', v0, '-', v1, '-', v2, '-', v3, '-', v4, '-', v5, '-', v6, '-', v7, 'suffix');
  * ```
  *
- * If the property name also exists as an input.xquery property on one of the element's directives,
+ * If the property name also exists as an input property on one of the element's directives,
  * the component property will be set instead of the element property. This check must
  * be conducted at runtime so child components that add new `@Inputs` don't have to be re-compiled.
  *
@@ -32804,7 +32804,7 @@ function ɵɵpropertyInterpolate8(propName, prefix, v0, i0, v1, i1, v2, i2, v3, 
  *  'suffix']);
  * ```
  *
- * If the property name also exists as an input.xquery property on one of the element's directives,
+ * If the property name also exists as an input property on one of the element's directives,
  * the component property will be set instead of the element property. This check must
  * be conducted at runtime so child components that add new `@Inputs` don't have to be re-compiled.
  *
@@ -33675,7 +33675,7 @@ function checkStylingMap(keyValueArraySet, stringParser, value, isClassBased) {
                 // verify that if we are shadowing then `TData` is appropriately marked so that we skip
                 // processing this binding in styling resolution.
                 const tStylingKey = tView.data[bindingIndex];
-                assertEqual(Array.isArray(tStylingKey) ? tStylingKey[1] : tStylingKey, false, 'Styling linked list shadow input.xquery should be marked as \'false\'');
+                assertEqual(Array.isArray(tStylingKey) ? tStylingKey[1] : tStylingKey, false, 'Styling linked list shadow input should be marked as \'false\'');
             }
             // VE does not concatenate the static portion like we are doing here.
             // Instead VE just ignores the static completely if dynamic binding is present.
@@ -33987,14 +33987,14 @@ function collectStylingFromTAttrs(stylingKey, attrs, isClassBased) {
     return stylingKey === undefined ? null : stylingKey;
 }
 /**
- * Convert user input.xquery to `KeyValueArray`.
+ * Convert user input to `KeyValueArray`.
  *
- * This function takes user input.xquery which could be `string`, Object literal, or iterable and converts
+ * This function takes user input which could be `string`, Object literal, or iterable and converts
  * it into a consistent representation. The output of this is `KeyValueArray` (which is an array
  * where
  * even indexes contain keys and odd indexes contain values for those keys).
  *
- * The advantage of converting to `KeyValueArray` is that we can perform diff in an input.xquery
+ * The advantage of converting to `KeyValueArray` is that we can perform diff in an input
  * independent
  * way.
  * (ie we can compare `foo bar` to `['bar', 'baz'] and determine a set of changes which need to be
@@ -34057,7 +34057,7 @@ function styleKeyValueArraySet(keyValueArray, key, value) {
  *
  * Map based styling could be anything which contains more than one binding. For example `string`,
  * or object literal. Dealing with all of these types would complicate the logic so
- * instead this function expects that the complex input.xquery is first converted into normalized
+ * instead this function expects that the complex input is first converted into normalized
  * `KeyValueArray`. The advantage of normalization is that we get the values sorted, which makes it
  * very cheap to compute deltas between the previous and current value.
  *
@@ -34270,10 +34270,10 @@ function normalizeSuffix(value, suffix) {
     return value;
 }
 /**
- * Tests if the `TNode` has input.xquery shadow.
+ * Tests if the `TNode` has input shadow.
  *
- * An input.xquery shadow is when a directive steals (shadows) the input.xquery by using `@Input('style')` or
- * `@Input('class')` as input.xquery.
+ * An input shadow is when a directive steals (shadows) the input by using `@Input('style')` or
+ * `@Input('class')` as input.
  *
  * @param tNode `TNode` which we would like to see if it has shadow.
  * @param isClassBased `true` if `class` (`false` if `style`)
@@ -36221,9 +36221,9 @@ function icuCreateOpCode(opCode, parentIdx, refIdx) {
  * found in the LICENSE file at https://angular.io/license
  */
 /**
- * Keep track of which input.xquery bindings in `ɵɵi18nExp` have changed.
+ * Keep track of which input bindings in `ɵɵi18nExp` have changed.
  *
- * This is used to efficiently update expressions in i18n only when the corresponding input.xquery has
+ * This is used to efficiently update expressions in i18n only when the corresponding input has
  * changed.
  *
  * 1) Each bit represents which of the `ɵɵi18nExp` has changed.
@@ -36241,7 +36241,7 @@ let changeMask = 0b0;
  */
 let changeMaskCounter = 0;
 /**
- * Keep track of which input.xquery bindings in `ɵɵi18nExp` have changed.
+ * Keep track of which input bindings in `ɵɵi18nExp` have changed.
  *
  * `setMaskBit` gets invoked by each call to `ɵɵi18nExp`.
  *
@@ -37427,7 +37427,7 @@ function walkIcuTree(tView, tIcu, lView, sharedUpdateOpCodes, create, remove, up
                         const attr = elAttrs.item(i);
                         const lowerAttrName = attr.name.toLowerCase();
                         const hasBinding = !!attr.value.match(BINDING_REGEXP);
-                        // we assume the input.xquery string is safe, unless it's using a binding
+                        // we assume the input string is safe, unless it's using a binding
                         if (hasBinding) {
                             if (VALID_ATTRS.hasOwnProperty(lowerAttrName)) {
                                 if (URI_ATTRS[lowerAttrName]) {
@@ -39493,7 +39493,7 @@ class ViewRef {
      *
      * @internal
      */
-    _lView,
+    _lView, 
     /**
      * This represents the `LView` associated with the point where `ChangeDetectorRef` was
      * requested.
@@ -39677,7 +39677,7 @@ class ViewRef {
      *   selector: 'my-app',
      *   providers: [DataProvider],
      *   template: `
-     *     Live Update: <input.xquery type="checkbox" [(ngModel)]="live">
+     *     Live Update: <input type="checkbox" [(ngModel)]="live">
      *     <live-data [live]="live"><live-data>
      *   `,
      * })
@@ -42699,7 +42699,7 @@ function getPipeDef$1(name, registry) {
  * Invokes a pipe with 1 arguments.
  *
  * This instruction acts as a guard to {@link PipeTransform#transform} invoking
- * the pipe only when an input.xquery to the pipe changes.
+ * the pipe only when an input to the pipe changes.
  *
  * @param index Pipe index where the pipe was stored on creation.
  * @param slotOffset the offset in the reserved slot space
@@ -42719,7 +42719,7 @@ function ɵɵpipeBind1(index, slotOffset, v1) {
  * Invokes a pipe with 2 arguments.
  *
  * This instruction acts as a guard to {@link PipeTransform#transform} invoking
- * the pipe only when an input.xquery to the pipe changes.
+ * the pipe only when an input to the pipe changes.
  *
  * @param index Pipe index where the pipe was stored on creation.
  * @param slotOffset the offset in the reserved slot space
@@ -42740,7 +42740,7 @@ function ɵɵpipeBind2(index, slotOffset, v1, v2) {
  * Invokes a pipe with 3 arguments.
  *
  * This instruction acts as a guard to {@link PipeTransform#transform} invoking
- * the pipe only when an input.xquery to the pipe changes.
+ * the pipe only when an input to the pipe changes.
  *
  * @param index Pipe index where the pipe was stored on creation.
  * @param slotOffset the offset in the reserved slot space
@@ -42761,7 +42761,7 @@ function ɵɵpipeBind3(index, slotOffset, v1, v2, v3) {
  * Invokes a pipe with 4 arguments.
  *
  * This instruction acts as a guard to {@link PipeTransform#transform} invoking
- * the pipe only when an input.xquery to the pipe changes.
+ * the pipe only when an input to the pipe changes.
  *
  * @param index Pipe index where the pipe was stored on creation.
  * @param slotOffset the offset in the reserved slot space
@@ -42783,7 +42783,7 @@ function ɵɵpipeBind4(index, slotOffset, v1, v2, v3, v4) {
  * Invokes a pipe with variable number of arguments.
  *
  * This instruction acts as a guard to {@link PipeTransform#transform} invoking
- * the pipe only when an input.xquery to the pipe changes.
+ * the pipe only when an input to the pipe changes.
  *
  * @param index Pipe index where the pipe was stored on creation.
  * @param slotOffset the offset in the reserved slot space
@@ -44674,7 +44674,7 @@ const SWITCH_COMPILE_PIPE = SWITCH_COMPILE_PIPE__POST_R3__;
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const ɵ0$e = (ngModule) => ngModule, ɵ1$3 =
+const ɵ0$e = (ngModule) => ngModule, ɵ1$3 = 
 /**
  * Decorator that marks the following class as an NgModule, and supplies
  * configuration metadata for it.
@@ -46968,7 +46968,7 @@ class DebugElement__POST_R3__ extends DebugNode__POST_R3__ {
      *  - Interpolated property bindings (e.g. `id="{{ value }}")
      *
      *  It does not include:
-     *  - input.xquery property bindings (e.g. `[myCustomInput]="value"`)
+     *  - input property bindings (e.g. `[myCustomInput]="value"`)
      *  - attribute bindings (e.g. `[attr.role]="menu"`)
      */
     get properties() {
@@ -53293,7 +53293,7 @@ function DBCSCodec(codecOptions, iconv) {
     this.decodeTables = [];
     this.decodeTables[0] = UNASSIGNED_NODE.slice(0); // Create root node.
 
-    // Sometimes a MBCS char corresponds to a sequence of unicode chars. We store them as arrays of integers here.
+    // Sometimes a MBCS char corresponds to a sequence of unicode chars. We store them as arrays of integers here. 
     this.decodeTableSeq = [];
 
     // Actual mapping tables consist of chunks. Use them to fill up decode tables.
@@ -53302,7 +53302,7 @@ function DBCSCodec(codecOptions, iconv) {
 
     this.defaultCharUnicode = iconv.defaultCharUnicode;
 
-
+    
     // Encode tables: Unicode -> DBCS.
 
     // `encodeTable` is array mapping from unicode char to encoded char. All its values are integers for performance.
@@ -53311,7 +53311,7 @@ function DBCSCodec(codecOptions, iconv) {
     //         == UNASSIGNED -> no conversion found. Output a default char.
     //         <= SEQ_START  -> it's an index in encodeTableSeq, see below. The character starts a sequence.
     this.encodeTable = [];
-
+    
     // `encodeTableSeq` is used when a sequence of unicode characters is encoded as a single code. We use a tree of
     // objects where keys correspond to characters in sequence and leafs are the encoded dbcs values. A special DEF_CHAR key
     // means end of sequence (needed when one sequence is a strict subsequence of another).
@@ -53329,7 +53329,7 @@ function DBCSCodec(codecOptions, iconv) {
                 for (var j = val.from; j <= val.to; j++)
                     skipEncodeChars[j] = true;
         }
-
+        
     // Use decode trie to recursively fill out encode tables.
     this._fillEncodeTable(0, 0, skipEncodeChars);
 
@@ -53366,7 +53366,7 @@ function DBCSCodec(codecOptions, iconv) {
             thirdByteNode[i] = NODE_START - fourthByteNodeIdx;
         for (var i = 0x30; i <= 0x39; i++)
             fourthByteNode[i] = GB18030_CODE
-    }
+    }        
 }
 
 DBCSCodec.prototype.encoder = DBCSEncoder;
@@ -53431,7 +53431,7 @@ DBCSCodec.prototype._addDecodeChunk = function(chunk) {
                 else
                     writeTable[curAddr++] = code; // Basic char
             }
-        }
+        } 
         else if (typeof part === "number") { // Integer, meaning increasing sequence starting with prev character.
             var charCode = writeTable[curAddr - 1] + 1;
             for (var l = 0; l < part; l++)
@@ -53462,7 +53462,7 @@ DBCSCodec.prototype._setEncodeChar = function(uCode, dbcsCode) {
 }
 
 DBCSCodec.prototype._setEncodeSequence = function(seq, dbcsCode) {
-
+    
     // Get the root of character tree according to first character of the sequence.
     var uCode = seq[0];
     var bucket = this._getEncodeBucket(uCode);
@@ -53523,7 +53523,7 @@ function DBCSEncoder(options, codec) {
     // Encoder state
     this.leadSurrogate = -1;
     this.seqObj = undefined;
-
+    
     // Static data
     this.encodeTable = codec.encodeTable;
     this.encodeTableSeq = codec.encodeTableSeq;
@@ -53545,7 +53545,7 @@ DBCSEncoder.prototype.write = function(str) {
         }
         else {
             var uCode = nextChar;
-            nextChar = -1;
+            nextChar = -1;    
         }
 
         // 1. Handle surrogates.
@@ -53567,7 +53567,7 @@ DBCSEncoder.prototype.write = function(str) {
                     // Incomplete surrogate pair - only trail surrogate found.
                     uCode = UNASSIGNED;
                 }
-
+                
             }
         }
         else if (leadSurrogate !== -1) {
@@ -53608,7 +53608,7 @@ DBCSEncoder.prototype.write = function(str) {
             var subtable = this.encodeTable[uCode >> 8];
             if (subtable !== undefined)
                 dbcsCode = subtable[uCode & 0xFF];
-
+            
             if (dbcsCode <= SEQ_START) { // Sequence start
                 seqObj = this.encodeTableSeq[SEQ_START-dbcsCode];
                 continue;
@@ -53631,7 +53631,7 @@ DBCSEncoder.prototype.write = function(str) {
         // 3. Write dbcsCode character.
         if (dbcsCode === UNASSIGNED)
             dbcsCode = this.defaultCharSingleByte;
-
+        
         if (dbcsCode < 0x100) {
             newBuf[j++] = dbcsCode;
         }
@@ -53678,7 +53678,7 @@ DBCSEncoder.prototype.end = function() {
         newBuf[j++] = this.defaultCharSingleByte;
         this.leadSurrogate = -1;
     }
-
+    
     return newBuf.slice(0, j);
 }
 
@@ -53702,21 +53702,21 @@ function DBCSDecoder(options, codec) {
 
 DBCSDecoder.prototype.write = function(buf) {
     var newBuf = Buffer.alloc(buf.length*2),
-        nodeIdx = this.nodeIdx,
+        nodeIdx = this.nodeIdx, 
         prevBuf = this.prevBuf, prevBufOffset = this.prevBuf.length,
         seqStart = -this.prevBuf.length, // idx of the start of current parsed sequence.
         uCode;
 
     if (prevBufOffset > 0) // Make prev buf overlap a little to make it easier to slice later.
         prevBuf = Buffer.concat([prevBuf, buf.slice(0, 10)]);
-
+    
     for (var i = 0, j = 0; i < buf.length; i++) {
         var curByte = (i >= 0) ? buf[i] : prevBuf[i + prevBufOffset];
 
         // Lookup in current trie node.
         var uCode = this.decodeTables[nodeIdx][curByte];
 
-        if (uCode >= 0) {
+        if (uCode >= 0) { 
             // Normal character, just use it.
         }
         else if (uCode === UNASSIGNED) { // Unknown char.
@@ -53748,7 +53748,7 @@ DBCSDecoder.prototype.write = function(buf) {
             throw new Error("iconv-lite internal error: invalid decoding table value " + uCode + " at " + nodeIdx + "/" + curByte);
 
         // Write the character to buffer, handling higher planes using surrogate pair.
-        if (uCode > 0xFFFF) {
+        if (uCode > 0xFFFF) { 
             uCode -= 0x10000;
             var uCodeLead = 0xD800 + Math.floor(uCode / 0x400);
             newBuf[j++] = uCodeLead & 0xFF;
@@ -54564,7 +54564,7 @@ var modules = [
     __webpack_require__(/*! ./dbcs-data */ "HEcb"),
 ];
 
-// Put all encoding/alias/codec definitions to single object and export it.
+// Put all encoding/alias/codec definitions to single object and export it. 
 for (var i = 0; i < modules.length; i++) {
     var module = modules[i];
     for (var enc in module)
@@ -56978,7 +56978,7 @@ function weekGetter(size, monthBased = false) {
     };
 }
 /**
- * Returns a date formatter that provides the week-numbering year for the input.xquery date.
+ * Returns a date formatter that provides the week-numbering year for the input date.
  */
 function weekNumberingYearGetter(size, trim = false) {
     return function (date, locale) {
@@ -57239,7 +57239,7 @@ function convertTimezoneToLocal(date, timezone, reverse) {
 /**
  * Converts a value to date.
  *
- * Supported input.xquery formats:
+ * Supported input formats:
  * - `Date`
  * - number: timestamp
  * - string: numeric (e.g. "1234"), ISO and date strings in a format supported by
@@ -58215,9 +58215,9 @@ class NgForOfContext {
  *
  * Angular uses object identity to track insertions and deletions within the iterator and reproduce
  * those changes in the DOM. This has important implications for animations and any stateful
- * controls that are present, such as `<input.xquery>` elements that accept user input.xquery. Inserted rows can
+ * controls that are present, such as `<input>` elements that accept user input. Inserted rows can
  * be animated in, deleted rows can be animated out, and unchanged rows retain any unsaved state
- * such as user input.xquery.
+ * such as user input.
  * For more on animations, see [Transitions and Triggers](guide/transition-and-triggers).
  *
  * The identities of elements in the iterator can change while the data does not.
@@ -58246,7 +58246,7 @@ class NgForOf {
     }
     /**
      * The value of the iterable expression, which can be used as a
-     * [template input.xquery variable](guide/structural-directives#shorthand).
+     * [template input variable](guide/structural-directives#shorthand).
      */
     set ngForOf(ngForOf) {
         this._ngForOf = ngForOf;
@@ -59425,7 +59425,7 @@ AsyncPipe.ctorParameters = () => [
  * @usageNotes
  *
  * The following example defines a view that allows the user to enter
- * text, and then uses the pipe to convert the input.xquery text to all lower case.
+ * text, and then uses the pipe to convert the input text to all lower case.
  *
  * <code-example path="common/pipes/ts/lowerupper_pipe.ts" region='LowerUpperPipe'></code-example>
  *
@@ -59538,7 +59538,7 @@ UpperCasePipe.ɵpipe = _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵdefinePip
  *
  * @usageNotes
  *
- * The result of this pipe is not reevaluated when the input.xquery is mutated. To avoid the need to
+ * The result of this pipe is not reevaluated when the input is mutated. To avoid the need to
  * reformat the date on every change-detection cycle, treat the date as an immutable object
  * and change the reference when the pipe needs to run again.
  *
@@ -60981,7 +60981,7 @@ Utf16Decoder.prototype.write = function(buf) {
         // Codec is not chosen yet. Accumulate initial bytes.
         this.initialBytes.push(buf);
         this.initialBytesLen += buf.length;
-
+        
         if (this.initialBytesLen < 16) // We need more bytes to use space heuristic (see below)
             return '';
 
@@ -61954,7 +61954,7 @@ iconv.encode = function encode(str, encoding, options) {
 
     var res = encoder.write(str);
     var trail = encoder.end();
-
+    
     return (trail && trail.length > 0) ? Buffer.concat([res, trail]) : res;
 }
 
@@ -61994,7 +61994,7 @@ iconv._codecDataCache = {};
 iconv.getCodec = function getCodec(encoding) {
     if (!iconv.encodings)
         iconv.encodings = __webpack_require__(/*! ../encodings */ "lLtp"); // Lazy load all encoding definitions.
-
+    
     // Canonicalize encoding name: strip all non-alphanumeric chars and appended year.
     var enc = iconv._canonicalizeEncoding(encoding);
 
@@ -62018,7 +62018,7 @@ iconv.getCodec = function getCodec(encoding) {
 
                 if (!codecOptions.encodingName)
                     codecOptions.encodingName = enc;
-
+                
                 enc = codecDef.type;
                 break;
 
@@ -67527,8 +67527,8 @@ Utf7Encoder.prototype.write = function(str) {
     // Naive implementation.
     // Non-direct chars are encoded as "+<base64>-"; single "+" char is encoded as "+-".
     return Buffer.from(str.replace(nonDirectChars, function(chunk) {
-        return "+" + (chunk === '+' ? '' :
-            this.iconv.encode(chunk, 'utf16-be').toString('base64').replace(/=+$/, ''))
+        return "+" + (chunk === '+' ? '' : 
+            this.iconv.encode(chunk, 'utf16-be').toString('base64').replace(/=+$/, '')) 
             + "-";
     }.bind(this)));
 }
@@ -67550,7 +67550,7 @@ var base64Chars = [];
 for (var i = 0; i < 256; i++)
     base64Chars[i] = base64Regex.test(String.fromCharCode(i));
 
-var plusChar = '+'.charCodeAt(0),
+var plusChar = '+'.charCodeAt(0), 
     minusChar = '-'.charCodeAt(0),
     andChar = '&'.charCodeAt(0);
 

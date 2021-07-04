@@ -164,6 +164,7 @@ export class XQObjeto {
             parametros: _parametros,
             tipado: _tipado,
             instrucciones: _instrucciones,
+            tipo: Tipos.DECLARACION_FUNCION,
             linea: _linea,
             columna: _columna
         }
@@ -173,6 +174,17 @@ export class XQObjeto {
         return {
             name: _name,
             parametros: _parametros,
+            tipo: Tipos.LLAMADA_FUNCION,
+            linea: _linea,
+            columna: _columna
+        }
+    }
+
+    llamadaNativa(_name: string, _parametros: Array<any>, _linea: number, _columna: number) {
+        return {
+            name: _name,
+            parametros: _parametros,
+            tipo: Tipos.LLAMADA_NATIVA,
             linea: _linea,
             columna: _columna
         }

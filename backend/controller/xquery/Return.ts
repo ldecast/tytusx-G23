@@ -2,14 +2,15 @@ import { Ambito } from "../../model/xml/Ambito/Ambito";
 import { Tipos } from "../../model/xpath/Enum";
 import { Contexto } from "../Contexto";
 import Expresion from "../xpath/Expresion/Expresion";
-import pushIterators from "./BuildElement";
+import pushIterators from "./Expresion/BuildElement";
 
 function returnQuery(_expresion: any, _ambito: Ambito, _iterators: Array<Contexto>) {
-    let expresion: Array<Contexto> = [];
+    let expresion: Array<any> = [];
     for (let i = 0; i < _iterators.length; i++) { // [$x, $y, $z]
         const iterator = _iterators[i]; // { Contexto }
-        let _x: Contexto = Expresion(_expresion, _ambito, iterator, iterator.variable?.id); // _expresion = [XPATH]
-        if (_x) expresion = expresion.concat(_x);
+        let _x = Expresion(_expresion, _ambito, iterator, iterator.variable?.id); // _expresion = [XPATH]
+        if (_x && !_x.error) expresion = expresion.concat(_x);
+        // console.log(_x)
     }
 
     let _str: Array<any> = pushIterators(expresion);
@@ -18,7 +19,7 @@ function returnQuery(_expresion: any, _ambito: Ambito, _iterators: Array<Context
         _str.push({ valor: '</' + _expresion.id_close + '>' })
     }
 
-    return { cadena: writeReturn(_str), parametros: expresion };
+    return { valor: writeReturn(_str), parametros: expresion };
 }
 
 function writeReturn(_expresion: any): string {
@@ -46,7 +47,7 @@ function writeReturn(_expresion: any): string {
         }
         cadena += '\n';
     }
-    console.log(cadena)
+    // console.log(cadena)
     return cadena;
 }
 

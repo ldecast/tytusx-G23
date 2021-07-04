@@ -6,7 +6,7 @@ import { Global } from '../model/xml/Ambito/Global';
 import { Element } from '../model/xml/Element';
 
 function compile(req: any) {
-    let errors = [];
+    let errors: Array<any> = [];
     try {
         // Datos de la petición desde Angular
         let xml = req.xml;
@@ -43,12 +43,10 @@ function compile(req: any) {
         let xml_parse = xml_ast.ast; // AST que genera Jison
         let global = new Ambito(null, "global"); // Ámbito global
         let cadena = new Global(xml_parse, global); // Llena la tabla de símbolos
-        let simbolos = cadena.ambito.getArraySymbols(); // Arreglo con los símbolos
 
         // Análisis de xQuery
         let xQuery_ast = parser_xQuery.parse(xQuery);
         let ast = (xQuery_ast.xquery) ? (xQuery_ast.xquery) : (xQuery_ast.xpath); // AST que genera Jison
-        // console.log(xQuery_ast.ast, "ast");
         if (xQuery_ast.errors.length > 0 || ast === null || xQuery_ast === true) {
             if (xQuery_ast.errors.length > 0) errors = xQuery_ast.errors;
             if (ast === null || xQuery_ast === true) {
@@ -60,16 +58,24 @@ function compile(req: any) {
         let root = new Contexto();
         root.elementos = [new Element("[object XMLDocument]", [], "", cadena.ambito.tablaSimbolos, "0", "0", "[object XMLDocument]")];
         let bloque;
+        let consola: string = "";
         if (xQuery_ast.xquery) {
             bloque = Bloque.getOutput(xQuery_ast.xquery, cadena.ambito, root); // Procesa las instrucciones de XQuery (fase 2)
         }
         else if (xQuery_ast.xpath) {
             bloque = XPath(xQuery_ast.xpath, cadena.ambito, root); // Procesa las instrucciones si sólo viene XPath (fase 1)
         }
+        if (bloque.cadena) consola = bloque.cadena;
+        if (bloque.error) {
+            errors.push(bloque);
+            consola = bloque.error;
+        }
+        let simbolos = cadena.ambito.getArraySymbols(); // Arreglo con los símbolos
+        console.log(consola);
         let output = {
             arreglo_simbolos: simbolos,
             arreglo_errores: errors,
-            output: bloque?.cadena,
+            output: consola,
             encoding: encoding,
             codigo3d: bloque?.codigo3d
         }

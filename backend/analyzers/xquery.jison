@@ -10,11 +10,8 @@ let re = /[^\n\t\r ]+/g
 %options case-insensitive
 %x string_doubleq
 %x string_singleq
-%x content
 
 /*Regular Expressions*/
-element_content                     ([^<>&\"{}] | '&lt;' | '&gt;' | '&amp;' | '&apos;' | '&quot;' )+
-// injection                           [{][$][\w]+('/' | '//' )*[}]
 %%
 
 \s+                   	// Whitespace
@@ -22,6 +19,10 @@ element_content                     ([^<>&\"{}] | '&lt;' | '&gt;' | '&amp;' | '&
 "<!--"[\s\S\n]*?"-->"	// MultiLineComment
 
 [0-9]+("."[0-9]+)?\b    return 'num'
+"upper-case"			return 'tk_uppercase'
+"lower-case"			return 'tk_lowercase'
+"number"				return 'tk_number'
+"substring"				return 'tk_substring'
 "let"                   return 'tk_let'
 ("<="|"le")				return 'tk_menorigual'
 (">="|"ge")				return 'tk_mayorigual'
@@ -128,13 +129,6 @@ element_content                     ([^<>&\"{}] | '&lt;' | '&gt;' | '&amp;' | '&
 <string_singleq>"\\r"           { attribute += "\r"; }
 <string_singleq>[']	            { yytext = attribute; this.popState(); return 'tk_string_s'; }
 
-// <content>"<!--"([^-]|\-[^-])*"-->"	    /* MultiLineComment*/
-// <content>{element_content}       { if(yytext.match(re)) { return 'tk_content';} }
-// <content>"{"                     { this.popState(); return 'tk_labre'; }
-// <content>"<"                     { this.popState(); return 'tk_menor'; }
-// <content><<EOF>>               	 return 'EOF'
-// <content>.                     	 { errors.push({ tipo: "Léxico", error: yytext, origen: "XQuery", linea: yylloc.first_line, columna: yylloc.first_column+1 }); return 'INVALID'; }
-
 
 [\w\u00e1\u00e9\u00ed\u00f3\u00fa\u00c1\u00c9\u00cd\u00d3\u00da\u00f1\u00d1]+ return 'tk_id'
 
@@ -152,9 +146,9 @@ element_content                     ([^<>&\"{}] | '&lt;' | '&gt;' | '&amp;' | '&
     // const getASTTree = require('./ast_xpath');
 
 	function insert_current(_variable, _predicate, _linea, _columna) {
-		return builder.newAxis(builder.newExpression(builder.newCurrent(_variable, _linea, _columna), _predicate, _linea, _columna), _linea, _columna)
+		return builder.newAxis(builder.newExpression(builder.newCurrent(_variable, _linea, _columna), _predicate, _linea, _columna), _linea, _columna);
 	}
-	function insert_text(_linea, _columna){
+	function insert_text(_linea, _columna) {
 		return builder.newDoubleAxis(builder.newExpression(builder.newValue("text()", Tipos.FUNCION_TEXT, _linea, _columna), null, _linea, _columna), _linea, _columna);
 	}
 %}
@@ -165,7 +159,7 @@ element_content                     ([^<>&\"{}] | '&lt;' | '&gt;' | '&amp;' | '&
 %left 'tk_equal' 'tk_diferent' 'tk_menor' 'tk_menorigual' 'tk_mayor' 'tk_mayorigual'
 %left 'tk_mas' 'tk_menos'
 %left 'tk_div' 'tk_mod' 'tk_asterisco'
-// %left umas
+%left umas
 %left umenos
 %left 'tk_ParA'
 %left 'tk_bar' 'tk_2bar'
@@ -173,9 +167,10 @@ element_content                     ([^<>&\"{}] | '&lt;' | '&gt;' | '&amp;' | '&
 
 %start ini
 
-%% // GRAMATICA DE DOCUMENTO XPath ANALISIS ASCENDENTE
+%% // GRAMATICA DE DOCUMENTO XQUERY ANALISIS ASCENDENTE
 
-ini: XPATH_U EOF{   prod_1 = grammar_stack.pop();
+ini: XPATH_U EOF{   
+					prod_1 = grammar_stack.pop();
 					prod_2 = grammar_stack.pop();
 			 		grammar_stack.push({'ini -> XPATH_U EOF': [prod_2, prod_1]});
 					// grammar_report =  getGrammarReport(grammar_stack); // cst = getCST(grammar_stack); // let arbol_ast = getASTTree($1);
@@ -203,6 +198,7 @@ IF: tk_if tk_ParA E tk_ParC { $$=$3; }
 ;
 
 THEN: tk_then E { $$=$2; }
+	| tk_then tk_ParA tk_ParC { $$=[]; }
 ;
 
 ELSE: tk_else E { $$=$2; }
@@ -221,13 +217,26 @@ LISTA_PARAMETROS: LISTA_PARAMETROS tk_coma PARAMETRO { $1.push($3); $$=$1; }
 PARAMETRO: VARIABLE tk_as DATATPYE { $$=queryBuilder.nuevoParametro($1, $3, this._$.first_line, this._$.first_column+1); }
 ;
 
-DATATPYE: tk_xs tk_dospts RESERVED_TYPES tk_interrogacion { $$=$3; }
+DATATPYE: tk_xs tk_dospts RESERVED_TYPES TERM { $$=$3; }
+;
+
+TERM: tk_interrogacion
+	| tk_asterisco
+	|
 ;
 
 INSTR_FUNCIONES: XQUERY { $$=$1; }
 ;
 
 LLAMADA: tk_local tk_dospts tk_id tk_ParA VALORES tk_ParC { $$=queryBuilder.nuevaLlamada($3, $5, this._$.first_line, this._$.first_column+1); }
+		| NATIVAS tk_ParA VALORES tk_ParC { $$=queryBuilder.llamadaNativa($1, $3, this._$.first_line, this._$.first_column+1); }
+;
+
+NATIVAS: tk_uppercase { $$ = Tipos.TO_UPPERCASE; }
+		| tk_lowercase { $$ = Tipos.TO_LOWERCASE; }
+		| tk_string { $$ = Tipos.TO_STRING; }
+		| tk_number { $$ = Tipos.TO_NUMBER; }
+		| tk_substring { $$ = Tipos.SUBSTRING; }
 ;
 
 FOR_LOOP: tk_for DECLARACION INSTRUCCIONES_FOR RETURN_STATEMENT { $3.push($4); $$ = queryBuilder.nuevoFor($2, $3, this._$.first_line, this._$.first_column+1); }
@@ -244,7 +253,10 @@ INSTR_FOR_P: WHERE_CONDITION { $$ = $1; }
 ;
 
 LET_CLAUSE: tk_let VARIABLE tk_2puntos_igual DECLARACIONPP { $$ = queryBuilder.nuevoLet($2, $4, this._$.first_line, this._$.first_column+1); }
-			| tk_let VARIABLE tk_2puntos_igual LLAMADA { $$ = queryBuilder.nuevoLet($2, $4, this._$.first_line, this._$.first_column+1); }
+;
+
+COMA_AUX: COMA_AUX tk_coma E { $1.push($3); $$=$1; }
+        | E { $$=[$1]; }
 ;
 
 WHERE_CONDITION: tk_where E { $$ = queryBuilder.nuevoWhere($2, this._$.first_line, this._$.first_column+1); }
@@ -271,8 +283,8 @@ DECLARACIONP: VARIABLE tk_in DECLARACIONPP { $$ = queryBuilder.nuevaDeclaracion(
 ;
 
 DECLARACIONPP: tk_ParA E tk_to E tk_ParC { $$ = queryBuilder.nuevoIntervalo($2, $4, this._$.first_line, this._$.first_column+1); }
-            | tk_ParA VALORES tk_ParC { $$ = queryBuilder.nuevosValores($2, this._$.first_line, this._$.first_column+1); }
-            | DOC XPATH { $$=$2; }
+            | tk_ParA E tk_coma COMA_AUX tk_ParC { $4.unshift($2); $$ = queryBuilder.nuevosValores($4, this._$.first_line, this._$.first_column+1); }
+            | E { $$=$1; }
 ;
 
 DOC: tk_doc tk_ParA STRING tk_ParC
@@ -283,25 +295,6 @@ VALORES: VALORES tk_coma E { $1.push($3); $$=$1; }
             | E { $$=[$1]; }
 ;
 
-HTML: tk_menor tk_id ATTRIBUTE_LIST tk_mayor CONTENT_LL tk_menor tk_bar tk_id tk_mayor { $$ = queryBuilder.nuevoHTML($2, $3, $5, $8, this._$.first_line, this._$.first_column+1); }
-    | tk_menor tk_id ATTRIBUTE_LIST tk_mayor tk_menor tk_bar tk_id tk_mayor { $$ = queryBuilder.nuevoHTML($2, $3, null, $7, this._$.first_line, this._$.first_column+1); }
-    | tk_menor tk_id ATTRIBUTE_LIST tk_bar tk_mayor { $$ = queryBuilder.nuevoHTML($2, $3, null, null, this._$.first_line, this._$.first_column+1); }
-;
-
-CONTENT_LL: CONTENT_LL CONTENT_TAG { $1.push($2); $$=$1; }
-        | CONTENT_TAG { $$=[$1]; }
-        | HTML
-;
-
-CONTENT_TAG: tk_id { $$ = queryBuilder.nuevoContenido($1, this._$.first_line, this._$.first_column+1); } // era tk_content
-            | tk_labre XPATH tk_lcierra { $$ = queryBuilder.nuevaInyeccion($2, false, this._$.first_line, this._$.first_column+1); }
-            | tk_labre tk_data tk_ParA XPATH tk_ParC tk_lcierra { $$ = queryBuilder.nuevaInyeccion($4, true, this._$.first_line, this._$.first_column+1); }
-;
-
-ATTRIBUTE_LIST: tk_id tk_equal STRING { $$=$3; }
-                | tk_id tk_equal CONTENT_LL { $$=$3; }
-                | { $$=null; }
-;
 
 XPATH_U: XPATH_U tk_line XPATH  { $1.push($3); $$=$1;
 								 prod_1 = grammar_stack.pop();
@@ -316,7 +309,7 @@ XPATH: XPATH QUERY  { $1.push($2); $$=$1;
 					  prod_1 = grammar_stack.pop();
 					  prod_2 = grammar_stack.pop();
 			 		  grammar_stack.push({'XPATH -> XPATH QUERY {S1.push(S2); SS = S1;}': [prod_2, prod_1]}); }
-	| QUERY  { $$=[$1];
+	| DOC QUERY  { $$=[$2];
 			   prod_1 = grammar_stack.pop();
 			   grammar_stack.push({'XPATH -> QUERY {SS = [S1]}': [prod_1]}); }
 ;
@@ -396,9 +389,9 @@ E:	E tk_menorigual E { $$=builder.newOperation($1, $3, Tipos.RELACIONAL_MENORIGU
 	| tk_menos E %prec umenos { $$=builder.newOperation(builder.newValue(0, Tipos.NUMBER, @1.first_line, @1.first_column+1), $2, Tipos.OPERACION_RESTA, this.$.first_line, this.$.first_column+1); 
 								prod_1 = grammar_stack.pop();
 						  		grammar_stack.push({'E -: tk_menos E': ['token: tk_menos\t Lexema: ' + $1, prod_1]});}
-	// | tk_mas E %prec umas { $$=builder.newOperation(builder.newValue(0, Tipos.NUMBER, @1.first_line, @1.first_column+1), $2, Tipos.OPERACION_SUMA, this.$.first_line, this.$.first_column+1); 
-	// 							prod_1 = grammar_stack.pop();
-	// 					  		grammar_stack.push({'E -: tk_mas E': ['token: tk_mas\t Lexema: ' + $1, prod_1]});}
+	| tk_mas E %prec umas { $$=builder.newOperation(builder.newValue(0, Tipos.NUMBER, @1.first_line, @1.first_column+1), $2, Tipos.OPERACION_SUMA, this.$.first_line, this.$.first_column+1); 
+								prod_1 = grammar_stack.pop();
+						  		grammar_stack.push({'E -: tk_mas E': ['token: tk_mas\t Lexema: ' + $1, prod_1]});}
 	| tk_ParA E tk_ParC { $$=$2;
 						  prod_1 = grammar_stack.pop();
 						  grammar_stack.push({'E -> tk_ParA E tk_ParC {SS=S2}': ['token: tk_ParA\t Lexema: ' + $1, prod_1, 'token: tk_ParC\t Lexema: ' + $3]}); }
@@ -436,11 +429,9 @@ EXP_PR: FUNC CORCHETP { $$=builder.newExpression($1, $2, this._$.first_line, thi
 
 PRIMITIVO: tk_id { $$=builder.newNodename($1, this._$.first_line, this._$.first_column+1);
 				   grammar_stack.push({'PRIMITIVO -> tk_id {SS=builder.newNodename(Param)}':['token: tk_text\t Lexema: ' + $1]}); }
-        // | VARIABLE	{ $$=builder.newAxis(builder.newCurrent($1.variable, this._$.first_line, this._$.first_column+1), this._$.first_line, this._$.first_column+1); }
         | STRING { $$ = $1; }
 		| num { $$=builder.newValue(Number($1), Tipos.NUMBER, this._$.first_line, this._$.first_column+1);
 				grammar_stack.push({'PRIMITIVO -> num {SS=builder.newValue(Param)}':['token: num\t Lexema: ' + $1]}); }
-		// | tk_asterisco { $$=builder.newValue($1, Tipos.ASTERISCO, this._$.first_line, this._$.first_column+1); grammar_stack.push({'PRIMITIVO -> tk_asterisco {SS=builder.newValue(Param)}':['token: tk_asterisco\t Lexema: ' + $1]}); }
 		| tk_punto { $$=builder.newCurrent($1, this._$.first_line, this._$.first_column+1); 
 					 grammar_stack.push({'PRIMITIVO -> tk_punto {SS=builder.newCurrent(Param)}':['token: tk_punto\t Lexema: ' + $1]}); }
 		| tk_2puntos { $$=builder.newParent($1, this._$.first_line, this._$.first_column+1);
@@ -449,7 +440,6 @@ PRIMITIVO: tk_id { $$=builder.newNodename($1, this._$.first_line, this._$.first_
 							grammar_stack.push({'PRIMITIVO -> tk_arroba tk_id {SS=builder.newAttribute(Param)}':['token: tk_arroba\t Lexema: ' + $1, 'token: tk_id\t Lexema: ' + $2]}); }
 		| tk_arroba tk_asterisco { $$=builder.newAttribute($2, this._$.first_line, this._$.first_column+1); 
 							 grammar_stack.push({'PRIMITIVO -> tk_arroba tk_asterisco {SS=builder.newAttribute(Param)}':['token: tk_arroba\t Lexema: ' + $1, 'token: tk_asterisco\t Lexema: ' + $2]});}
-        // | tk_content
 ;
 
 STRING: tk_string_d { $$=builder.newValue($1, Tipos.STRING, this._$.first_line, this._$.first_column+1);
@@ -520,3 +510,27 @@ RESERVED_TYPES: tk_string { $$ = Tipos.TIPADO_STRING; }
 		| hexBinary { $$ = Tipos.TIPADO_STRING; }
 		| tk_uri { $$ = Tipos.TIPADO_STRING; }
 ;
+
+
+
+/******************************************************************* Ya no se implementó HTML, se puede ignorar *******************************************************************/
+HTML: tk_menor tk_id ATTRIBUTE_LIST tk_mayor CONTENT_LL tk_menor tk_bar tk_id tk_mayor { $$ = queryBuilder.nuevoHTML($2, $3, $5, $8, this._$.first_line, this._$.first_column+1); }
+    | tk_menor tk_id ATTRIBUTE_LIST tk_mayor tk_menor tk_bar tk_id tk_mayor { $$ = queryBuilder.nuevoHTML($2, $3, null, $7, this._$.first_line, this._$.first_column+1); }
+    | tk_menor tk_id ATTRIBUTE_LIST tk_bar tk_mayor { $$ = queryBuilder.nuevoHTML($2, $3, null, null, this._$.first_line, this._$.first_column+1); }
+;
+
+CONTENT_LL: CONTENT_LL CONTENT_TAG { $1.push($2); $$=$1; }
+        | CONTENT_TAG { $$=[$1]; }
+        | HTML
+;
+
+CONTENT_TAG: tk_id { $$ = queryBuilder.nuevoContenido($1, this._$.first_line, this._$.first_column+1); } // era tk_content
+            | tk_labre XPATH tk_lcierra { $$ = queryBuilder.nuevaInyeccion($2, false, this._$.first_line, this._$.first_column+1); }
+            | tk_labre tk_data tk_ParA XPATH tk_ParC tk_lcierra { $$ = queryBuilder.nuevaInyeccion($4, true, this._$.first_line, this._$.first_column+1); }
+;
+
+ATTRIBUTE_LIST: tk_id tk_equal STRING { $$=$3; }
+                | tk_id tk_equal CONTENT_LL { $$=$3; }
+                | { $$=null; }
+;
+/*********************************************************************************************************************************************************************************/
