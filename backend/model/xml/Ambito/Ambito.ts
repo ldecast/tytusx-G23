@@ -10,15 +10,14 @@ export class Ambito {
     anterior: Ambito;
     tipo: string;
     tablaSimbolos: Array<Element>;
-    tablaVariables: Array<Variable>;
     contextFromVar?: Variable | null;
     tablaFunciones: Array<Funcion>;
+    tablaVariables?: Array<Variable>;
 
     constructor(_anterior: any, _tipo: string) {
         this.anterior = _anterior
         this.tipo = _tipo
         this.tablaSimbolos = [];
-        this.tablaVariables = [];
         this.tablaFunciones = [];
     }
 
@@ -26,36 +25,8 @@ export class Ambito {
         this.tablaSimbolos.push(_simbolo);
     }
 
-    addVariable(_variable: Variable) {
-        let exists = this.existeVariable(_variable.id);
-        if (exists !== -1) {
-            this.tablaVariables[exists] = _variable;
-        }
-        else {
-            this.tablaVariables.unshift(_variable);
-        }
-    }
-
     addFunction(_function: Funcion) {
         this.tablaFunciones.unshift(_function);
-    }
-
-    existeVariable(_id: string): number {
-        for (let i = 0; i < this.tablaVariables.length; i++) {
-            const variable = this.tablaVariables[i];
-            if (_id == variable.id && (variable.contexto || variable.valor))
-                return i;
-        }
-        return -1;
-    }
-
-    getVar(_id: string): Variable | null {
-        for (let i = 0; i < this.tablaVariables.length; i++) {
-            const variable = this.tablaVariables[i];
-            if (_id == variable.id && (variable.contexto || variable.valor))
-                return variable;
-        }
-        return null;
     }
 
     getFunction(_name: string): Funcion | null {
@@ -296,7 +267,7 @@ export class Ambito {
                 let symb = this.createSymbolFuncion(funcion, "global");
                 simbolos.push(symb);
             });
-            this.tablaVariables.forEach(variable => {
+            this.tablaVariables?.forEach(variable => {
                 let symb = this.createSymbolVariable(variable, "global");
                 simbolos.push(symb);
             });

@@ -85,7 +85,6 @@ function ExpresionQuery(_expresion: any, _ambito: Ambito, _contexto: Contexto, _
 
     else if (tipo === Tipos.LLAMADA_FUNCION) {
         const Exec = require("../Funciones/Exec");
-        // console.log(_expresion.parametros,5555555555)
         return Exec(_expresion, _ambito, _contexto, _id);
     }
 

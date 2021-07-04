@@ -1,5 +1,4 @@
 import { Ambito } from "../../../../model/xml/Ambito/Ambito";
-import { Variable } from "../../../../model/xml/Ambito/Variable";
 import { Tipos } from "../../../../model/xpath/Enum";
 import { Contexto } from "../../../Contexto";
 
@@ -26,30 +25,12 @@ function Aritmetica(_expresion: any, _ambito: Ambito, _contexto: Contexto, _id?:
 
 function init(_opIzq: any, _opDer: any, _ambito: Ambito, _tipo: Tipos, _contexto: Contexto, _id?: any) {
     const Expresion = require("../Expresion");
-    // console.log(_ambito.tablaVariables, 88888)
-    // let tmp = new Ambito(null, "tmp", _ambito.tablaFunciones, _ambito.tablaVariables);
-    // let tmp_c = new Contexto(_contexto, _ambito.tablaVariables);
-    // if (_tipo === Tipos.OPERACION_SUMA) {
-    //     console.log(_ambito.tablaVariables, 777777777)
-    //     console.log(_contexto.tablaValores, 9898989898)
-    // }
-
-    let a: Array<Variable> = [];
-    a = a.concat(_ambito.tablaVariables);
-    let tmp = new Contexto(_contexto, a);
-
     let op1 = Expresion(_opIzq, _ambito, _contexto, _id);
     if (op1 === null || op1.error) return op1;
     let op2 = Expresion(_opDer, _ambito, _contexto, _id);
     if (op2 === null || op2.error) return op2;
-    if (_tipo === Tipos.OPERACION_SUMA) {
-        console.log(_ambito.tablaVariables, 777777777)
-        console.log(_contexto.tablaValores, 9898989898)
-        // console.log(_opIzq.parametros[0].opIzq, 4444444444444, _opDer.parametros[0].opIzq)
-        console.log(op1, 4444444444444, op2)
-    }
-
     let tipo: Tipos = _tipo;
+
     if (op1.tipo === Tipos.FUNCION_LAST && op2.tipo === Tipos.NUMBER) {
         op1 = _contexto.getLength();
         op2 = Number(op2.valor);
@@ -86,7 +67,6 @@ function suma(_opIzq: any, _opDer: any) {
 }
 
 function resta(_opIzq: number, _opDer: number) {
-    // console.log(_opIzq, 22222, _opDer)
     return {
         valor: (_opIzq - _opDer),
         tipo: Tipos.NUMBER,

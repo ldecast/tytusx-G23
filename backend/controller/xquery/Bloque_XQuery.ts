@@ -15,6 +15,7 @@ import Exec from "./Funciones/Exec";
 
 let reset: Contexto;
 let output: Array<Contexto> = [];
+let _str: Array<string>;
 
 function Bloque(_instruccion: Array<any>, _ambito: Ambito, _retorno: Contexto, id?: any): any {
     output = [];
@@ -23,10 +24,7 @@ function Bloque(_instruccion: Array<any>, _ambito: Ambito, _retorno: Contexto, i
     let i;
     for (i = 0; i < _instruccion.length; i++) {
         const instr = _instruccion[i];
-        if (instr.tipo === Tipos.FOR_LOOP) {
-            return ForLoop(instr, _ambito, _retorno);
-        }
-        else if (instr.tipo === Tipos.SELECT_FROM_ROOT || instr.tipo === Tipos.EXPRESION) {
+        if (instr.tipo === Tipos.SELECT_FROM_ROOT || instr.tipo === Tipos.EXPRESION) {
             tmp = Eje(instr.expresion, _ambito, _retorno, id);
         }
         else if (instr.tipo === Tipos.SELECT_FROM_CURRENT) {
@@ -34,9 +32,6 @@ function Bloque(_instruccion: Array<any>, _ambito: Ambito, _retorno: Contexto, i
         }
         else if (instr.tipo === Tipos.SELECT_AXIS) {
             tmp = Axis.SA(instr, _ambito, _retorno, id);
-        }
-        else if (instr.tipo === Tipos.IF_THEN_ELSE) {
-            tmp = IfConditional(instr.condicionIf, instr.instruccionesThen, instr.instruccionesElse, _ambito, _retorno);
         }
         else if (instr.tipo === Tipos.LET_CLAUSE) {
             LetClause(instr.id, instr.valor, _ambito, _retorno, id);
@@ -46,8 +41,14 @@ function Bloque(_instruccion: Array<any>, _ambito: Ambito, _retorno: Contexto, i
             NewFunction(instr, _ambito, _retorno);
             continue;
         }
+        else if (instr.tipo === Tipos.FOR_LOOP) {
+            return ForLoop(instr, _ambito, _retorno);
+        }
         else if (instr.tipo === Tipos.LLAMADA_FUNCION) {
             return Exec(instr, _ambito, _retorno);
+        }
+        else if (instr.tipo === Tipos.IF_THEN_ELSE) {
+            return IfConditional(instr.condicionIf, instr.instruccionesThen, instr.instruccionesElse, _ambito, _retorno);
         }
         else if (instr.tipo === Tipos.RETURN_STATEMENT) {
             return returnQuery(instr.expresion, _ambito, [_retorno]);
@@ -63,12 +64,14 @@ function Bloque(_instruccion: Array<any>, _ambito: Ambito, _retorno: Contexto, i
         output.push(_retorno);
 }
 
-function getOutput(_instruccion: Array<any>, _ambito: Ambito, _retorno: Contexto) {
+function getOutput(_instruccion: Array<any>, _ambito: Ambito, _retorno: Contexto, _string: Array<string>) {
+    _str = _string;
     let _bloque = Bloque(_instruccion, _ambito, _retorno);
+    /* let cadena = (_str.length > 0) ? _str.join('\n') : writeOutput(); */
     let cadena = (_bloque && _bloque.valor !== undefined) ? (_bloque.valor) : writeOutput();
     let codigo3d = ""; // Agregar función que devuelva código tres direcciones
     console.log(cadena);
-    return { cadena: cadena, codigo3d: codigo3d };
+    return { cadena: String(cadena), codigo3d: codigo3d };
 }
 
 function getIterators(_instruccion: Array<any>, _ambito: Ambito, _retorno: Contexto, _id?: any): any {
