@@ -1,6 +1,11 @@
 import {Environment} from "./Environment";
 import {Element} from "../model/xml/Element";
 
+
+enum FOR_TYPE{
+    SELECT_FROM_CURRENT, SELECT_FROM_ROOT,EXPRESION
+}
+
 export class XQueryTranslator {
     private str: string = "";
     private debug: boolean = false;
@@ -13,6 +18,9 @@ export class XQueryTranslator {
     private funNumber: number = -1;
     public  HP:number;
     public SP:number;
+    private functions_Arr: string[] = [];
+
+
     constructor( public ast:object[], public root: Element) {
         this.HP = Element.heap_index;
         this.SP = Element.stack_index;
@@ -20,7 +28,25 @@ export class XQueryTranslator {
         console.log(this.SP)
     }
 
+
     public translate(){
+        let xquery = this.ast['xquery'];
+        let xpath = this.ast['xpath'];
+       if(xquery != undefined){
+           this.ast = this.ast['xquery'];
+           this.xQueryTranslate();
+       }else if(xpath != undefined){
+           this.ast = this.ast['xpath'];
+           this.xPathTranslate();
+       }else {
+           console.log("Error 8")
+       }
+
+
+    }
+
+
+    private xQueryTranslate(){
         for(let i = 0; i < this.ast.length; i++){
             switch (this.ast[i]['tipo']) {
                 case 'FOR_LOOP':
@@ -37,6 +63,15 @@ export class XQueryTranslator {
             }
         }
     }
+    private xPathTranslate(){
+
+    }
+
+
+
+
+
+
 
     private  FOR_LOOP(obj: object, env: Environment): void{
         if(this.debug){console.log("FOR_LOOP" + (this.show_obj? "\n"+obj:""));}
@@ -71,31 +106,33 @@ export class XQueryTranslator {
     }
 
     private DECLARACION(obj, env: Environment){
-        console.log(obj)
-
-        console.log("\n************")
+        console.log(obj);
         if(this.debug){console.log('DECLARATION' + (this.show_obj? "\n"+obj:""));}
         if(obj['variable'] !=null){
             env.addVariable(obj['variable']['variable']);
         }else {
             console.log("ERROR 4");
         }
-        let length = obj['iterators'].length;
-        for (let i: number = 0; i < obj['iterators'].length; i++){
+        //let length = obj['iterators'].length;
+        let function_name = null;
+        for (let i: number = obj['iterators'].length - 1; i >= 0; i--){
             switch (obj['iterators'][i]['tipo']){
                 case 'SELECT_FROM_CURRENT':
                     //console.log('SELECT_FROM_CURRENT');
                     //console.log(obj['iterators'][i]);
-                    this.EXPRESION(obj['iterators'][i]['expresion'], (i ==0), (i == length -1));
+                    function_name = this.EXPRESION(obj['iterators'][i]['expresion'], (i ==0), function_name, FOR_TYPE.SELECT_FROM_CURRENT);
                     break;
                 case 'SELECT_FROM_ROOT':
                     //console.log('SELECT_FROM_ROOT');
                     //console.log(obj['iterators'][i]);
-                    this.EXPRESION(obj['iterators'][i]['expresion'], (i ==0), (i == length -1));
+                    function_name = this.EXPRESION(obj['iterators'][i]['expresion'], (i ==0),  function_name, FOR_TYPE.SELECT_FROM_ROOT);
                     break;
                 case 'EXPRESION':
                     console.log('EXPRESION');
-                    this.EXPRESION(obj['iterators'][i], (i ==0), (i == length -1));
+                    function_name = this.EXPRESION(obj['iterators'][i], (i ==0), function_name, FOR_TYPE.EXPRESION);
+                    break;
+                case 'VALORES':
+                    console.log('VALORES');
                     break;
                 default:
                     console.log(obj)
@@ -103,26 +140,60 @@ export class XQueryTranslator {
                     break;
             }
         }
+
+        //TODO: al final el ultimo function name es el correcto
     }
     //fromStack if its the first iteration will look on stack
-    private EXPRESION(obj: object, fromStack: boolean, lastOne: boolean){
-        let predicate: Object = obj['predicate'];
-        if (predicate == null){}
+    private EXPRESION(obj: object, fromStack: boolean, next_fun: string, type: FOR_TYPE): string{
         console.log(obj)
-        this.expresion_(obj['expresion'], fromStack, (predicate == null?null: this.predicate(obj['predicate']) ), lastOne);
+        switch (obj['tipo']){
+            case 'EXPRESION':
+                let func_return: string = null;
+                let predicate: Object = obj['predicate'];
+                if (predicate == null){}
+                func_return = this.expresion_(obj['expresion'], fromStack, (predicate == null?null: this.predicate(obj['predicate']) ), next_fun, type);
+                console.log("***************************")
+                return func_return;
+            case 'SELECT_AXIS':
+                //this.func_return();
+                console.log("SELECT_AXIS")
+                break;
+
+        }
+        return "";
 
     }
 
+    private  axis_(obj: object, fromStack: boolean, predicate_f: string, next_fun: string, type: FOR_TYPE): string{
 
 
-    private expresion_(obj: object, fromRoot: boolean, predicate_f: string, lastOne: boolean){
+        return "";
+    }
 
+    private expresion_(obj: object, fromStack: boolean, predicate_f: string, next_fun: string, type: FOR_TYPE): string{
+        console.log(obj);
+        let func_return: string = null;
         switch (obj['tipo']) {
             case 'NODENAME':
                 //console.log(obj);
                 //console.log(obj['nodename']);
-                if (fromRoot){
-                    this.setSearchMethodFromStack(obj['nodename'], predicate_f, lastOne);
+                if (fromStack){
+                    if (type == FOR_TYPE.SELECT_FROM_CURRENT || type == FOR_TYPE.EXPRESION){
+                        func_return = this.setSearchMethodFromStack(obj['nodename'], predicate_f, next_fun);
+                    }else if(type == FOR_TYPE.SELECT_FROM_ROOT){
+                        func_return = this.setSearchMethodFromFirstStack(obj['nodename'], predicate_f, next_fun);
+                    }else{
+                        console.log("Error 9");
+                    }
+
+                }else{
+                    if (type == FOR_TYPE.SELECT_FROM_CURRENT){
+                        func_return = this.setSearchDoubleBar(obj['nodename'], predicate_f, next_fun);
+                    }else if(type == FOR_TYPE.SELECT_FROM_ROOT){
+                        func_return = this.setSearchOneBar(obj['nodename'], predicate_f, next_fun);
+                    }else{
+
+                    }
                 }
                 /*buscar en el stack todos los que coincidan con nodeName obj['nodename']
                 // push obj['nodename'] en un the heap while increasing heap counter
@@ -131,16 +202,23 @@ export class XQueryTranslator {
                 // if returns true save the element returned on the heap keeping track of the first one
                 // to keep it like index*/
                 break;
+            case 'SELECT_PARENT':
+                func_return = this.setSelectParent(null, predicate_f, next_fun);
+                break
             case 'SELECT_CURRENT':
+                if(obj['expresion']=='.'){
+                    //DO NOTHING
+                }
                 //si es from root tambien usar
                 console.log("Error 5")
                 //console.log(obj);
                 //console.log(obj['expresion']);
                 break;
             default:
-                console.log("Error 4");
+                console.log("Error 6");
                 break;
         }
+        return func_return;
 
     }
 
@@ -152,10 +230,445 @@ export class XQueryTranslator {
         return function_name;
     }
 
-    private setSearchMethodFromStack(node_name: string, predicate_f: string, lastOne: boolean){
 
+    private setSelectParent(node_name?: string, predicate_f?: string, next_fun?: string):string{
+        let function_name: string = this.getNextFun();
+        this.functions_Arr.push(function_name);
+        this.header = this.header + `
+void ${function_name}();
+`;
+
+        this.code = this.code + `
+void ${function_name}(){
+    int t0 = SF - 1;
+    int pointers_list = STACK_FUNC[t0];//List in HEAP to pointers on STACK
+    int return_list = HP;
+    STACK_FUNC[SF] = return_list;
+    SF = SF + 1;
+    int node = HEAP[pointers_list];
+    label_x2:
+    if(node == 0){goto label_x1;}
+    if(node == -1){goto label_x0;}
+    int t1 = node + 4;
+    int father = STACK[t1];
+    STACK_FUNC[SF] = father;
+    SF = SF + 1;
+    addItemToList();
+    SF = SF - 1;
+    STACK_FUNC[SF] = 0;
+    label_x0:
+    pointers_list++;
+    node = HEAP[pointers_list];
+    goto label_x2;
+    label_x1:
+    HEAP[(int) HP] = 0;
+    HP = HP + 1;
+    SF = SF - 1;
+    STACK_FUNC[SF] = 0;
+    STACK_FUNC[SF] = return_list;
+}
+`;
+
+
+        return function_name;
+    }
+
+    private setSearchOneBar(node_name: string, predicate_f: string, next_fun: string):string{
+        let function_name: string = this.getNextFun();
+        this.functions_Arr.push(function_name);
+        let var1 = this.getNextVar();
+        let var2 = this.getNextVar();
+        let var3 = this.getNextVar();
+        let var4 = this.getNextVar();
+        let var5 = this.getNextVar();
+        let var6 = this.getNextVar();
+        let var15 = this.getNextVar();
+
+
+
+        let tag6: string = this.getNextTag();
+        let tag8: string = this.getNextTag();
+        let tag9: string = this.getNextTag();
+        let tag10: string = this.getNextTag();
+        let tag11: string = this.getNextTag();
+        let tag12: string = this.getNextTag();
+
+        this.header = this.header + `
+void ${function_name}();
+`;
+        this.code = this.code + `
+void ${function_name}(){
+    
+    
+    int ${var1} = SF - 1;
+    int ${var15} = STACK_FUNC[${var1}];//List in HEAP to pointers on STACK
+    
+    STACK_FUNC[SF] = HP; //Pointer to Node value
+    SF = SF + 1;
+`;
+
+
+
+        for(let i = 0; i < node_name.length; i++){
+            this.code = this.code + `   HEAP[(int)HP] = ${node_name[i].charCodeAt(0)}; //STR_val = ${node_name[i]}
+    HP = HP + 1;
+`;
+        }
+
+
+        this.code = this.code + `    HEAP[(int)HP] = 0;
+    HP = HP + 1;
+
+    int ${var4} = HP; // sets the start of the result list
+    HEAP[(int) HP] = 0; // If no Nodes found then the list will start with 0
+
+    int ${var3} = ${var15};
+    int ${var2} = HEAP[${var3}];
+    
+    ${tag12}://inicio del primer for
+    if(${var2} == 0){goto ${tag8};}//exit extern for
+    if(${var2} == -1){goto ${tag11};}
+    ${var2} = ${var2} + 3; //index to children of first node in HEAP    //${var2} = 4
+    int tag_child_index = STACK[${var2}];
+    if(tag_child_index == -1){goto ${tag11};}
+    int child = HEAP[tag_child_index];
+
+
+    ${tag10}:
+    if(child == 0){goto ${tag9};}
+
+    int ${var5} = STACK[child];
+    STACK_FUNC[SF] = ${var5};
+    SF = SF + 1;
+    compareTwoStrings();
+    int ${var6} = (int) STACK_FUNC[SF];
+    if(${var6} != 1){goto ${tag6};}
+    HEAP[(int)HP] = child;
+    HP = HP + 1;
+    ${tag6}:
+    STACK_FUNC[SF] = 0;
+    SF = SF - 1;
+    STACK_FUNC[SF] = 0;
+    tag_child_index = tag_child_index + 1;
+    child = HEAP[tag_child_index];
+    goto ${tag10};
+    ${tag9}:
+
+
+    ${tag11}: // Next iteration extern for / Exit inner for
+    ${var3} = ${var3} + 1;
+    ${var2} = HEAP[${var3}];
+    goto ${tag12}; //Repeat extern for
+    ${tag8}://Exit extern for
+    HEAP[(int) HP] = 0;
+    HP = HP + 1;
+    STACK_FUNC[SF] = 0;
+    SF = SF - 1;
+    STACK_FUNC[SF] = 0;
+    
+    
+    STACK_FUNC[SF] = ${var4};// merged_list
+    
+}
+    
+    
+    
+    `;
+
+
+
+
+        return function_name;
+    }
+
+    private setSearchDoubleBar(node_name: string, predicate_f: string, next_fun: string):string{
+        let function_name: string = this.getNextFun();
+        this.functions_Arr.push(function_name);
+        let var1 = this.getNextVar();
+        let var2 = this.getNextVar();
+        let var3 = this.getNextVar();
+        let var4 = this.getNextVar();
+        let var5 = this.getNextVar();
+        let var6 = this.getNextVar();
+        let var7 = this.getNextVar();
+        let var8 = this.getNextVar();
+        let var9 = this.getNextVar();
+        let var10 = this.getNextVar();
+        let var11 = this.getNextVar();
+        let var12 = this.getNextVar();
+        let var13 = this.getNextVar();
+        let var14 = this.getNextVar();
+        let var15 = this.getNextVar();
+
+
+        let tag1: string = this.getNextTag();
+        let tag2: string = this.getNextTag();
+        let tag3: string = this.getNextTag();
+        let tag4: string = this.getNextTag();
+        let tag5: string = this.getNextTag();
+        let tag6: string = this.getNextTag();
+        let tag7: string = this.getNextTag();
+        let tag8: string = this.getNextTag();
+        let tag9: string = this.getNextTag();
+        let tag10: string = this.getNextTag();
+        let tag11: string = this.getNextTag();
+        let tag12: string = this.getNextTag();
+        let tag13: string = this.getNextTag();
+        let tag14: string = this.getNextTag();
+        let tag15: string = this.getNextTag();
+        this.header = this.header + `void ${function_name}();
+`;
+        this.code = this.code + `
+void ${function_name}(){
+    
+    
+    int ${var1} = SF - 1;
+    int ${var15} = STACK_FUNC[${var1}];//List in HEAP to pointers on STACK
+    
+    STACK_FUNC[SF] = HP; //Pointer to Node value
+    SF = SF + 1;
+`;
+
+
+
+        for(let i = 0; i < node_name.length; i++){
+            this.code = this.code + `   HEAP[(int)HP] = ${node_name[i].charCodeAt(0)}; //STR_val = ${node_name[i]}
+    HP = HP + 1;
+`;
+        }
+
+
+this.code = this.code + `    HEAP[(int)HP] = 0;
+    HP = HP + 1;
+
+    int ${var4} = HP; // sets the start of the result list
+    HEAP[(int) HP] = 0; // If no Nodes found then the list will start with 0
+
+    int ${var3} = ${var15};
+    int ${var2} = HEAP[${var3}];
+    
+    ${tag12}://inicio del primer for
+    if(${var2} == 0){goto ${tag8};}//exit extern for
+    if(${var2} == -1){goto ${tag11};}
+    ${var2} = ${var2} + 3; //index to children of first node in HEAP    //${var2} = 4
+    int tag_child_index = STACK[${var2}];
+    if(tag_child_index == -1){goto ${tag11};}
+    int child = HEAP[tag_child_index];
+
+
+    ${tag10}:
+    if(child == 0){goto ${tag9};}
+
+    int ${var5} = STACK[child];
+    STACK_FUNC[SF] = ${var5};
+    SF = SF + 1;
+    compareTwoStrings();
+    int ${var6} = (int) STACK_FUNC[SF];
+    if(${var6} != 1){goto ${tag6};}
+    HEAP[(int)HP] = child;
+    HP = HP + 1;
+    ${tag6}:
+    STACK_FUNC[SF] = 0;
+    SF = SF - 1;
+    STACK_FUNC[SF] = 0;
+    tag_child_index = tag_child_index + 1;
+    child = HEAP[tag_child_index];
+    goto ${tag10};
+    ${tag9}:
+
+
+    ${tag11}: // Next iteration extern for / Exit inner for
+    ${var3} = ${var3} + 1;
+    ${var2} = HEAP[${var3}];
+    goto ${tag12}; //Repeat extern for
+    ${tag8}://Exit extern for
+    HEAP[(int) HP] = 0;
+    HP = HP + 1;
+    STACK_FUNC[SF] = 0;
+    SF = SF - 1;
+    STACK_FUNC[SF] = 0;
+
+
+    /**************************** End of first list*************/
+    //La primera lista esta en ${var4};
+    //Crear una segunda lista vacia del tamano de los hijos de ${var15};
+    /********************Reserve spaces in HEAP for the possible list of its children********************************/
+
+    int index_of_lists = HP;
+    int ${var13} = ${var15};
+    //int copy_of_actual_index = actual_index;
+    ${tag5}:
+    int ${var7} = HEAP[${var13}];
+    if(${var7} == 0){goto ${tag4};}
+    int ${var8} = HEAP[${var13}];
+    int index_to_children_ = ${var8} + 3; //Children pointer
+    int ${var9} = STACK[index_to_children_];
+    if(${var9} == -1){goto ${tag3};}
+    int children_ =  STACK[index_to_children_];// indice al heap of children
+    HP = HP + 1;
+    ${tag3}:
+    ${var13} = ${var13} + 1;
+    goto ${tag5};
+    ${tag4}:
+    HEAP[(int)HP] = 0;
+    HP = HP + 1;
+    /********************Reserve spaces in HEAP for the possible list of its children********************************/
+
+
+    /*******************************Set up the list to return**********************************/
+    int ${var14} = ${var15};
+    int copy_of_list_index = index_of_lists;
+    ${tag2}:
+    int ${var10} = HEAP[${var14}];
+    if(${var10} == 0){goto ${tag1};}
+    int ${var11} = HEAP[${var14}];
+    int index_to_children = ${var11} + 3; //Pointer to Children of element in HEAP
+    int index_to_children_heap = STACK[index_to_children];
+
+    if( index_to_children_heap == -1){goto ${tag7};}
+    int ${var12} = STACK[index_to_children];
+    STACK_FUNC[SF] = ${var12};//HEAP[children];
+    SF = SF + 1;
+    f0();
+    int return_list_pointer = (int) STACK_FUNC[SF];
+    STACK_FUNC[SF] = 0;
+    SF = SF - 1;
+    STACK_FUNC[SF] = 0;
+    HEAP[copy_of_list_index] = return_list_pointer;
+    copy_of_list_index = copy_of_list_index + 1;
+    ${tag7}:
+    ${var14} = ${var14} + 1;
+    goto ${tag2};
+    ${tag1}:
+    STACK_FUNC[SF] = index_of_lists;
+    SF = SF + 1;
+    STACK_FUNC[SF] = ${var4};
+    SF = SF + 1;
+    mergeLists();
+    int merged_list = STACK_FUNC[SF];
+    //pop result
+    STACK_FUNC[SF] = 0;
+    SF = SF - 1;
+    STACK_FUNC[SF] = 0;
+    SF = SF - 1;
+    STACK_FUNC[SF] = 0;
+    STACK_FUNC[SF] = merged_list;// merged_list
+    
+    }
+    `;
+
+        return function_name;
+    }
+
+    //Look only index 1
+    private setSearchMethodFromFirstStack(node_name: string, predicate_f: string, next_fun: string): string{
+        console.log("setSearchMethodFromFirstStack");
         let main_var = this.getNextVar();
+        let function_name: string = this.getNextFun();
+        let var1 = this.getNextVar();
+        let var2 = this.getNextVar();
 
+
+
+        let label1 = this.getNextTag();
+        this.header = this.header + `void ${function_name}();
+`;
+        this.code = this.code + `
+        /*This is the code to pull data from the stack, searches for ONLY FIRST tag ${node_name} // setSearchMethodFromFirstStack*/
+void ${function_name}(){
+    STACK_FUNC[SF] = HP;
+    SF = SF + 1;
+`;
+        for(let i = 0; i < node_name.length; i++){
+            this.code = this.code + `   HEAP[(int)HP] = ${node_name[i].charCodeAt(0)}; //STR_val = ${node_name[i]}
+    HP = HP + 1;
+`;
+        }
+        this.code = this.code + `   HEAP[(int)HP] = 0;
+    HP = HP + 1;
+    int ${main_var} = HP; // sets the start of the result list
+    HEAP[(int) HP] = 0; // If no Nodes found then the list will start with 0
+    int ${var1} = 1; // This is pulling the root which is in the 1st pos of stack
+    STACK_FUNC[SF] = STACK[${var1}];
+    SF = SF + 1;
+    compareTwoStrings();
+    int ${var2} = (int) STACK_FUNC[SF];
+    if(${var2} != 1){goto ${label1};}
+    HEAP[(int)HP] = ${var1};
+    HP = HP + 1;
+    ${label1}:
+    STACK_FUNC[SF] = 0;
+    SF = SF -1;
+    STACK_FUNC[SF] = 0;
+    
+    SF = SF -1;
+    STACK_FUNC[SF] = 0;
+    HEAP[(int)HP] = 0;
+    HP = HP + 1;
+    //TODO Manage Predicate
+    STACK_FUNC[SF] = ${main_var};
+    SF = SF + 1;
+`;
+
+        this.code = this.code + `   ${(predicate_f==null?"":predicate_f + '();')}
+    SF = SF - 1;
+    STACK_FUNC[SF] = 0;
+    //TODO resolver si existe predicado obtener su valor
+    //Manage next function to call
+    int result = ${main_var};
+    //Manejar atributos
+    //Manejar Axis
+`;
+
+
+
+
+        for(let i = this.functions_Arr.length -1; i>=0; i--){
+            //functions_Arr
+            this.code = this.code + `STACK_FUNC[SF] = ${(i == this.functions_Arr.length -1 ? main_var:"result")};
+`;
+            this.code = this.code +`    SF = SF + 1;
+    ${this.functions_Arr[i]}();
+    result = STACK_FUNC[SF];
+    SF = SF - 1;
+    STACK_FUNC[SF] = 0;
+    
+`;
+        }
+
+
+
+        this.code = this.code + ` /*STACK_FUNC[SF] = ${main_var};
+    SF = SF + 1;    
+    ${next_fun}();
+    int result = STACK_FUNC[SF];
+    SF = SF - 1;
+    STACK_FUNC[SF] = 0;*/
+`;
+
+
+
+
+        this.code = this.code + `
+    //TODELETE
+    int counter = 0;
+    while(HEAP[result] != 0){
+        print_child_by_index(HEAP[result]);
+        result++;
+        counter ++;
+    }
+
+    printf("Total: %d", SF);
+}    
+`;
+        return function_name;
+    }
+
+    //Look for all nodes
+    private setSearchMethodFromStack(node_name: string, predicate_f: string, next_fun: string): string{
+        console.log("setSearchMethodFromStack")
+        let main_var = this.getNextVar();
+        let function_name: string = this.getNextFun();
         let var1 = this.getNextVar();
         let var2 = this.getNextVar();
         let var3 = this.getNextVar();
@@ -168,21 +681,22 @@ export class XQueryTranslator {
         this.header = this.header + `void ${function_name}();
 `;
         this.code = this.code + `
-        /*This is the code to pull data from the stack, searches for tag ${node_name}*/
+        /*This is the code to pull data from the stack, searches for tag ${node_name} // setSearchMethodFromStack*/
 void ${function_name}(){
     STACK_FUNC[SF] = HP;
     SF = SF + 1;
 `;
 
         for(let i = 0; i < node_name.length; i++){
-            this.code = this.code + `   HEAP[(int)HP] = '${node_name[i]}';
+            this.code = this.code + `   HEAP[(int)HP] = ${node_name[i].charCodeAt(0)}; //STR_val = ${node_name[i]}
     HP = HP + 1;
 `;
         }
-        this.code = this.code + `   HEAP[(int)HP] = '\\0';
+        this.code = this.code + `   HEAP[(int)HP] = 0;
     HP = HP + 1;
-    int ${main_var} = HP;
-    int ${var1} = 1;
+    int ${main_var} = HP; // sets the start of the result list
+    HEAP[(int) HP] = 0; // If no Nodes found then the list will start with 0
+    int ${var1} = 1; // This is pulling the root which is in the 1st pos of stack
     STACK_FUNC[SF] = STACK[${var1}];
     SF = SF + 1;
     compareTwoStrings();
@@ -195,7 +709,7 @@ void ${function_name}(){
     SF = SF -1;
     STACK_FUNC[SF] = 0;
  
-    ${var1} = 5;
+    ${var1} = 6;
     ${label2}:
     ;
     if(STACK[${var1}] == 0){goto ${label3};}
@@ -210,29 +724,85 @@ void ${function_name}(){
     STACK_FUNC[SF] = 0;
     SF = SF -1;
     STACK_FUNC[SF] = 0;
-    ${var1} = ${var1} + 4;
+    ${var1} = ${var1} + 5;
     goto ${label2};
     ${label3}:
     SF = SF -1;
     STACK_FUNC[SF] = 0;;
     HEAP[(int)HP] = 0;
-    HP = HP + 1;    
+    HP = HP + 1;
+    //Manage Predicate
+    STACK_FUNC[SF] = ${main_var};
+    SF = SF + 1;    
 `;
+
         this.code = this.code + `   ${(predicate_f==null?"":predicate_f + '();')}
-}
+    SF = SF - 1;
+    STACK_FUNC[SF] = 0;
+    //TODO resolver si existe predicado obtener su valor
+    //Manage next function to call
+    int result = ${main_var};
+    //Manejar atributos
+    //Manejar Axis
 `;
 
+
+
+
+        for(let i = this.functions_Arr.length -1; i>=0; i--){
+            //functions_Arr
+            this.code = this.code + `STACK_FUNC[SF] = ${(i == this.functions_Arr.length -1 ? main_var:"result")};
+`;
+            this.code = this.code +`    SF = SF + 1;
+    ${this.functions_Arr[i]}();
+    result = STACK_FUNC[SF];
+    SF = SF - 1;
+    STACK_FUNC[SF] = 0;
+    
+`;
+        }
+
+    this.code = this.code + ` /*STACK_FUNC[SF] = ${main_var};
+    SF = SF + 1;    
+    ${next_fun}();
+    int result = STACK_FUNC[SF];
+    SF = SF - 1;
+    STACK_FUNC[SF] = 0;*/
+`;
+
+
+
+
+        this.code = this.code + `
+    //TODELETE
+    int counter = 0;
+    while(HEAP[result] != 0){
+        print_child_by_index(HEAP[result]);
+        result++;
+        counter ++;
     }
 
-    private setSearchNodeDoubleBar(node_name: string, predicate_f?: string){
+    printf("Total: %d", SF);
+}    
+`;
 
+
+
+
+    return function_name;
     }
 
-    private setSearchNodeOneBar(node_name: string, predicate_f?: string){
-
+    private setSearchNodeDoubleBar(node_name: string, predicate_f?: string, next_fun?: string): string{
+        let main_var = this.getNextVar();
+        return main_var;
     }
 
+    private setSearchNodeOneBar(node_name: string, predicate_f?: string, next_fun?: string): string{
+        let main_var = this.getNextVar();
+        return main_var;
+    }
 
+//TEST
 
 
     private setHelpFunctions(){
@@ -283,6 +853,21 @@ void ${function_name}(){
         let var45: string = this.getNextVar();
         let var46: string = this.getNextVar();
         let var47: string = this.getNextVar();
+        let var48: string = this.getNextVar();
+        let var49: string = this.getNextVar();
+        let var50: string = this.getNextVar();
+        let var51: string = this.getNextVar();
+        let var52: string = this.getNextVar();
+        let var53: string = this.getNextVar();
+        let var54: string = this.getNextVar();
+        let var55: string = this.getNextVar();
+        let var56: string = this.getNextVar();
+        let var57: string = this.getNextVar();
+        let var58: string = this.getNextVar();
+        let var59: string = this.getNextVar();
+        let var60: string = this.getNextVar();
+
+
 
 
 
@@ -312,9 +897,50 @@ void ${function_name}(){
         let tag23: string = this.getNextTag();
         let tag24: string = this.getNextTag();
         let tag25: string = this.getNextTag();
+        let tag26: string = this.getNextTag();
+        let tag27: string = this.getNextTag();
+        let tag28: string = this.getNextTag();
+        let tag29: string = this.getNextTag();
+        let tag30: string = this.getNextTag();
+        let tag31: string = this.getNextTag();
+        let tag32: string = this.getNextTag();
+        let tag33: string = this.getNextTag();
+        let tag34: string = this.getNextTag();
+        let tag35: string = this.getNextTag();
+        let tag36: string = this.getNextTag();
+        let tag37: string = this.getNextTag();
+        let tag38: string = this.getNextTag();
+        let tag39: string = this.getNextTag();
+        let tag40: string = this.getNextTag();
 
 
-        this.code = this.code + `void compareTwoStrings(){
+        this.code = this.code + `
+void isItemInList(){
+    int ${var55} = SF - 1;
+    int ${var56} = STACK_FUNC[${var55}];
+    ${var55} = SF - 2;
+    int ${var57} = STACK_FUNC[${var55}];
+    ${var55} = SF - 3;
+    int ${var58} = STACK_FUNC[${var55}];
+
+    ${tag37}:
+    if(${var58} >= ${var57}){goto ${tag38};}
+    int ${var59} = HEAP[${var58}];
+    if(${var59} == ${var56}){goto ${tag39};}
+    ${var58} = ${var58} + 1;
+    goto ${tag37};
+    ${tag38}:
+    //Item is not in list
+    HEAP[(int)HP] = ${var56};
+    HP = HP + 1;
+    return;
+    ${tag39}:
+    //The Item is already in list;
+    ;
+}
+        
+//0 are different 1 are equal
+void compareTwoStrings(){
     int ${var1} = SF -1;
     int ${var2} = (int )STACK_FUNC[${var1}];
     ${var1} = SF -2;
@@ -359,12 +985,14 @@ void print_tag(){
     int ${var11} = ${var10} + 1;
     int ${var12} = ${var10} + 2;
     int ${var13} = ${var10} + 3;
-
+    int parent = ${var10} + 4; //TODO: new
+    
+    
     int tag_name = STACK[${var10}];
     int tag_val = STACK[${var11}];
     int tag_attr_index = STACK[${var12}];
     int tag_child_index = STACK[${var13}];
-
+    int tag_parent = STACK[parent]; // TODO: new
 
     STACK_FUNC[SF] = tag_name;
     SF = SF + 1;
@@ -409,8 +1037,34 @@ void print_tag(){
     print_close_tag();
     SF = SF - 1;
     STACK_FUNC[SF] = 0;
+    
+    STACK_FUNC[SF] = tag_parent;
+    SF = SF + 1;
+    print_father();
+    SF = SF - 1;
+    STACK_FUNC[SF] = 0;
+
 
 }
+
+void print_father(){
+    int t1 = SF - 1;
+    int t2 = STACK_FUNC[t1];
+    int t3 = STACK[t2];
+
+    if(t3 == -1){ goto label_38; }
+    label_37:
+    int t60 = HEAP[t3];
+    if(t60 ==0){goto label_38;}
+    printf("%c", (char) t60);
+    t3 = t3 + 1;
+    goto label_37;
+   
+    label_38:
+    ;
+}
+
+
 
 void print_content(){
     int ${var15} = SF - 1;
@@ -588,6 +1242,99 @@ void print_close_tag(){
  
 
 
+
+//merge a list with a list of lists
+void mergeLists(){
+    int ${var48} = SF - 1;
+    int ${var51} = STACK_FUNC[${var48}];
+    ${var48} = SF - 2;
+    int ${var52} = STACK_FUNC[${var48}]; // index_of_lists
+    int ${var53} = HP;
+
+
+    ${tag26}:
+    if(HEAP[${var51}] == 0){goto ${tag28};}
+    if(HEAP[${var51}] == -1){goto ${tag27};}
+    int ${var49} = HEAP[${var51}];
+    HEAP[(int)HP] = ${var49};
+    HP = HP + 1;
+    ${tag27}:
+    ${var51} = ${var51} + 1;
+    goto ${tag26};
+    ${tag28}:
+    ;
+
+
+    ${tag29}:
+    if(HEAP[${var52}] == 0){goto ${tag34};}
+    if(HEAP[${var52}] == -1){goto ${tag33};}
+
+    /**********************Inner For**************************/
+    int ${var54} = HEAP[${var52}];
+    ${tag30}:
+    if(HEAP[${var54}] == 0){goto ${tag32};}
+    if(HEAP[${var54}] == -1){goto ${tag31};}
+    STACK_FUNC[SF] = ${var53}; // Beginning
+    SF = SF + 1;
+    int t2 = HP - 1;
+    STACK_FUNC[SF] = t2;// Ending
+    SF = SF + 1;
+    int ${var50} = HEAP[${var54}];
+    STACK_FUNC[SF] = ${var50}; // Value
+    SF = SF + 1;
+    isItemInList();
+    SF = SF - 1;
+    STACK_FUNC[SF] = 0;
+    SF = SF - 1;
+    STACK_FUNC[SF] = 0;
+    SF = SF - 1;
+    STACK_FUNC[SF] = 0;
+
+    ${tag31}:
+    ${var54} = ${var54} + 1;
+    goto ${tag30};
+    ${tag32}:
+    /**********************Inner For**************************/
+    ${tag33}:
+    ${var52} = ${var52} + 1;
+    goto ${tag29};
+    ${tag34}:
+    ;
+    if(${var53} == HP){ goto ${tag35};}
+    HEAP[(int)HP] = 0;
+    HP = HP + 1;
+    STACK_FUNC[SF] = ${var53};
+    goto ${tag36};
+    ${tag35}:
+    STACK_FUNC[SF] = -1;
+    ${tag36}:
+    ;
+}
+
+
+
+//add one item to the list if its not already there
+//value, list
+void addItemToList(){
+    int t0 = SF - 1;
+    int value = STACK_FUNC[t0];//List in HEAP to pointers on STACK
+    int t1 = SF - 2;
+    int list = STACK_FUNC[t1];//List in HEAP to pointers on STACK
+
+    label_x2:
+    if(HEAP[list] == 0){goto label_x0;}
+    if(HEAP[list] == value){goto label_x1;}
+    list++;
+    goto label_x2;
+    label_x0:
+    if(value == -1){goto label_x1;}
+    //if(HEAP[t1] == 0){goto label_x1;}
+    HEAP[(int) HP] = value;
+    HP = HP + 1;
+    label_x1:
+    ;
+}
+
 /*************************TODELETE***************************************/
 
 void print_tags_from_heap(){
@@ -623,8 +1370,23 @@ void print_value_by_index(int index) {
     while (val != '\\0') { printf("%c", val); t0++; val = (char) HEAP[t0];
 
     }
-    printf("");
+    printf("\\n");
 }
+
+
+void print_child_by_index(int index) {
+    int t0 = STACK[index];
+    //int t0 = index;
+    char val = (char) HEAP[t0];
+    while (val != '\\0') { printf("%c", val); t0++; val = (char) HEAP[t0];
+
+    }
+    printf("\\n");
+}
+
+
+
+
 void printHeap(){
     int i = 0;
     for(int i = 1; i <1000; i++ ){
@@ -644,21 +1406,37 @@ void print_val();
 void print_number();
 void print_open_tag();
 void print_close_tag();
-
-
-
+void mergeLists();
+void isItemInList();
+void AxisAncestor();
+void AxisAncestorSelf();
+void AxisAttributes();
+void AxisChild();
+void AxisDescendant();
+void AxisDescendantSelf();
+void AxisFollowing();
+void AxisFollowingSibling();
+void AxisParent();
+void AxisPreceding();
+void AxisPrecedingSibling();
+void AxisSelf();
+void mergeTwoLists();
 
 
 /*************************TODELETE***************************************/
 void print_tags_from_heap();
-void print_value_by_index(int);      
+void print_value_by_index(int);
+void print_child_by_index(int);      
 void printHeap(); 
+void isItemInList();
+void print_father();
+void addItemToList();
         `;
     }
 
 
     public getCode():string{
-        this.root.set3DCode();
+        this.root.set3DCode(null);
         this.code = `float HEAP[100000];
 float STACK[10000];
 float STACK_FUNC[10000];
@@ -670,7 +1448,7 @@ int main(){
 ` + Element.code_definition + `
     HP = ${Element.heap_index};
     SP = ${Element.stack_index};
-    f0(); //TODELETE
+    f1(); //TODELETE
     return 0;
 }
  `+ this.code;
