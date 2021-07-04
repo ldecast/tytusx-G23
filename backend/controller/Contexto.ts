@@ -20,7 +20,9 @@ export class Contexto {
     variable?: Variable;
     atCounter?: Variable;
 
-    constructor(_context?: Contexto) {
+    tablaValores: Array<Variable>;
+
+    constructor(_context?: Contexto, _variables?: Array<Variable>) {
         if (_context) {
             this.elementos = _context.elementos;
             this.atributos = _context.atributos;
@@ -30,6 +32,7 @@ export class Contexto {
             this.items = _context.items;
             if (_context.variable) this.variable = _context.variable;
             if (_context.atCounter) this.atCounter = _context.atCounter;
+            this.tablaValores = _context.tablaValores;
         }
         else {
             this.elementos = [];
@@ -38,8 +41,40 @@ export class Contexto {
             this.nodos = [];
             this.items = [];
             this.cadena = Tipos.NONE;
+            this.tablaValores = [];
+        }
+        if (_variables) {
+            this.tablaValores = _variables;
         }
         this.error = this.notFound = null;
+    }
+
+    addVariable(_variable: Variable) {
+        let exists = this.existeVariable(_variable.id);
+        if (exists !== -1) {
+            this.tablaValores[exists] = _variable;
+        }
+        else {
+            this.tablaValores.unshift(_variable);
+        }
+    }
+
+    existeVariable(_id: string): number {
+        for (let i = 0; i < this.tablaValores.length; i++) {
+            const variable = this.tablaValores[i];
+            if (_id == variable.id && (variable.contexto || variable.valor))
+                return i;
+        }
+        return -1;
+    }
+
+    getVar(_id: string): Variable | null {
+        for (let i = 0; i < this.tablaValores.length; i++) {
+            const variable = this.tablaValores[i];
+            if (_id == variable.id && (variable.contexto || variable.valor))
+                return variable;
+        }
+        return null;
     }
 
     pushElement(_v: Element) {

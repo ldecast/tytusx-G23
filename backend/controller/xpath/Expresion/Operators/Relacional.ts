@@ -11,15 +11,15 @@ function Relacional(_expresion: any, _ambito: Ambito, _contexto: Contexto, _id?:
         case Tipos.RELACIONAL_MAYOR:
             return mayor(operators.op1, operators.op2, operators.exp);
         case Tipos.RELACIONAL_MAYORIGUAL:
-            return mayorigual(operators.op1, operators.op2);
+            return mayorigual(operators.op1, operators.op2, operators.exp);
         case Tipos.RELACIONAL_MENOR:
-            return menor(operators.op1, operators.op2);
+            return menor(operators.op1, operators.op2, operators.exp);
         case Tipos.RELACIONAL_MENORIGUAL:
-            return menorigual(operators.op1, operators.op2);
+            return menorigual(operators.op1, operators.op2, operators.exp);
         case Tipos.RELACIONAL_IGUAL:
             return igual(operators.op1, operators.op2, operators.exp);
         case Tipos.RELACIONAL_DIFERENTE:
-            return diferente(operators.op1, operators.op2);
+            return diferente(operators.op1, operators.op2, operators.exp);
         default:
             return null;
     }
@@ -180,7 +180,9 @@ function mayor(_opIzq: any, _opDer: any, _exp?: any) {
     }
 }
 
-function mayorigual(_opIzq: any, _opDer: any) {
+function mayorigual(_opIzq: any, _opDer: any, _exp?: any) {
+    if (_exp === Tipos.BOOLEANO)
+        return [{ valor: (_opIzq.valor >= _opDer.valor), tipo: _exp }]
     if (_opIzq.id)
         return { e1: _opIzq.valor, e2: _opDer, tipo: Tipos.ELEMENTOS, desigualdad: Tipos.RELACIONAL_MAYORIGUAL }
     if (_opIzq.tipo === Tipos.ATRIBUTOS)
@@ -193,7 +195,9 @@ function mayorigual(_opIzq: any, _opDer: any) {
     }
 }
 
-function menor(_opIzq: any, _opDer: any) {
+function menor(_opIzq: any, _opDer: any, _exp?: any) {
+    if (_exp === Tipos.BOOLEANO)
+        return [{ valor: (_opIzq.valor < _opDer.valor), tipo: _exp }]
     if (_opIzq.id)
         return { e1: _opIzq.valor, e2: _opDer, tipo: Tipos.ELEMENTOS, desigualdad: Tipos.RELACIONAL_MENOR }
     if (_opIzq.tipo === Tipos.ATRIBUTOS)
@@ -206,7 +210,9 @@ function menor(_opIzq: any, _opDer: any) {
     }
 }
 
-function menorigual(_opIzq: any, _opDer: any) {
+function menorigual(_opIzq: any, _opDer: any, _exp?: any) {
+    if (_exp === Tipos.BOOLEANO)
+        return [{ valor: (_opIzq.valor <= _opDer.valor), tipo: _exp }]
     if (_opIzq.id)
         return { e1: _opIzq.valor, e2: _opDer, tipo: Tipos.ELEMENTOS, desigualdad: Tipos.RELACIONAL_MENORIGUAL }
     if (_opIzq.tipo === Tipos.ATRIBUTOS)
@@ -235,7 +241,9 @@ function igual(_opIzq: any, _opDer: any, _exp?: any) {
     return { e1: _opIzq, e2: _opDer, tipo: Tipos.ELEMENTOS, desigualdad: Tipos.RELACIONAL_IGUAL }
 }
 
-function diferente(_opIzq: any, _opDer: any) {
+function diferente(_opIzq: any, _opDer: any, _exp?: any) {
+    if (_exp === Tipos.BOOLEANO)
+        return [{ valor: (_opIzq.valor != _opDer.valor), tipo: _exp }]
     if (_opIzq.tipo === Tipos.ELEMENTOS)
         return { e1: _opIzq, e2: _opDer, tipo: Tipos.ELEMENTOS, desigualdad: Tipos.RELACIONAL_DIFERENTE }
     if (_opIzq.tipo === Tipos.FUNCION_POSITION || _opDer.tipo === Tipos.FUNCION_POSITION)
