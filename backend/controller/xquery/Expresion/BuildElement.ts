@@ -1,22 +1,21 @@
-import { Element } from "../../model/xml/Element";
-import { Atributo } from "../../model/xml/Atributo";
-import { Tipos } from "../../model/xpath/Enum";
-import { Contexto } from "../Contexto";
+import { Element } from "../../../model/xml/Element";
+import { Atributo } from "../../../model/xml/Atributo";
+import { Tipos } from "../../../model/xpath/Enum";
 
-function pushIterators(input: Array<Contexto>): Array<any> {
+function pushIterators(input: Array<any>): Array<any> {
     let iterators: Array<string> = [];
-    // console.log(input.xquery, 36363638)
+    // console.log(input, 36363638)
     for (let i = 0; i < input.length; i++) {
         const path = input[i];
-        if (path.items.length > 0) {
+        if (path.items && path.items.length > 0) {
             return input;
         }
         if (path.notFound) {
             return [{ notFound: 'No se encontraron elementos.' }];
         }
-        // if (path.valor) {
-        //     iterators.unshift(path);
-        // }
+        if (path.valor || path.valor === 0) {
+            iterators.unshift(path.valor);
+        }
         if (path.cadena === Tipos.TEXTOS) {
             let root: Array<string> = path.texto;
             root.forEach(txt => {

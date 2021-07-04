@@ -106,6 +106,16 @@ function getFromCurrent(_id: any, _contexto: Contexto, _ambito: Ambito, _condici
         retorno.cadena = Tipos.ELEMENTOS;
         return retorno;
     }
+    // Selecciona el nodo actual
+    else if (_id === ".") {
+        retorno = _contexto;
+        if (_condicion) {
+            let filter = new Predicate(_condicion, _ambito, retorno);
+            retorno.elementos = filter.filterElements(retorno.elementos);
+        }
+        /* retorno.cadena = Tipos.ELEMENTOS; */
+        return retorno;
+    }
     // Selecciona todos los descendientes con el id o en el caso que sea //*
     else {
         for (let i = 0; i < _contexto.elementos.length; i++) {
@@ -114,8 +124,6 @@ function getFromCurrent(_id: any, _contexto: Contexto, _ambito: Ambito, _condici
                 element.childs.forEach(child => {
                     retorno.elementos = _ambito.searchNodes(_id, child, retorno.elementos);
                 });
-            else if (_id === ".")
-                retorno.elementos.push(element);
         }
     }
     if (_condicion) {
