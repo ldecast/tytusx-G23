@@ -8,7 +8,6 @@ function LetClause(_id: any, _valor: any, _ambito: Ambito, _contexto: Contexto, 
     let tmp = new Contexto(_contexto);
     let variable = new Variable(_id.variable, Tipos.VARIABLE, _id.linea, _id.columna);
     let contexto = Expresion(_valor, _ambito, tmp, id);
-    // console.log(_valor,3020220)
     if (contexto) {
         variable.setValue(contexto);
         tmp.addVariable(variable);

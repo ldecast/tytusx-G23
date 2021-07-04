@@ -20,7 +20,7 @@ export class Contexto {
     variable?: Variable;
     atCounter?: Variable;
 
-    tablaValores: Array<Variable>;
+    tablaVariables: Array<Variable>;
 
     constructor(_context?: Contexto, _variables?: Array<Variable>) {
         if (_context) {
@@ -32,7 +32,7 @@ export class Contexto {
             this.items = _context.items;
             if (_context.variable) this.variable = _context.variable;
             if (_context.atCounter) this.atCounter = _context.atCounter;
-            this.tablaValores = _context.tablaValores;
+            this.tablaVariables = _context.tablaVariables;
         }
         else {
             this.elementos = [];
@@ -41,10 +41,10 @@ export class Contexto {
             this.nodos = [];
             this.items = [];
             this.cadena = Tipos.NONE;
-            this.tablaValores = [];
+            this.tablaVariables = [];
         }
         if (_variables) {
-            this.tablaValores = _variables;
+            this.tablaVariables = _variables;
         }
         this.error = this.notFound = null;
     }
@@ -52,16 +52,16 @@ export class Contexto {
     addVariable(_variable: Variable) {
         let exists = this.existeVariable(_variable.id);
         if (exists !== -1) {
-            this.tablaValores[exists] = _variable;
+            this.tablaVariables[exists] = _variable;
         }
         else {
-            this.tablaValores.unshift(_variable);
+            this.tablaVariables.unshift(_variable);
         }
     }
 
     existeVariable(_id: string): number {
-        for (let i = 0; i < this.tablaValores.length; i++) {
-            const variable = this.tablaValores[i];
+        for (let i = 0; i < this.tablaVariables.length; i++) {
+            const variable = this.tablaVariables[i];
             if (_id == variable.id && (variable.contexto || variable.valor))
                 return i;
         }
@@ -69,8 +69,8 @@ export class Contexto {
     }
 
     getVar(_id: string): Variable | null {
-        for (let i = 0; i < this.tablaValores.length; i++) {
-            const variable = this.tablaValores[i];
+        for (let i = 0; i < this.tablaVariables.length; i++) {
+            const variable = this.tablaVariables[i];
             if (_id == variable.id && (variable.contexto || variable.valor))
                 return variable;
         }
