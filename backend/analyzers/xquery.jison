@@ -10,7 +10,6 @@ let re = /[^\n\t\r ]+/g
 %options case-insensitive
 %x string_doubleq
 %x string_singleq
-%x content
 
 /*Regular Expressions*/
 %%
@@ -20,6 +19,10 @@ let re = /[^\n\t\r ]+/g
 "<!--"[\s\S\n]*?"-->"	// MultiLineComment
 
 [0-9]+("."[0-9]+)?\b    return 'num'
+"upper-case"			return 'tk_uppercase'
+"lower-case"			return 'tk_lowercase'
+"number"				return 'tk_number'
+"substring"				return 'tk_substring'
 "let"                   return 'tk_let'
 ("<="|"le")				return 'tk_menorigual'
 (">="|"ge")				return 'tk_mayorigual'
@@ -156,7 +159,7 @@ let re = /[^\n\t\r ]+/g
 %left 'tk_equal' 'tk_diferent' 'tk_menor' 'tk_menorigual' 'tk_mayor' 'tk_mayorigual'
 %left 'tk_mas' 'tk_menos'
 %left 'tk_div' 'tk_mod' 'tk_asterisco'
-// %left umas
+%left umas
 %left umenos
 %left 'tk_ParA'
 %left 'tk_bar' 'tk_2bar'
@@ -166,7 +169,8 @@ let re = /[^\n\t\r ]+/g
 
 %% // GRAMATICA DE DOCUMENTO XQUERY ANALISIS ASCENDENTE
 
-ini: XPATH_U EOF{   prod_1 = grammar_stack.pop();
+ini: XPATH_U EOF{   
+					prod_1 = grammar_stack.pop();
 					prod_2 = grammar_stack.pop();
 			 		grammar_stack.push({'ini -> XPATH_U EOF': [prod_2, prod_1]});
 					// grammar_report =  getGrammarReport(grammar_stack); // cst = getCST(grammar_stack); // let arbol_ast = getASTTree($1);
@@ -225,6 +229,14 @@ INSTR_FUNCIONES: XQUERY { $$=$1; }
 ;
 
 LLAMADA: tk_local tk_dospts tk_id tk_ParA VALORES tk_ParC { $$=queryBuilder.nuevaLlamada($3, $5, this._$.first_line, this._$.first_column+1); }
+		| NATIVAS tk_ParA VALORES tk_ParC { $$=queryBuilder.llamadaNativa($1, $3, this._$.first_line, this._$.first_column+1); }
+;
+
+NATIVAS: tk_uppercase { $$ = Tipos.TO_UPPERCASE; }
+		| tk_lowercase { $$ = Tipos.TO_LOWERCASE; }
+		| tk_string { $$ = Tipos.TO_STRING; }
+		| tk_number { $$ = Tipos.TO_NUMBER; }
+		| tk_substring { $$ = Tipos.SUBSTRING; }
 ;
 
 FOR_LOOP: tk_for DECLARACION INSTRUCCIONES_FOR RETURN_STATEMENT { $3.push($4); $$ = queryBuilder.nuevoFor($2, $3, this._$.first_line, this._$.first_column+1); }
@@ -377,9 +389,9 @@ E:	E tk_menorigual E { $$=builder.newOperation($1, $3, Tipos.RELACIONAL_MENORIGU
 	| tk_menos E %prec umenos { $$=builder.newOperation(builder.newValue(0, Tipos.NUMBER, @1.first_line, @1.first_column+1), $2, Tipos.OPERACION_RESTA, this.$.first_line, this.$.first_column+1); 
 								prod_1 = grammar_stack.pop();
 						  		grammar_stack.push({'E -: tk_menos E': ['token: tk_menos\t Lexema: ' + $1, prod_1]});}
-	// | tk_mas E %prec umas { $$=builder.newOperation(builder.newValue(0, Tipos.NUMBER, @1.first_line, @1.first_column+1), $2, Tipos.OPERACION_SUMA, this.$.first_line, this.$.first_column+1); 
-	// 							prod_1 = grammar_stack.pop();
-	// 					  		grammar_stack.push({'E -: tk_mas E': ['token: tk_mas\t Lexema: ' + $1, prod_1]});}
+	| tk_mas E %prec umas { $$=builder.newOperation(builder.newValue(0, Tipos.NUMBER, @1.first_line, @1.first_column+1), $2, Tipos.OPERACION_SUMA, this.$.first_line, this.$.first_column+1); 
+								prod_1 = grammar_stack.pop();
+						  		grammar_stack.push({'E -: tk_mas E': ['token: tk_mas\t Lexema: ' + $1, prod_1]});}
 	| tk_ParA E tk_ParC { $$=$2;
 						  prod_1 = grammar_stack.pop();
 						  grammar_stack.push({'E -> tk_ParA E tk_ParC {SS=S2}': ['token: tk_ParA\t Lexema: ' + $1, prod_1, 'token: tk_ParC\t Lexema: ' + $3]}); }
@@ -417,11 +429,9 @@ EXP_PR: FUNC CORCHETP { $$=builder.newExpression($1, $2, this._$.first_line, thi
 
 PRIMITIVO: tk_id { $$=builder.newNodename($1, this._$.first_line, this._$.first_column+1);
 				   grammar_stack.push({'PRIMITIVO -> tk_id {SS=builder.newNodename(Param)}':['token: tk_text\t Lexema: ' + $1]}); }
-        // | VARIABLE	{ $$=builder.newAxis(builder.newCurrent($1.variable, this._$.first_line, this._$.first_column+1), this._$.first_line, this._$.first_column+1); }
         | STRING { $$ = $1; }
 		| num { $$=builder.newValue(Number($1), Tipos.NUMBER, this._$.first_line, this._$.first_column+1);
 				grammar_stack.push({'PRIMITIVO -> num {SS=builder.newValue(Param)}':['token: num\t Lexema: ' + $1]}); }
-		// | tk_asterisco { $$=builder.newValue($1, Tipos.ASTERISCO, this._$.first_line, this._$.first_column+1); grammar_stack.push({'PRIMITIVO -> tk_asterisco {SS=builder.newValue(Param)}':['token: tk_asterisco\t Lexema: ' + $1]}); }
 		| tk_punto { $$=builder.newCurrent($1, this._$.first_line, this._$.first_column+1); 
 					 grammar_stack.push({'PRIMITIVO -> tk_punto {SS=builder.newCurrent(Param)}':['token: tk_punto\t Lexema: ' + $1]}); }
 		| tk_2puntos { $$=builder.newParent($1, this._$.first_line, this._$.first_column+1);
@@ -430,7 +440,6 @@ PRIMITIVO: tk_id { $$=builder.newNodename($1, this._$.first_line, this._$.first_
 							grammar_stack.push({'PRIMITIVO -> tk_arroba tk_id {SS=builder.newAttribute(Param)}':['token: tk_arroba\t Lexema: ' + $1, 'token: tk_id\t Lexema: ' + $2]}); }
 		| tk_arroba tk_asterisco { $$=builder.newAttribute($2, this._$.first_line, this._$.first_column+1); 
 							 grammar_stack.push({'PRIMITIVO -> tk_arroba tk_asterisco {SS=builder.newAttribute(Param)}':['token: tk_arroba\t Lexema: ' + $1, 'token: tk_asterisco\t Lexema: ' + $2]});}
-        // | tk_content
 ;
 
 STRING: tk_string_d { $$=builder.newValue($1, Tipos.STRING, this._$.first_line, this._$.first_column+1);

@@ -12,6 +12,7 @@ import IfConditional from "./If";
 import returnQuery from "./Return";
 import NewFunction from "./Funciones/NewFunction";
 import Exec from "./Funciones/Exec";
+import Nativa from "./Funciones/Nativas";
 
 let reset: Contexto;
 let output: Array<Contexto> = [];
@@ -44,10 +45,13 @@ function Bloque(_instruccion: Array<any>, _ambito: Ambito, _retorno: Contexto, i
             return ForLoop(instr, _ambito, _retorno);
         }
         else if (instr.tipo === Tipos.LLAMADA_FUNCION) {
-            return Exec(instr, _ambito, _retorno);
+            return Exec(instr, _ambito, _retorno, id);
+        }
+        else if (instr.tipo === Tipos.LLAMADA_NATIVA) {
+            return Nativa(instr, _ambito, _retorno, id);
         }
         else if (instr.tipo === Tipos.IF_THEN_ELSE) {
-            return IfConditional(instr.condicionIf, instr.instruccionesThen, instr.instruccionesElse, _ambito, _retorno);
+            return IfConditional(instr.condicionIf, instr.instruccionesThen, instr.instruccionesElse, _ambito, _retorno, id);
         }
         else if (instr.tipo === Tipos.RETURN_STATEMENT) {
             return returnQuery(instr.expresion, _ambito, [_retorno]);
