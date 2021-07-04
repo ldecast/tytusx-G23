@@ -65,14 +65,13 @@ function Bloque(_instruccion: Array<any>, _ambito: Ambito, _retorno: Contexto, i
 
 function getOutput(_instruccion: Array<any>, _ambito: Ambito, _retorno: Contexto) {
     let _bloque = Bloque(_instruccion, _ambito, _retorno);
-    if (_bloque.error) {
+    if (_bloque && _bloque.error) {
         if (_bloque.error.error) return _bloque.error;
         return _bloque;
     }
     /* let cadena = (_str.length > 0) ? _str.join('\n') : writeOutput(); */
     let cadena = (_bloque && _bloque.valor !== undefined) ? (_bloque.valor) : writeOutput();
     let codigo3d = ""; // Agregar función que devuelva código tres direcciones
-    console.log(cadena);
     return { cadena: replaceEntity(String(cadena)), codigo3d: codigo3d };
 }
 

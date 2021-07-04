@@ -194,6 +194,7 @@ IF: tk_if tk_ParA E tk_ParC { $$=$3; }
 ;
 
 THEN: tk_then E { $$=$2; }
+	| tk_then tk_ParA tk_ParC { $$=[]; }
 ;
 
 ELSE: tk_else E { $$=$2; }

@@ -71,7 +71,7 @@ function compile(req: any) {
             consola = bloque.error;
         }
         let simbolos = cadena.ambito.getArraySymbols(); // Arreglo con los símbolos
-
+        console.log(consola);
         let output = {
             arreglo_simbolos: simbolos,
             arreglo_errores: errors,
