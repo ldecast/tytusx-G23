@@ -12,13 +12,14 @@ export class Ambito {
     tablaSimbolos: Array<Element>;
     contextFromVar?: Variable | null;
     tablaFunciones: Array<Funcion>;
-    tablaVariables?: Array<Variable>;
+    tablaVariables: Array<Variable>;
 
     constructor(_anterior: any, _tipo: string) {
         this.anterior = _anterior
         this.tipo = _tipo
         this.tablaSimbolos = [];
         this.tablaFunciones = [];
+        this.tablaVariables = [];
     }
 
     addSimbolo(_simbolo: Element) {
@@ -264,11 +265,11 @@ export class Ambito {
                 }
             });
             this.tablaFunciones.forEach(funcion => {
-                let symb = this.createSymbolFuncion(funcion, "global");
+                let symb = this.createSymbolFuncion(funcion);
                 simbolos.push(symb);
             });
-            this.tablaVariables?.forEach(variable => {
-                let symb = this.createSymbolVariable(variable, "global");
+            this.tablaVariables.forEach(variable => {
+                let symb = this.createSymbolVariable(variable);
                 simbolos.push(symb);
             });
             return simbolos;
@@ -323,24 +324,24 @@ export class Ambito {
         }
     }
 
-    createSymbolVariable(_variable: Variable, _entorno: string) {
-        let value = (_variable.contexto) ? this.buildPath(_variable.contexto) : (_variable.valor ? _variable.valor.valor : '');
+    createSymbolVariable(_variable: Variable) {
+        let value = (_variable.contexto) ? this.buildPath(_variable.contexto) : (_variable.valor ? _variable.valor : '');
         return {
             id: _variable.id,
-            value: value,
+            value: (value.valor) ? (value.valor) : value,
             tipo: "Variable",
-            entorno: _entorno,
+            entorno: _variable.entorno,
             linea: _variable.linea,
             columna: _variable.columna
         }
     }
 
-    createSymbolFuncion(_funcion: Funcion, _entorno: string) {
+    createSymbolFuncion(_funcion: Funcion) {
         return {
             id: _funcion.name,
             value: "Función creada por el usuario",
             tipo: "Function",
-            entorno: _entorno,
+            entorno: "global",
             linea: _funcion.linea,
             columna: _funcion.columna
         }
