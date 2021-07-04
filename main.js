@@ -20,6 +20,9 @@ const For_1 = __importDefault(__webpack_require__(/*! ./For */ "9hMJ"));
 const Let_1 = __importDefault(__webpack_require__(/*! ./Let */ "hC0Z"));
 const If_1 = __importDefault(__webpack_require__(/*! ./If */ "tJF2"));
 const Return_1 = __importDefault(__webpack_require__(/*! ./Return */ "JNzZ"));
+const NewFunction_1 = __importDefault(__webpack_require__(/*! ./Funciones/NewFunction */ "VIoe"));
+const Exec_1 = __importDefault(__webpack_require__(/*! ./Funciones/Exec */ "zmd1"));
+const Nativas_1 = __importDefault(__webpack_require__(/*! ./Funciones/Nativas */ "Kzq8"));
 let reset;
 let output = [];
 function Bloque(_instruccion, _ambito, _retorno, id) {
@@ -29,13 +32,7 @@ function Bloque(_instruccion, _ambito, _retorno, id) {
     let i;
     for (i = 0; i < _instruccion.length; i++) {
         const instr = _instruccion[i];
-        if (instr.tipo === Enum_1.Tipos.FOR_LOOP) {
-            return For_1.default(instr, _ambito, _retorno);
-        }
-        else if (instr.tipo === Enum_1.Tipos.IF_THEN_ELSE) {
-            return If_1.default(instr.condicionIf, instr.instruccionesThen, instr.instruccionesElse, _ambito, _retorno);
-        }
-        else if (instr.tipo === Enum_1.Tipos.SELECT_FROM_ROOT || instr.tipo === Enum_1.Tipos.EXPRESION) {
+        if (instr.tipo === Enum_1.Tipos.SELECT_FROM_ROOT || instr.tipo === Enum_1.Tipos.EXPRESION) {
             tmp = Eje_1.default(instr.expresion, _ambito, _retorno, id);
         }
         else if (instr.tipo === Enum_1.Tipos.SELECT_FROM_CURRENT) {
@@ -47,6 +44,22 @@ function Bloque(_instruccion, _ambito, _retorno, id) {
         else if (instr.tipo === Enum_1.Tipos.LET_CLAUSE) {
             Let_1.default(instr.id, instr.valor, _ambito, _retorno, id);
             continue;
+        }
+        else if (instr.tipo === Enum_1.Tipos.DECLARACION_FUNCION) {
+            NewFunction_1.default(instr, _ambito, _retorno);
+            continue;
+        }
+        else if (instr.tipo === Enum_1.Tipos.FOR_LOOP) {
+            return For_1.default(instr, _ambito, _retorno);
+        }
+        else if (instr.tipo === Enum_1.Tipos.LLAMADA_FUNCION) {
+            return Exec_1.default(instr, _ambito, _retorno, id);
+        }
+        else if (instr.tipo === Enum_1.Tipos.LLAMADA_NATIVA) {
+            return Nativas_1.default(instr, _ambito, _retorno, id);
+        }
+        else if (instr.tipo === Enum_1.Tipos.IF_THEN_ELSE) {
+            return If_1.default(instr.condicionIf, instr.instruccionesThen, instr.instruccionesElse, _ambito, _retorno, id);
         }
         else if (instr.tipo === Enum_1.Tipos.RETURN_STATEMENT) {
             return Return_1.default(instr.expresion, _ambito, [_retorno]);
@@ -67,13 +80,20 @@ function Bloque(_instruccion, _ambito, _retorno, id) {
 }
 function getOutput(_instruccion, _ambito, _retorno) {
     let _bloque = Bloque(_instruccion, _ambito, _retorno);
-    let cadena = (_bloque && _bloque.salida) ? (_bloque.salida) : writeOutput();
+    if (_bloque && _bloque.error) {
+        if (_bloque.error.error)
+            return _bloque.error;
+        return _bloque;
+    }
+    /* let cadena = (_str.length > 0) ? _str.join('\n') : writeOutput(); */
+    let cadena = (_bloque && _bloque.valor !== undefined) ? (_bloque.valor) : writeOutput();
     let codigo3d = ""; // Agregar función que devuelva código tres direcciones
-    console.log(cadena);
-    return { cadena: cadena, codigo3d: codigo3d };
+    return { cadena: replaceEntity(String(cadena)), codigo3d: codigo3d };
 }
 function getIterators(_instruccion, _ambito, _retorno, _id) {
-    Bloque(_instruccion, _ambito, _retorno, _id);
+    let _bloque = Bloque(_instruccion, _ambito, _retorno, _id);
+    if (_bloque)
+        return _bloque;
     if (output.length > 0)
         return output[output.length - 1];
     else
@@ -173,6 +193,115 @@ function concatText(_text) {
     return `\n${_text}`;
 }
 module.exports = { Bloque: Bloque, getIterators: getIterators, getOutput: getOutput };
+
+
+/***/ }),
+
+/***/ "+teJ":
+/*!************************************************************!*\
+  !*** ./src/js/controller/xquery/Expresion/BuildElement.js ***!
+  \************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+const Enum_1 = __webpack_require__(/*! ../../../model/xpath/Enum */ "MEUw");
+function pushIterators(input) {
+    let iterators = [];
+    // console.log(input, 36363638)
+    for (let i = 0; i < input.length; i++) {
+        const path = input[i];
+        if (path.items && path.items.length > 0) {
+            return input;
+        }
+        if (path.notFound) {
+            return [{ notFound: 'No se encontraron elementos.' }];
+        }
+        if (path.valor || path.valor === 0) {
+            iterators.unshift(path.valor);
+        }
+        if (path.cadena === Enum_1.Tipos.TEXTOS) {
+            let root = path.texto;
+            root.forEach(txt => {
+                iterators.push(concatText(txt).substring(1));
+            });
+        }
+        else if (path.cadena === Enum_1.Tipos.ELEMENTOS) {
+            let root = path.elementos;
+            root.forEach(element => {
+                iterators.push(concatChilds(element, "").substring(1));
+            });
+        }
+        else if (path.cadena === Enum_1.Tipos.ATRIBUTOS) {
+            if (path.atributos) {
+                let root = path.atributos; // <-- muestra sólo el atributo
+                root.forEach(attr => {
+                    iterators.push(concatAttributes(attr).substring(1));
+                });
+            }
+            else {
+                let root = path.elementos; // <-- muestra toda la etiqueta
+                root.forEach(element => {
+                    iterators.push(extractAttributes(element, "").substring(1));
+                });
+            }
+        }
+        else if (path.cadena === Enum_1.Tipos.COMBINADO) {
+            let root = path.nodos;
+            root.forEach((elemento) => {
+                if (elemento.elementos) {
+                    iterators.push(concatChilds(elemento.elementos, "").substring(1));
+                }
+                else if (elemento.textos) {
+                    iterators.push(concatText(elemento.textos).substring(1));
+                }
+            });
+        }
+    }
+    if (iterators.length > 0)
+        return [iterators];
+    return [{ notFound: 'No se encontraron elementos.' }];
+}
+function concatChilds(_element, cadena) {
+    cadena = ("\n<" + _element.id_open);
+    if (_element.attributes) {
+        _element.attributes.forEach(attribute => {
+            cadena += (" " + attribute.id + "=\"" + attribute.value + "\"");
+        });
+    }
+    if (_element.childs) {
+        cadena += ">";
+        _element.childs.forEach(child => {
+            cadena += concatChilds(child, cadena);
+        });
+        cadena += ("\n</" + _element.id_close + ">\n");
+    }
+    else {
+        if (_element.id_close === null)
+            cadena += "/>";
+        else {
+            cadena += ">";
+            cadena += (_element.value + "</" + _element.id_close + ">");
+        }
+    }
+    return cadena;
+}
+function concatAttributes(_attribute) {
+    return `\n${_attribute.id}="${_attribute.value}"`;
+}
+function extractAttributes(_element, cadena) {
+    if (_element.attributes) {
+        _element.attributes.forEach(attribute => {
+            cadena += `\n${attribute.id}="${attribute.value}"`;
+        });
+    }
+    return cadena;
+}
+function concatText(_text) {
+    return `\n${_text}`;
+}
+module.exports = pushIterators;
 
 
 /***/ }),
@@ -355,6 +484,16 @@ function getFromCurrent(_id, _contexto, _ambito, _condicion, id) {
         retorno.cadena = Enum_1.Tipos.ELEMENTOS;
         return retorno;
     }
+    // Selecciona el nodo actual
+    else if (_id === ".") {
+        retorno = _contexto;
+        if (_condicion) {
+            let filter = new Predicate_1.Predicate(_condicion, _ambito, retorno);
+            retorno.elementos = filter.filterElements(retorno.elementos);
+        }
+        /* retorno.cadena = Tipos.ELEMENTOS; */
+        return retorno;
+    }
     // Selecciona todos los descendientes con el id o en el caso que sea //*
     else {
         for (let i = 0; i < _contexto.elementos.length; i++) {
@@ -363,8 +502,6 @@ function getFromCurrent(_id, _contexto, _ambito, _condicion, id) {
                 element.childs.forEach(child => {
                     retorno.elementos = _ambito.searchNodes(_id, child, retorno.elementos);
                 });
-            else if (_id === ".")
-                retorno.elementos.push(element);
         }
     }
     if (_condicion) {
@@ -552,8 +689,9 @@ function WhereClause(_instruccion, _ambito, _iterators) {
     for (let i = 0; i < _iterators.length; i++) { // [$x, $y, $z]
         const iterator = _iterators[i]; // { Contexto }
         let _x = Expresion_1.default(_instruccion, _ambito, iterator, (_a = iterator.variable) === null || _a === void 0 ? void 0 : _a.id); // _instruccion = [comparissons]
-        if (_x)
-            iterators = iterators.concat(_x);
+        if (!_x || _x.error)
+            return _x;
+        iterators = iterators.concat(_x);
     }
     // console.log(iterators)
     return iterators;
@@ -2111,17 +2249,23 @@ function ForLoop(_instruccion, _ambito, _contexto) {
     // console.log(_instruccion, 'instrucciones For')
     let declaracion = _instruccion.cuerpo;
     let iterators = [];
-    declaracion.forEach((_declaracion) => {
+    for (let i = 0; i < declaracion.length; i++) {
+        const _declaracion = declaracion[i];
         let it = Expresion_1.default(_declaracion, _ambito, _contexto);
+        if (it === null || it.error)
+            return it;
         iterators = iterators.concat(it);
-    });
+    }
     for (let i = 0; i < _instruccion.instrucciones.length; i++) {
         const instr = _instruccion.instrucciones[i];
         if (instr.tipo === Enum_1.Tipos.LET_CLAUSE) { // Declara una variable y la almacena de primero en el ámbito
             Let_1.default(instr.id, instr.valor, _ambito, _contexto);
         }
         if (instr.tipo === Enum_1.Tipos.WHERE_CONDITION) { // Filtrar los elementos de cada variable
-            iterators = Where_1.default(instr.condiciones, _ambito, iterators);
+            let where = Where_1.default(instr.condiciones, _ambito, iterators);
+            if (where === null || where.error)
+                return where;
+            iterators = where;
         }
         if (instr.tipo === Enum_1.Tipos.ORDER_BY_CLAUSE) { // Ordenar los elementos según los parámetros
             let filter = OrderBy_1.default(instr.ordenes, _ambito, iterators);
@@ -2181,9 +2325,12 @@ const environment = {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Variable = void 0;
 class Variable {
-    constructor(_id, _tipo) {
+    constructor(_id, _tipo, _linea, _columna, _entorno) {
         this.id = _id;
         this.tipo = _tipo;
+        this.linea = _linea ? _linea : 1;
+        this.columna = _columna ? _columna : 1;
+        this.entorno = _entorno ? _entorno : "global";
     }
     setValue(_obj) {
         if (_obj.constructor.name === "Contexto") {
@@ -2385,7 +2532,7 @@ function getFromCurrent(_id, _contexto, _ambito, _condicion, id) {
             let filter = new Predicate_1.Predicate(_condicion, _ambito, retorno);
             retorno.elementos = filter.filterElements(retorno.elementos);
         }
-        retorno.cadena = Enum_1.Tipos.ELEMENTOS;
+        /* retorno.cadena = Tipos.ELEMENTOS; */
         return retorno;
     }
     // Búsqueda en los hijos por id
@@ -2777,14 +2924,14 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 const Enum_1 = __webpack_require__(/*! ../../model/xpath/Enum */ "MEUw");
 const Expresion_1 = __importDefault(__webpack_require__(/*! ../xpath/Expresion/Expresion */ "gajf"));
-const BuildElement_1 = __importDefault(__webpack_require__(/*! ./BuildElement */ "XhXr"));
+const BuildElement_1 = __importDefault(__webpack_require__(/*! ./Expresion/BuildElement */ "+teJ"));
 function returnQuery(_expresion, _ambito, _iterators) {
     var _a;
     let expresion = [];
     for (let i = 0; i < _iterators.length; i++) { // [$x, $y, $z]
         const iterator = _iterators[i]; // { Contexto }
         let _x = Expresion_1.default(_expresion, _ambito, iterator, (_a = iterator.variable) === null || _a === void 0 ? void 0 : _a.id); // _expresion = [XPATH]
-        if (_x)
+        if (_x && !_x.error)
             expresion = expresion.concat(_x);
         // console.log(_x)
     }
@@ -2793,7 +2940,7 @@ function returnQuery(_expresion, _ambito, _iterators) {
         _str.unshift({ valor: '<' + _expresion.id_open + '>' });
         _str.push({ valor: '</' + _expresion.id_close + '>' });
     }
-    return { salida: writeReturn(_str), parametros: expresion };
+    return { valor: writeReturn(_str), parametros: expresion };
 }
 function writeReturn(_expresion) {
     // console.log(_expresion, 3444);
@@ -3266,6 +3413,85 @@ exports.Element = Element;
 
 /***/ }),
 
+/***/ "Kzq8":
+/*!*******************************************************!*\
+  !*** ./src/js/controller/xquery/Funciones/Nativas.js ***!
+  \*******************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+const Contexto_1 = __webpack_require__(/*! ../../Contexto */ "ivfU");
+const Enum_1 = __webpack_require__(/*! ../../../model/xpath/Enum */ "MEUw");
+const Expresion_1 = __importDefault(__webpack_require__(/*! ../../xpath/Expresion/Expresion */ "gajf"));
+function Nativa(_instr, _ambito, _contexto, _id) {
+    let tmp = new Contexto_1.Contexto(_contexto);
+    let name = _instr.name;
+    let parametros = _instr.parametros;
+    let valores = [];
+    for (let i = 0; i < parametros.length; i++) {
+        const parametro = parametros[i];
+        let contexto = Expresion_1.default(parametro, _ambito, tmp, _id);
+        if (contexto === null || contexto.error)
+            return contexto;
+        if (contexto.constructor.name === "Contexto") {
+            contexto = _ambito.extractValue(contexto);
+        }
+        valores.push(contexto);
+    }
+    let err = { error: `No se pudo ejecutar correctamente la función ${name}`, tipo: "Semántico", origen: "XQuery", linea: _instr.linea, columna: _instr.columna };
+    try {
+        let output;
+        let tipo;
+        switch (name) {
+            case Enum_1.Tipos.TO_UPPERCASE:
+                output = String(valores[0].valor).toUpperCase();
+                tipo = Enum_1.Tipos.STRING;
+                break;
+            case Enum_1.Tipos.TO_LOWERCASE:
+                output = String(valores[0].valor).toLocaleLowerCase();
+                tipo = Enum_1.Tipos.STRING;
+                break;
+            case Enum_1.Tipos.TO_STRING:
+                output = String(valores[0].valor);
+                tipo = Enum_1.Tipos.STRING;
+                break;
+            case Enum_1.Tipos.TO_NUMBER:
+                output = Number(valores[0].valor);
+                tipo = Enum_1.Tipos.NUMBER;
+                break;
+            case Enum_1.Tipos.SUBSTRING:
+                if (valores.length === 3)
+                    output = String(valores[0].valor).substring(parseInt(valores[1].valor), parseInt(valores[2].valor));
+                else if (valores.length === 2)
+                    output = String(valores[0].valor).substring(parseInt(valores[1].valor));
+                else
+                    return { error: `La cantidad de ${valores.length} parámetros no coinciden con los esperados en la función substring.`, tipo: "Semántico", origen: "XQuery", linea: _instr.linea, columna: _instr.columna };
+                tipo = Enum_1.Tipos.STRING;
+                break;
+            default:
+                return null;
+        }
+        if (!output)
+            return err;
+        return {
+            valor: output,
+            tipo: tipo
+        };
+    }
+    catch (error) {
+        return err;
+    }
+}
+module.exports = Nativa;
+
+
+/***/ }),
+
 /***/ "MEUw":
 /*!************************************!*\
   !*** ./src/js/model/xpath/Enum.js ***!
@@ -3349,6 +3575,8 @@ var Tipos;
     Tipos["ORDER_BY_CLAUSE"] = "ORDER_BY_CLAUSE";
     Tipos["RETURN_STATEMENT"] = "RETURN_STATEMENT";
     Tipos["ASIGNACION"] = "ASIGNACION";
+    Tipos["DECLARACION_FUNCION"] = "DECLARACION_FUNCION";
+    Tipos["LLAMADA_FUNCION"] = "LLAMADA_FUNCION";
     Tipos["IF_THEN_ELSE"] = "IF_THEN_ELSE";
     Tipos["VARIABLE"] = "VARIABLE";
     Tipos["DECLARACION"] = "DECLARACION";
@@ -3361,6 +3589,13 @@ var Tipos;
     Tipos["TIPADO_INTEGER"] = "TIPADO_INTEGER";
     Tipos["TIPADO_DECIMAL"] = "TIPADO_DECIMAL";
     Tipos["TIPADO_BOOLEANO"] = "TIPADO_BOOLEANO";
+    // Funciones nativas
+    Tipos["LLAMADA_NATIVA"] = "LLAMADA_NATIVA";
+    Tipos["TO_UPPERCASE"] = "TO_UPPERCASE";
+    Tipos["TO_LOWERCASE"] = "TO_LOWERCASE";
+    Tipos["TO_STRING"] = "TO_STRING";
+    Tipos["TO_NUMBER"] = "TO_NUMBER";
+    Tipos["SUBSTRING"] = "SUBSTRING";
 })(Tipos = exports.Tipos || (exports.Tipos = {}));
 
 
@@ -3379,32 +3614,25 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.Ambito = void 0;
 const Enum_1 = __webpack_require__(/*! ../../xpath/Enum */ "MEUw");
 class Ambito {
-    // tablaFunciones: Array<Funcion>;
     constructor(_anterior, _tipo) {
         this.anterior = _anterior;
         this.tipo = _tipo;
         this.tablaSimbolos = [];
+        this.tablaFunciones = [];
         this.tablaVariables = [];
     }
     addSimbolo(_simbolo) {
         this.tablaSimbolos.push(_simbolo);
     }
-    addVariabe(_variable) {
-        this.tablaVariables.unshift(_variable);
+    addFunction(_function) {
+        this.tablaFunciones.unshift(_function);
     }
-    existeVariable(_id) {
-        for (let i = 0; i < this.tablaVariables.length; i++) {
-            const variable = this.tablaVariables[i];
-            if (_id == variable.id && (variable.contexto || variable.valor))
-                return true;
-        }
-        return false;
-    }
-    getContextFromVar(_id) {
-        for (let i = 0; i < this.tablaVariables.length; i++) {
-            const variable = this.tablaVariables[i];
-            if (_id == variable.id && (variable.contexto || variable.valor))
-                return variable;
+    getFunction(_name, _numParams) {
+        for (let i = 0; i < this.tablaFunciones.length; i++) {
+            const funcion = this.tablaFunciones[i];
+            if (_name == funcion.name && _numParams == funcion.parametros.length) {
+                return funcion;
+            }
         }
         return null;
     }
@@ -3596,12 +3824,33 @@ class Ambito {
         _array.push(_element);
         return _array;
     }
-    getGlobal() {
-        let e;
-        for (e = this; e != null; e = e.anterior) {
-            if (e.anterior === null)
-                return e;
-        }
+    extractValue(_contexto) {
+        let element = _contexto.getArray()[0];
+        if (element.value)
+            return {
+                valor: element.value,
+                tipo: (!isNaN(element.value) && !isNaN(parseFloat(element.value))) ? Enum_1.Tipos.NUMBER : Enum_1.Tipos.STRING
+            };
+        if (element.id_open)
+            return {
+                valor: element.id_open,
+                tipo: (!isNaN(element.id_open) && !isNaN(parseFloat(element.id_open))) ? Enum_1.Tipos.NUMBER : Enum_1.Tipos.STRING
+            };
+        if (element.id)
+            return {
+                valor: element.id,
+                tipo: (!isNaN(element.id) && !isNaN(parseFloat(element.id))) ? Enum_1.Tipos.NUMBER : Enum_1.Tipos.STRING
+            };
+        if ((!isNaN(element) && !isNaN(parseFloat(element))))
+            return {
+                valor: element,
+                tipo: Enum_1.Tipos.NUMBER
+            };
+        if (typeof (element) === "string")
+            return {
+                valor: element,
+                tipo: Enum_1.Tipos.STRING
+            };
         return null;
     }
     // Métodos para obtener la tabla de símbolos
@@ -3625,6 +3874,14 @@ class Ambito {
                     let symb = this.createSymbolElement(element, (element.father === null ? "global" : element.father));
                     simbolos.push(symb);
                 }
+            });
+            this.tablaFunciones.forEach(funcion => {
+                let symb = this.createSymbolFuncion(funcion);
+                simbolos.push(symb);
+            });
+            this.tablaVariables.forEach(variable => {
+                let symb = this.createSymbolVariable(variable);
+                simbolos.push(symb);
             });
             return simbolos;
         }
@@ -3656,19 +3913,17 @@ class Ambito {
         return _symbols;
     }
     createSymbolElement(_element, _entorno) {
-        let type = (_element.id_close === null ? 'Tag simple' : 'Tag doble');
-        var symb = {
+        return {
             id: _element.id_open,
             value: _element.value,
-            tipo: type,
+            tipo: (_element.id_close === null ? 'Tag simple' : 'Tag doble'),
             entorno: _entorno,
             linea: _element.line,
             columna: _element.column
         };
-        return symb;
     }
     createSymbolAttribute(_attribute, _entorno) {
-        var symb = {
+        return {
             id: _attribute.id,
             value: _attribute.value,
             tipo: "Atributo",
@@ -3676,7 +3931,39 @@ class Ambito {
             linea: _attribute.line,
             columna: _attribute.column
         };
-        return symb;
+    }
+    createSymbolVariable(_variable) {
+        let value = (_variable.contexto) ? this.buildPath(_variable.contexto) : (_variable.valor ? _variable.valor : '');
+        return {
+            id: _variable.id,
+            value: (value.valor) ? (value.valor) : value,
+            tipo: "Variable",
+            entorno: _variable.entorno,
+            linea: _variable.linea,
+            columna: _variable.columna
+        };
+    }
+    createSymbolFuncion(_funcion) {
+        return {
+            id: _funcion.name,
+            value: "Función creada por el usuario",
+            tipo: "Function",
+            entorno: "local",
+            linea: _funcion.linea,
+            columna: _funcion.columna
+        };
+    }
+    buildPath(_contexto) {
+        if (_contexto.elementos.length > 0)
+            return "ref://" + _contexto.elementos[0].id_open;
+        if (_contexto.atributos.length > 0)
+            return "ref://@" + _contexto.atributos[0].id;
+        if (_contexto.nodos.length > 0)
+            return "ref://node()";
+        if (_contexto.texto.length > 0)
+            return _contexto.texto.toString();
+        if (_contexto.items.length > 0)
+            return _contexto.items.toString();
     }
 }
 exports.Ambito = Ambito;
@@ -3700,23 +3987,30 @@ const Enum_1 = __webpack_require__(/*! ../../../model/xpath/Enum */ "MEUw");
 const Expresion_1 = __importDefault(__webpack_require__(/*! ../../xpath/Expresion/Expresion */ "gajf"));
 const Contexto_1 = __webpack_require__(/*! ../../Contexto */ "ivfU");
 const Variable_1 = __webpack_require__(/*! ../../../model/xml/Ambito/Variable */ "C8dJ");
-function ExpresionQuery(_expresion, _ambito, _contexto, id) {
+function ExpresionQuery(_expresion, _ambito, _contexto, _id) {
     let tipo = _expresion.tipo;
     if (tipo === Enum_1.Tipos.DECLARACION) {
         let contexto = new Contexto_1.Contexto();
-        let id = Expresion_1.default(_expresion.variable, _ambito, _contexto);
-        let it = Expresion_1.default(_expresion.iterators, _ambito, _contexto);
+        let id = Expresion_1.default(_expresion.variable, _ambito, _contexto, _id);
+        let it = Expresion_1.default(_expresion.iterators, _ambito, _contexto, _id);
         if (id.valor && it) {
             contexto = it;
-            contexto.variable = new Variable_1.Variable(id.valor, Enum_1.Tipos.VARIABLE);
-            if (_expresion.atKey)
-                contexto.atCounter = new Variable_1.Variable(_expresion.atKey.variable, Enum_1.Tipos.VARIABLE);
+            let newVar = new Variable_1.Variable(id.valor, Enum_1.Tipos.VARIABLE, _expresion.linea, _expresion.columna, "For");
+            contexto.variable = newVar;
+            newVar.valor = "For loop variable assigned.";
+            _ambito.tablaVariables.push(newVar);
+            if (_expresion.atKey) {
+                newVar = new Variable_1.Variable(_expresion.atKey.variable, Enum_1.Tipos.VARIABLE, _expresion.linea, _expresion.columna + 5, "At");
+                contexto.atCounter = newVar;
+                newVar.valor = "At keyword used for counter.";
+                _ambito.tablaVariables.push(newVar);
+            }
         }
         return contexto;
     }
     if (tipo === Enum_1.Tipos.VARIABLE) {
-        if (id && _contexto.cadena != Enum_1.Tipos.NONE) {
-            if (id === _expresion.variable)
+        if (_id && _contexto.cadena != Enum_1.Tipos.NONE) {
+            if (_id === _expresion.variable)
                 return _contexto;
             else
                 return null;
@@ -3725,36 +4019,36 @@ function ExpresionQuery(_expresion, _ambito, _contexto, id) {
     }
     if (tipo === Enum_1.Tipos.INTERVALO) {
         let contexto = new Contexto_1.Contexto();
-        let val_1 = Expresion_1.default(_expresion.valor1, _ambito, _contexto);
+        let val_1 = Expresion_1.default(_expresion.valor1, _ambito, _contexto, _id);
         if (!val_1 || val_1.error)
             return val_1;
-        let val_2 = Expresion_1.default(_expresion.valor2, _ambito, _contexto);
+        let val_2 = Expresion_1.default(_expresion.valor2, _ambito, _contexto, _id);
         if (!val_2 || val_2.error)
             return val_2;
         for (let i = parseInt(val_1.valor); i <= parseInt(val_2.valor); i++) {
             contexto.items.push(i);
         }
-        if (id)
-            contexto.variable = new Variable_1.Variable(id, Enum_1.Tipos.VARIABLE);
+        if (_id)
+            contexto.variable = new Variable_1.Variable(_id, Enum_1.Tipos.VARIABLE, _expresion.linea, _expresion.columna);
         contexto.cadena = Enum_1.Tipos.INTERVALO;
         return contexto;
     }
     if (tipo === Enum_1.Tipos.VALORES) {
         let contexto = new Contexto_1.Contexto();
         _expresion.valores.forEach((valor) => {
-            const expresion = Expresion_1.default(valor, _ambito, _contexto);
+            const expresion = Expresion_1.default(valor, _ambito, _contexto, _id);
             if (expresion && !expresion.error)
                 contexto.items.push(parseInt(expresion.valor));
         });
-        if (id)
-            contexto.variable = new Variable_1.Variable(id, Enum_1.Tipos.VARIABLE);
+        if (_id)
+            contexto.variable = new Variable_1.Variable(_id, Enum_1.Tipos.VARIABLE, _expresion.linea, _expresion.columna);
         contexto.cadena = Enum_1.Tipos.VALORES;
         return contexto;
     }
     if (tipo === Enum_1.Tipos.HTML) {
         let content = [];
         for (let i = 0; i < _expresion.value.length; i++) {
-            const value = Expresion_1.default(_expresion.value[i], _ambito, _contexto, id);
+            const value = Expresion_1.default(_expresion.value[i], _ambito, _contexto, _id);
             if (value)
                 content = content.concat(value);
             // else content.pop();
@@ -3765,25 +4059,32 @@ function ExpresionQuery(_expresion, _ambito, _contexto, id) {
         return { valor: _expresion.contenido };
     }
     if (tipo === Enum_1.Tipos.INYECCION) {
-        let e_0 = Expresion_1.default(_expresion.path[0], _ambito, _contexto, id);
+        let e_0 = Expresion_1.default(_expresion.path[0], _ambito, _contexto, _id);
         if (!e_0)
             return null;
         if (_contexto.items.length > 0)
             return _contexto;
         const Bloque = __webpack_require__(/*! ../Bloque_XQuery */ "+qh/");
-        let elements = [];
-        /* elements.push(e_0); */
-        let _x = Bloque.getIterators(_expresion.path, _ambito, _contexto, id);
+        let elements = []; /* elements.push(e_0); */
+        let _x = Bloque.getIterators(_expresion.path, _ambito, _contexto, _id);
         if (_x && _x.length > 0) {
             _contexto = _x;
             elements = elements.concat(_x);
         }
         return elements;
     }
+    else if (tipo === Enum_1.Tipos.LLAMADA_FUNCION) {
+        const Exec = __webpack_require__(/*! ../Funciones/Exec */ "zmd1");
+        return Exec(_expresion, _ambito, _contexto, _id);
+    }
+    else if (tipo === Enum_1.Tipos.LLAMADA_NATIVA) {
+        const Nativa = __webpack_require__(/*! ../Funciones/Nativas */ "Kzq8");
+        return Nativa(_expresion, _ambito, _contexto, _id);
+    }
     else {
         // console.log(_expresion, 4444);
         const Bloque = __webpack_require__(/*! ../Bloque_XQuery */ "+qh/");
-        let _iterators = Bloque.getIterators(_expresion, _ambito, _contexto, id);
+        let _iterators = Bloque.getIterators(_expresion, _ambito, _contexto, _id);
         if (_iterators === null)
             return null;
         return _iterators;
@@ -4365,6 +4666,47 @@ AppComponent.ɵcmp = _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵdefineCompo
 
 /***/ }),
 
+/***/ "TrQH":
+/*!**************************************!*\
+  !*** ./src/js/controller/Funcion.js ***!
+  \**************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.Funcion = void 0;
+class Funcion {
+    constructor(_name, _parametros, _sentencias, _retorno, _linea, _columna) {
+        this.name = _name;
+        this.parametros = this.createParam(_parametros);
+        this.sentencias = _sentencias;
+        this.retorno = _retorno;
+        this.linea = _linea;
+        this.columna = _columna;
+    }
+    createParam(_params) {
+        let parametros = [];
+        _params.forEach(param => {
+            parametros.push(new Parametro(param.id.variable, param.tipado, param.linea, param.columna));
+        });
+        return parametros;
+    }
+}
+exports.Funcion = Funcion;
+class Parametro {
+    constructor(_id, _tipado, _linea, _columna) {
+        this.id = _id;
+        this.tipado = _tipado;
+        this.linea = _linea;
+        this.columna = _columna;
+    }
+}
+
+
+/***/ }),
+
 /***/ "TxV8":
 /*!***************************************************************!*\
   !*** ./src/js/controller/xpath/Expresion/Operators/Logica.js ***!
@@ -4375,9 +4717,12 @@ AppComponent.ɵcmp = _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵdefineCompo
 "use strict";
 
 const Enum_1 = __webpack_require__(/*! ../../../../model/xpath/Enum */ "MEUw");
-function Logica(_expresion, _ambito, _contexto) {
-    let operators = init(_expresion.opIzq, _expresion.opDer, _ambito, _contexto, _expresion.tipo);
+const Contexto_1 = __webpack_require__(/*! ../../../Contexto */ "ivfU");
+function Logica(_expresion, _ambito, _contexto, _id) {
+    let operators = init(_expresion.opIzq, _expresion.opDer, _ambito, _contexto, _expresion.tipo, _id);
     if (operators === null || operators.error)
+        return operators;
+    if (Array.isArray(operators))
         return operators;
     switch (operators.tipo) {
         case Enum_1.Tipos.LOGICA_AND:
@@ -4388,16 +4733,20 @@ function Logica(_expresion, _ambito, _contexto) {
             return null;
     }
 }
-function init(_opIzq, _opDer, _ambito, _contexto, _tipo) {
+function init(_opIzq, _opDer, _ambito, _contexto, _tipo, _id) {
     const Expresion = __webpack_require__(/*! ../Expresion */ "gajf");
-    let op1 = Expresion((Array.isArray(_opIzq)) ? (_opIzq[0]) : (_opIzq), _ambito, _contexto);
+    let op1 = Expresion(_opIzq, _ambito, _contexto, _id);
     if (op1 === null || op1.error)
         return op1;
-    let op2 = Expresion((Array.isArray(_opDer)) ? (_opDer[0]) : (_opDer), _ambito, _contexto);
+    let op2 = Expresion(_opDer, _ambito, _contexto, _id);
     if (op2 === null || op2.error)
         return op2;
     let tipo = _tipo;
     // console.log(op1, 888, op2)
+    if (Array.isArray(op1) && Array.isArray(op2)) {
+        let _or = (tipo === Enum_1.Tipos.LOGICA_OR) ? true : false;
+        return operate(op1[0], op2[0], _or);
+    }
     if (op1.tipo === Enum_1.Tipos.ELEMENTOS && op2.tipo === Enum_1.Tipos.ELEMENTOS) {
         return { op1: op1, op2: op2, tipo: tipo };
     }
@@ -4473,6 +4822,56 @@ function filterElements(e1, e2, desigualdad, _contexto) {
     }
     return tmp;
 }
+function operate(op1, op2, _or) {
+    if (op1.constructor.name === "Contexto") {
+        return filterContext(op1, op2, _or);
+    }
+    else if (op1.tipo === Enum_1.Tipos.BOOLEANO && op2.tipo === Enum_1.Tipos.BOOLEANO) {
+        return returnBoolean(op1, op2, _or);
+    }
+    else
+        return null;
+}
+function returnBoolean(_val1, _val2, _or) {
+    // console.log(_val1, _val2)
+    switch (_or) {
+        case true:
+            return [{ valor: (_val1.valor || _val2.valor), tipo: Enum_1.Tipos.BOOLEANO }];
+        case false:
+            return [{ valor: (_val1.valor && _val2.valor), tipo: Enum_1.Tipos.BOOLEANO }];
+        default:
+            return null;
+    }
+}
+function filterContext(_context1, _context2, _or) {
+    let array1 = _context1.elementos;
+    let array2 = _context2.elementos;
+    let tmp = new Contexto_1.Contexto();
+    if (_context1.variable)
+        tmp.variable = _context1.variable;
+    tmp.cadena = _context1.cadena;
+    for (let i = 0; i < array1.length; i++) {
+        const obj1 = array1[i];
+        let val1 = (obj1.id_open) ? (obj1.id_open) : (obj1.id);
+        for (let j = 0; j < array2.length; j++) {
+            const obj2 = array2[j];
+            let val2 = (obj2.id_open) ? (obj2.id_open) : (obj2.id);
+            if (val1 == val2 || _or) {
+                tmp.elementos.push(obj1);
+                tmp.elementos.push(obj2);
+            }
+        }
+    }
+    tmp.removeDuplicates();
+    if (!_or) {
+        let min = tmp.elementos.length - Math.min(array1.length, array2.length);
+        for (let i = 0; i < min; i++) {
+            tmp.elementos.pop();
+        }
+    }
+    // console.log(tmp, 3131313131)
+    return [tmp];
+}
 function verificarDesigualdad(_tipo, v1, e1, v2, e2) {
     switch (_tipo) {
         case Enum_1.Tipos.RELACIONAL_MAYOR:
@@ -4492,6 +4891,28 @@ function verificarDesigualdad(_tipo, v1, e1, v2, e2) {
     }
 }
 module.exports = Logica;
+
+
+/***/ }),
+
+/***/ "VIoe":
+/*!***********************************************************!*\
+  !*** ./src/js/controller/xquery/Funciones/NewFunction.js ***!
+  \***********************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+const Funcion_1 = __webpack_require__(/*! ../../Funcion */ "TrQH");
+function NewFunction(_instr, _ambito, _contexto) {
+    let name = _instr.name;
+    let parametros = _instr.parametros;
+    let tipado = _instr.tipado;
+    let sentencias = _instr.instrucciones;
+    _ambito.addFunction(new Funcion_1.Funcion(name, parametros, sentencias, tipado, _instr.linea, _instr.columna));
+}
+module.exports = NewFunction;
 
 
 /***/ }),
@@ -4677,6 +5098,7 @@ class XQObjeto {
             parametros: _parametros,
             tipado: _tipado,
             instrucciones: _instrucciones,
+            tipo: Enum_1.Tipos.DECLARACION_FUNCION,
             linea: _linea,
             columna: _columna
         };
@@ -4685,121 +5107,22 @@ class XQObjeto {
         return {
             name: _name,
             parametros: _parametros,
+            tipo: Enum_1.Tipos.LLAMADA_FUNCION,
+            linea: _linea,
+            columna: _columna
+        };
+    }
+    llamadaNativa(_name, _parametros, _linea, _columna) {
+        return {
+            name: _name,
+            parametros: _parametros,
+            tipo: Enum_1.Tipos.LLAMADA_NATIVA,
             linea: _linea,
             columna: _columna
         };
     }
 }
 exports.XQObjeto = XQObjeto;
-
-
-/***/ }),
-
-/***/ "XhXr":
-/*!**************************************************!*\
-  !*** ./src/js/controller/xquery/BuildElement.js ***!
-  \**************************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-const Enum_1 = __webpack_require__(/*! ../../model/xpath/Enum */ "MEUw");
-function pushIterators(input) {
-    let iterators = [];
-    // console.log(input, 36363638)
-    for (let i = 0; i < input.length; i++) {
-        const path = input[i];
-        if (path.items && path.items.length > 0) {
-            return input;
-        }
-        if (path.notFound) {
-            return [{ notFound: 'No se encontraron elementos.' }];
-        }
-        if (path.valor || path.valor === 0) {
-            iterators.unshift(path.valor);
-        }
-        if (path.cadena === Enum_1.Tipos.TEXTOS) {
-            let root = path.texto;
-            root.forEach(txt => {
-                iterators.push(concatText(txt).substring(1));
-            });
-        }
-        else if (path.cadena === Enum_1.Tipos.ELEMENTOS) {
-            let root = path.elementos;
-            root.forEach(element => {
-                iterators.push(concatChilds(element, "").substring(1));
-            });
-        }
-        else if (path.cadena === Enum_1.Tipos.ATRIBUTOS) {
-            if (path.atributos) {
-                let root = path.atributos; // <-- muestra sólo el atributo
-                root.forEach(attr => {
-                    iterators.push(concatAttributes(attr).substring(1));
-                });
-            }
-            else {
-                let root = path.elementos; // <-- muestra toda la etiqueta
-                root.forEach(element => {
-                    iterators.push(extractAttributes(element, "").substring(1));
-                });
-            }
-        }
-        else if (path.cadena === Enum_1.Tipos.COMBINADO) {
-            let root = path.nodos;
-            root.forEach((elemento) => {
-                if (elemento.elementos) {
-                    iterators.push(concatChilds(elemento.elementos, "").substring(1));
-                }
-                else if (elemento.textos) {
-                    iterators.push(concatText(elemento.textos).substring(1));
-                }
-            });
-        }
-    }
-    if (iterators.length > 0)
-        return [iterators];
-    return [{ notFound: 'No se encontraron elementos.' }];
-}
-function concatChilds(_element, cadena) {
-    cadena = ("\n<" + _element.id_open);
-    if (_element.attributes) {
-        _element.attributes.forEach(attribute => {
-            cadena += (" " + attribute.id + "=\"" + attribute.value + "\"");
-        });
-    }
-    if (_element.childs) {
-        cadena += ">";
-        _element.childs.forEach(child => {
-            cadena += concatChilds(child, cadena);
-        });
-        cadena += ("\n</" + _element.id_close + ">\n");
-    }
-    else {
-        if (_element.id_close === null)
-            cadena += "/>";
-        else {
-            cadena += ">";
-            cadena += (_element.value + "</" + _element.id_close + ">");
-        }
-    }
-    return cadena;
-}
-function concatAttributes(_attribute) {
-    return `\n${_attribute.id}="${_attribute.value}"`;
-}
-function extractAttributes(_element, cadena) {
-    if (_element.attributes) {
-        _element.attributes.forEach(attribute => {
-            cadena += `\n${attribute.id}="${attribute.value}"`;
-        });
-    }
-    return cadena;
-}
-function concatText(_text) {
-    return `\n${_text}`;
-}
-module.exports = pushIterators;
 
 
 /***/ }),
@@ -6845,12 +7168,12 @@ if ( true && __webpack_require__.c[__webpack_require__.s] === module) {
 "use strict";
 
 const Enum_1 = __webpack_require__(/*! ../../../model/xpath/Enum */ "MEUw");
-function Expresion(_expresion, _ambito, _contexto, id) {
+function Expresion(_expresion, _ambito, _contexto, _id) {
     var _a;
     // if (!_expresion) return null;
     let tipo = (Array.isArray(_expresion)) ? Enum_1.Tipos.NONE : _expresion.tipo;
     if (tipo === Enum_1.Tipos.EXPRESION) {
-        return Expresion(_expresion.expresion, _ambito, _contexto, id);
+        return Expresion(_expresion.expresion, _ambito, _contexto, _id);
     }
     else if (tipo === Enum_1.Tipos.NODENAME) {
         return { valor: _expresion.nodename, tipo: Enum_1.Tipos.ELEMENTOS, linea: _expresion.linea, columna: _expresion.columna };
@@ -6860,8 +7183,8 @@ function Expresion(_expresion, _ambito, _contexto, id) {
     }
     else if (tipo === Enum_1.Tipos.SELECT_CURRENT) {
         let exp = _expresion.expresion;
-        if (id) {
-            if (id === exp)
+        if (_id) {
+            if (_id === exp)
                 return { valor: ".", tipo: Enum_1.Tipos.ELEMENTOS, linea: _expresion.linea, columna: _expresion.columna };
             if (((_a = _contexto.atCounter) === null || _a === void 0 ? void 0 : _a.id) === exp) {
                 let length = _contexto.getLength();
@@ -6872,8 +7195,8 @@ function Expresion(_expresion, _ambito, _contexto, id) {
             }
             return null;
         }
-        if (_ambito.existeVariable(exp)) {
-            let valueFromVar = _ambito.getContextFromVar(exp);
+        if (_contexto.existeVariable(exp) !== -1) {
+            let valueFromVar = _contexto.getVar(exp);
             if (valueFromVar === null || valueFromVar === void 0 ? void 0 : valueFromVar.contexto) {
                 _ambito.contextFromVar = valueFromVar;
                 return { valor: ".", tipo: Enum_1.Tipos.ELEMENTOS, linea: _expresion.linea, columna: _expresion.columna, contextFromVar: valueFromVar.contexto };
@@ -6892,7 +7215,7 @@ function Expresion(_expresion, _ambito, _contexto, id) {
         return { valor: _expresion.expresion, tipo: Enum_1.Tipos.ATRIBUTOS, linea: _expresion.linea, columna: _expresion.columna };
     }
     else if (tipo === Enum_1.Tipos.SELECT_AXIS) {
-        let nodetest = Expresion(_expresion.nodetest.expresion, _ambito, _contexto);
+        let nodetest = Expresion(_expresion.nodetest.expresion, _ambito, _contexto, _id);
         if (nodetest.error)
             return nodetest;
         return { axisname: _expresion.axisname, nodetest: nodetest, predicate: _expresion.nodetest.predicate, tipo: Enum_1.Tipos.SELECT_AXIS, linea: _expresion.linea, columna: _expresion.columna };
@@ -6915,25 +7238,25 @@ function Expresion(_expresion, _ambito, _contexto, id) {
     else if (tipo === Enum_1.Tipos.OPERACION_SUMA || tipo === Enum_1.Tipos.OPERACION_RESTA || tipo === Enum_1.Tipos.OPERACION_MULTIPLICACION
         || tipo === Enum_1.Tipos.OPERACION_DIVISION || tipo === Enum_1.Tipos.OPERACION_MODULO || tipo === Enum_1.Tipos.OPERACION_NEGACION_UNARIA) {
         const Aritmetica = __webpack_require__(/*! ./Operators/Aritmetica */ "qbRd");
-        return Aritmetica(_expresion, _ambito, _contexto);
+        return Aritmetica(_expresion, _ambito, _contexto, _id);
     }
     else if (tipo === Enum_1.Tipos.RELACIONAL_MAYOR || tipo === Enum_1.Tipos.RELACIONAL_MAYORIGUAL
         || tipo === Enum_1.Tipos.RELACIONAL_MENOR || tipo === Enum_1.Tipos.RELACIONAL_MENORIGUAL
         || tipo === Enum_1.Tipos.RELACIONAL_IGUAL || tipo === Enum_1.Tipos.RELACIONAL_DIFERENTE) {
         const Relacional = __webpack_require__(/*! ./Operators/Relacional */ "r8U1");
-        return Relacional(_expresion, _ambito, _contexto, id);
+        return Relacional(_expresion, _ambito, _contexto, _id);
     }
     else if (tipo === Enum_1.Tipos.LOGICA_AND || tipo === Enum_1.Tipos.LOGICA_OR) {
         const Logica = __webpack_require__(/*! ./Operators/Logica */ "TxV8");
-        return Logica(_expresion, _ambito, _contexto);
+        return Logica(_expresion, _ambito, _contexto, _id);
     }
     else if (tipo === Enum_1.Tipos.IF_THEN_ELSE) {
         const IfConditional = __webpack_require__(/*! ../../xquery/If */ "tJF2");
-        return IfConditional(_expresion.condicionIf, _expresion.instruccionesThen, _expresion.instruccionesElse, _ambito, _contexto, id);
+        return IfConditional(_expresion.condicionIf, _expresion.instruccionesThen, _expresion.instruccionesElse, _ambito, _contexto, _id);
     }
     else {
         const ExpresionQuery = __webpack_require__(/*! ../../xquery/Expresion/Expresion */ "Rfe7");
-        return ExpresionQuery(_expresion, _ambito, _contexto, id);
+        return ExpresionQuery(_expresion, _ambito, _contexto, _id);
     }
 }
 module.exports = Expresion;
@@ -6956,12 +7279,14 @@ const Variable_1 = __webpack_require__(/*! ../../model/xml/Ambito/Variable */ "C
 function LetClause(_id, _valor, _ambito, _contexto, id) {
     const Expresion = __webpack_require__(/*! ../xpath/Expresion/Expresion */ "gajf");
     let tmp = new Contexto_1.Contexto(_contexto);
-    let variable = new Variable_1.Variable(_id.variable, Enum_1.Tipos.VARIABLE);
+    let variable = new Variable_1.Variable(_id.variable, Enum_1.Tipos.VARIABLE, _id.linea, _id.columna, "local");
     let contexto = Expresion(_valor, _ambito, tmp, id);
-    // console.log(_valor,3020220)
+    if (contexto === null || contexto.error)
+        return contexto;
     if (contexto) {
         variable.setValue(contexto);
-        _ambito.addVariabe(variable);
+        tmp.addVariable(variable);
+        _ambito.tablaVariables.push(variable);
     }
     // console.log(variable, 3333333);
 }
@@ -7024,11 +7349,9 @@ function compile(req) {
         let xml_parse = xml_ast.ast; // AST que genera Jison
         let global = new Ambito_1.Ambito(null, "global"); // Ámbito global
         let cadena = new Global_1.Global(xml_parse, global); // Llena la tabla de símbolos
-        let simbolos = cadena.ambito.getArraySymbols(); // Arreglo con los símbolos
         // Análisis de xQuery
         let xQuery_ast = parser_xQuery.parse(xQuery);
         let ast = (xQuery_ast.xquery) ? (xQuery_ast.xquery) : (xQuery_ast.xpath); // AST que genera Jison
-        // console.log(xQuery_ast.ast, "ast");
         if (xQuery_ast.errors.length > 0 || ast === null || xQuery_ast === true) {
             if (xQuery_ast.errors.length > 0)
                 errors = xQuery_ast.errors;
@@ -7040,16 +7363,25 @@ function compile(req) {
         let root = new Contexto_1.Contexto();
         root.elementos = [new Element_1.Element("[object XMLDocument]", [], "", cadena.ambito.tablaSimbolos, "0", "0", "[object XMLDocument]")];
         let bloque;
+        let consola = "";
         if (xQuery_ast.xquery) {
             bloque = Bloque_XQuery_1.default.getOutput(xQuery_ast.xquery, cadena.ambito, root); // Procesa las instrucciones de XQuery (fase 2)
         }
         else if (xQuery_ast.xpath) {
             bloque = Bloque_XPath_1.default(xQuery_ast.xpath, cadena.ambito, root); // Procesa las instrucciones si sólo viene XPath (fase 1)
         }
+        if (bloque.cadena)
+            consola = bloque.cadena;
+        if (bloque.error) {
+            errors.push(bloque);
+            consola = bloque.error;
+        }
+        let simbolos = cadena.ambito.getArraySymbols(); // Arreglo con los símbolos
+        console.log(consola);
         let output = {
             arreglo_simbolos: simbolos,
             arreglo_errores: errors,
-            output: bloque === null || bloque === void 0 ? void 0 : bloque.cadena,
+            output: consola,
             encoding: encoding,
             codigo3d: bloque === null || bloque === void 0 ? void 0 : bloque.codigo3d
         };
@@ -7251,7 +7583,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.Contexto = void 0;
 const Enum_1 = __webpack_require__(/*! ../model/xpath/Enum */ "MEUw");
 class Contexto {
-    constructor(_context) {
+    constructor(_context, _variables) {
         if (_context) {
             this.elementos = _context.elementos;
             this.atributos = _context.atributos;
@@ -7263,6 +7595,7 @@ class Contexto {
                 this.variable = _context.variable;
             if (_context.atCounter)
                 this.atCounter = _context.atCounter;
+            this.tablaVariables = _context.tablaVariables;
         }
         else {
             this.elementos = [];
@@ -7271,8 +7604,37 @@ class Contexto {
             this.nodos = [];
             this.items = [];
             this.cadena = Enum_1.Tipos.NONE;
+            this.tablaVariables = [];
+        }
+        if (_variables) {
+            this.tablaVariables = _variables;
         }
         this.error = this.notFound = null;
+    }
+    addVariable(_variable) {
+        let exists = this.existeVariable(_variable.id);
+        if (exists !== -1) {
+            this.tablaVariables[exists] = _variable;
+        }
+        else {
+            this.tablaVariables.unshift(_variable);
+        }
+    }
+    existeVariable(_id) {
+        for (let i = 0; i < this.tablaVariables.length; i++) {
+            const variable = this.tablaVariables[i];
+            if (_id == variable.id && (variable.contexto || variable.valor))
+                return i;
+        }
+        return -1;
+    }
+    getVar(_id) {
+        for (let i = 0; i < this.tablaVariables.length; i++) {
+            const variable = this.tablaVariables[i];
+            if (_id == variable.id && (variable.contexto || variable.valor))
+                return variable;
+        }
+        return null;
     }
     pushElement(_v) {
         this.elementos.push(_v);
@@ -9040,19 +9402,20 @@ if ( true && __webpack_require__.c[__webpack_require__.s] === module) {
   }
 */
 var xquery = (function(){
-var o=function(k,v,o,l){for(o=o||{},l=k.length;l--;o[k[l]]=v);return o},$V0=[27,57,69,76,95,96,97,98,99,100,101,102,103,104,107,108,109,110,111,112,113,114,115,116,117,118,119],$V1=[2,49],$V2=[1,20],$V3=[1,17],$V4=[1,18],$V5=[1,14],$V6=[1,15],$V7=[1,16],$V8=[1,13],$V9=[5,74],$Va=[1,38],$Vb=[1,44],$Vc=[1,27],$Vd=[1,26],$Ve=[1,40],$Vf=[1,41],$Vg=[1,42],$Vh=[1,43],$Vi=[1,58],$Vj=[1,59],$Vk=[1,34],$Vl=[1,35],$Vm=[1,36],$Vn=[1,37],$Vo=[1,45],$Vp=[1,46],$Vq=[1,47],$Vr=[1,48],$Vs=[1,49],$Vt=[1,50],$Vu=[1,51],$Vv=[1,52],$Vw=[1,53],$Vx=[1,54],$Vy=[1,55],$Vz=[1,56],$VA=[1,57],$VB=[5,17,23,25,33,42,48,55],$VC=[1,71],$VD=[1,69],$VE=[1,73],$VF=[1,70],$VG=[5,17,20,22,23,25,27,33,35,42,48,52,53,55,57,61,65,67,69,73,74,76,77,83,84,85,86,87,88,89,90,91,92,95,96,97,98,99,100,101,102,103,104,107,108,109,110,111,112,113,114,115,116,117,118,119],$VH=[2,77],$VI=[1,87],$VJ=[5,17,20,22,23,25,27,33,35,42,48,52,53,55,57,61,65,67,69,73,74,76,77,82,83,84,85,86,87,88,89,90,91,92,95,96,97,98,99,100,101,102,103,104,107,108,109,110,111,112,113,114,115,116,117,118,119],$VK=[1,106],$VL=[1,107],$VM=[35,48,52,53,55],$VN=[1,112],$VO=[1,114],$VP=[1,122],$VQ=[1,117],$VR=[1,111],$VS=[1,113],$VT=[1,115],$VU=[1,116],$VV=[1,118],$VW=[1,119],$VX=[1,120],$VY=[1,121],$VZ=[1,123],$V_=[1,124],$V$=[5,17,20,22,23,25,33,35,42,48,52,53,55,61,65,67,73,77,83,84,85,86,87,88,89,90,91,92],$V01=[48,52,53,55],$V11=[1,152],$V21=[67,69],$V31=[1,171],$V41=[5,17,23,25,33,35,42,48,52,53,55],$V51=[5,17,20,22,23,25,33,35,42,48,52,53,55,61,65,67,73,83,84,85,90,91,92],$V61=[5,17,20,22,23,25,33,35,42,48,52,53,55,61,65,67,73,83,84,85,86,87,90,91,92],$V71=[1,202],$V81=[1,203],$V91=[20,35],$Va1=[27,31,65,67,69],$Vb1=[5,17,23,25,27,31,33,42,48,55,65,67,69],$Vc1=[1,239];
+var o=function(k,v,o,l){for(o=o||{},l=k.length;l--;o[k[l]]=v);return o},$V0=[27,65,76,77,99,100,101,102,103,104,105,106,107,108,111,112,113,114,115,116,117,118,119,120,121,122,123],$V1=[2,59],$V2=[1,26],$V3=[1,17],$V4=[1,18],$V5=[1,21],$V6=[1,22],$V7=[1,23],$V8=[1,24],$V9=[1,25],$Va=[1,14],$Vb=[1,15],$Vc=[1,16],$Vd=[1,13],$Ve=[5,73],$Vf=[1,44],$Vg=[1,50],$Vh=[1,32],$Vi=[1,33],$Vj=[1,46],$Vk=[1,47],$Vl=[1,48],$Vm=[1,49],$Vn=[1,64],$Vo=[1,65],$Vp=[1,40],$Vq=[1,41],$Vr=[1,42],$Vs=[1,43],$Vt=[1,51],$Vu=[1,52],$Vv=[1,53],$Vw=[1,54],$Vx=[1,55],$Vy=[1,56],$Vz=[1,57],$VA=[1,58],$VB=[1,59],$VC=[1,60],$VD=[1,61],$VE=[1,62],$VF=[1,63],$VG=[5,17,23,25,33,45,46,47,48,49,50,56,63],$VH=[1,78],$VI=[1,75],$VJ=[1,77],$VK=[1,76],$VL=[1,80],$VM=[5,17,20,22,23,25,27,33,35,42,45,46,47,48,49,50,56,60,61,63,65,69,73,76,77,83,84,85,86,87,88,89,90,91,92,93,94,95,99,100,101,102,103,104,105,106,107,108,111,112,113,114,115,116,117,118,119,120,121,122,123],$VN=[2,75],$VO=[1,95],$VP=[5,17,20,22,23,25,27,33,35,42,45,46,47,48,49,50,56,60,61,63,65,69,73,76,77,82,83,84,85,86,87,88,89,90,91,92,93,94,95,99,100,101,102,103,104,105,106,107,108,111,112,113,114,115,116,117,118,119,120,121,122,123],$VQ=[1,114],$VR=[1,115],$VS=[35,56,60,61,63],$VT=[1,125],$VU=[1,119],$VV=[1,120],$VW=[1,121],$VX=[1,122],$VY=[1,123],$VZ=[1,124],$V_=[1,126],$V$=[1,127],$V01=[1,128],$V11=[1,129],$V21=[1,130],$V31=[1,131],$V41=[1,132],$V51=[5,17,20,22,23,25,33,35,42,45,46,47,48,49,50,56,60,61,63,69,83,84,85,86,87,88,89,90,91,92,93,94,95],$V61=[56,60,61,63],$V71=[1,164],$V81=[77,87],$V91=[1,183],$Va1=[1,188],$Vb1=[20,35],$Vc1=[5,17,23,25,33,35,45,46,47,48,49,50,56,60,61,63],$Vd1=[5,17,20,22,23,25,33,35,45,46,47,48,49,50,56,60,61,63,69,83,84,85,86,87,92,93,94,95],$Ve1=[5,17,20,22,23,25,33,35,45,46,47,48,49,50,56,60,61,63,69,83,84,85,86,87,88,89,92,93,94,95],$Vf1=[1,217],$Vg1=[1,218],$Vh1=[27,31,77,85,87],$Vi1=[5,17,23,25,27,31,33,45,46,47,48,49,50,56,63,77,85,87],$Vj1=[1,252],$Vk1=[20,31,35],$Vl1=[20,31,35,41,42];
 var parser = {trace: function trace () { },
 yy: {},
-symbols_: {"error":2,"ini":3,"XPATH_U":4,"EOF":5,"XQUERY":6,"INSTR_QUERY":7,"FOR_LOOP":8,"LET_CLAUSE":9,"RETURN_STATEMENT":10,"FUNCIONES":11,"LLAMADA":12,"IF_THEN_ELSE":13,"IF":14,"THEN":15,"ELSE":16,"tk_if":17,"tk_ParA":18,"E":19,"tk_ParC":20,"tk_then":21,"tk_else":22,"tk_declare":23,"tk_function":24,"tk_local":25,"tk_dospts":26,"tk_id":27,"LISTA_PARAMETROS":28,"tk_as":29,"DATATPYE":30,"tk_labre":31,"INSTR_FUNCIONES":32,"tk_lcierra":33,"tk_ptcoma":34,"tk_coma":35,"PARAMETRO":36,"VARIABLE":37,"tk_xs":38,"RESERVED_TYPES":39,"tk_interrogacion":40,"VALORES":41,"tk_for":42,"DECLARACION":43,"INSTRUCCIONES_FOR":44,"INSTR_FOR_P":45,"WHERE_CONDITION":46,"ORDER_BY":47,"tk_let":48,"tk_2puntos_igual":49,"DECLARACIONPP":50,"COMA_AUX":51,"tk_where":52,"tk_order":53,"tk_by":54,"tk_return":55,"HTML":56,"tk_dolar":57,"DECLARACIONP":58,"tk_in":59,"tk_at":60,"tk_to":61,"DOC":62,"tk_doc":63,"STRING":64,"tk_menor":65,"ATTRIBUTE_LIST":66,"tk_mayor":67,"CONTENT_LL":68,"tk_bar":69,"CONTENT_TAG":70,"XPATH":71,"tk_data":72,"tk_equal":73,"tk_line":74,"QUERY":75,"tk_2bar":76,"tk_asterisco":77,"CORCHETP":78,"EXP_PR":79,"AXIS":80,"CORCHET":81,"tk_corA":82,"tk_corC":83,"tk_menorigual":84,"tk_mayorigual":85,"tk_mas":86,"tk_menos":87,"tk_div":88,"tk_mod":89,"tk_or":90,"tk_and":91,"tk_diferent":92,"FUNC":93,"PRIMITIVO":94,"num":95,"tk_punto":96,"tk_2puntos":97,"tk_arroba":98,"tk_string_d":99,"tk_string_s":100,"tk_text":101,"tk_last":102,"tk_position":103,"tk_node":104,"AXISNAME":105,"tk_4puntos":106,"tk_ancestor":107,"tk_ancestor2":108,"tk_attribute":109,"tk_child":110,"tk_descendant":111,"tk_descendant2":112,"tk_following":113,"tk_following2":114,"tk_namespace":115,"tk_parent":116,"tk_preceding":117,"tk_preceding2":118,"tk_self":119,"tk_string":120,"tk_integer":121,"tk_decimal":122,"tk_boolean":123,"tk_normalizedString":124,"tk_token":125,"tk_date":126,"tk_dateTime":127,"tk_duration":128,"tk_time":129,"hexBinary":130,"tk_uri":131,"$accept":0,"$end":1},
-terminals_: {2:"error",5:"EOF",17:"tk_if",18:"tk_ParA",20:"tk_ParC",21:"tk_then",22:"tk_else",23:"tk_declare",24:"tk_function",25:"tk_local",26:"tk_dospts",27:"tk_id",29:"tk_as",31:"tk_labre",33:"tk_lcierra",34:"tk_ptcoma",35:"tk_coma",38:"tk_xs",40:"tk_interrogacion",42:"tk_for",48:"tk_let",49:"tk_2puntos_igual",52:"tk_where",53:"tk_order",54:"tk_by",55:"tk_return",57:"tk_dolar",59:"tk_in",60:"tk_at",61:"tk_to",63:"tk_doc",65:"tk_menor",67:"tk_mayor",69:"tk_bar",72:"tk_data",73:"tk_equal",74:"tk_line",76:"tk_2bar",77:"tk_asterisco",82:"tk_corA",83:"tk_corC",84:"tk_menorigual",85:"tk_mayorigual",86:"tk_mas",87:"tk_menos",88:"tk_div",89:"tk_mod",90:"tk_or",91:"tk_and",92:"tk_diferent",95:"num",96:"tk_punto",97:"tk_2puntos",98:"tk_arroba",99:"tk_string_d",100:"tk_string_s",101:"tk_text",102:"tk_last",103:"tk_position",104:"tk_node",106:"tk_4puntos",107:"tk_ancestor",108:"tk_ancestor2",109:"tk_attribute",110:"tk_child",111:"tk_descendant",112:"tk_descendant2",113:"tk_following",114:"tk_following2",115:"tk_namespace",116:"tk_parent",117:"tk_preceding",118:"tk_preceding2",119:"tk_self",120:"tk_string",121:"tk_integer",122:"tk_decimal",123:"tk_boolean",124:"tk_normalizedString",125:"tk_token",126:"tk_date",127:"tk_dateTime",128:"tk_duration",129:"tk_time",130:"hexBinary",131:"tk_uri"},
-productions_: [0,[3,2],[3,2],[6,2],[6,1],[7,1],[7,1],[7,1],[7,1],[7,1],[7,1],[13,3],[14,4],[15,2],[16,2],[16,3],[16,2],[11,14],[28,3],[28,1],[36,3],[30,4],[32,1],[12,6],[8,4],[8,3],[44,2],[44,1],[45,1],[45,1],[45,1],[9,4],[51,3],[51,1],[46,2],[47,3],[47,3],[10,2],[10,2],[10,2],[37,2],[43,3],[43,1],[58,3],[58,5],[50,5],[50,5],[50,1],[62,4],[62,0],[41,3],[41,1],[56,9],[56,8],[56,5],[68,2],[68,1],[68,1],[70,1],[70,3],[70,6],[66,3],[66,3],[66,0],[4,3],[4,1],[71,2],[71,2],[75,2],[75,2],[75,3],[75,3],[75,1],[75,1],[81,4],[81,3],[78,1],[78,0],[19,3],[19,3],[19,3],[19,3],[19,3],[19,3],[19,3],[19,3],[19,3],[19,2],[19,3],[19,3],[19,3],[19,3],[19,3],[19,1],[19,4],[19,1],[79,2],[79,2],[79,2],[94,1],[94,1],[94,1],[94,1],[94,1],[94,2],[94,2],[64,1],[64,1],[93,3],[93,3],[93,3],[93,3],[80,3],[80,4],[105,1],[105,1],[105,1],[105,1],[105,1],[105,1],[105,1],[105,1],[105,1],[105,1],[105,1],[105,1],[105,1],[39,1],[39,1],[39,1],[39,1],[39,1],[39,1],[39,1],[39,1],[39,1],[39,1],[39,1],[39,1]],
+symbols_: {"error":2,"ini":3,"XPATH_U":4,"EOF":5,"XQUERY":6,"INSTR_QUERY":7,"FOR_LOOP":8,"LET_CLAUSE":9,"RETURN_STATEMENT":10,"FUNCIONES":11,"LLAMADA":12,"IF_THEN_ELSE":13,"IF":14,"THEN":15,"ELSE":16,"tk_if":17,"tk_ParA":18,"E":19,"tk_ParC":20,"tk_then":21,"tk_else":22,"tk_declare":23,"tk_function":24,"tk_local":25,"tk_dospts":26,"tk_id":27,"LISTA_PARAMETROS":28,"tk_as":29,"DATATPYE":30,"tk_labre":31,"INSTR_FUNCIONES":32,"tk_lcierra":33,"tk_ptcoma":34,"tk_coma":35,"PARAMETRO":36,"VARIABLE":37,"tk_xs":38,"RESERVED_TYPES":39,"TERM":40,"tk_interrogacion":41,"tk_asterisco":42,"VALORES":43,"NATIVAS":44,"tk_uppercase":45,"tk_lowercase":46,"tk_string":47,"tk_number":48,"tk_substring":49,"tk_for":50,"DECLARACION":51,"INSTRUCCIONES_FOR":52,"INSTR_FOR_P":53,"WHERE_CONDITION":54,"ORDER_BY":55,"tk_let":56,"tk_2puntos_igual":57,"DECLARACIONPP":58,"COMA_AUX":59,"tk_where":60,"tk_order":61,"tk_by":62,"tk_return":63,"HTML":64,"tk_dolar":65,"DECLARACIONP":66,"tk_in":67,"tk_at":68,"tk_to":69,"DOC":70,"tk_doc":71,"STRING":72,"tk_line":73,"XPATH":74,"QUERY":75,"tk_2bar":76,"tk_bar":77,"CORCHETP":78,"EXP_PR":79,"AXIS":80,"CORCHET":81,"tk_corA":82,"tk_corC":83,"tk_menorigual":84,"tk_menor":85,"tk_mayorigual":86,"tk_mayor":87,"tk_mas":88,"tk_menos":89,"tk_div":90,"tk_mod":91,"tk_or":92,"tk_and":93,"tk_equal":94,"tk_diferent":95,"tk_data":96,"FUNC":97,"PRIMITIVO":98,"num":99,"tk_punto":100,"tk_2puntos":101,"tk_arroba":102,"tk_string_d":103,"tk_string_s":104,"tk_text":105,"tk_last":106,"tk_position":107,"tk_node":108,"AXISNAME":109,"tk_4puntos":110,"tk_ancestor":111,"tk_ancestor2":112,"tk_attribute":113,"tk_child":114,"tk_descendant":115,"tk_descendant2":116,"tk_following":117,"tk_following2":118,"tk_namespace":119,"tk_parent":120,"tk_preceding":121,"tk_preceding2":122,"tk_self":123,"tk_integer":124,"tk_decimal":125,"tk_boolean":126,"tk_normalizedString":127,"tk_token":128,"tk_date":129,"tk_dateTime":130,"tk_duration":131,"tk_time":132,"hexBinary":133,"tk_uri":134,"ATTRIBUTE_LIST":135,"CONTENT_LL":136,"CONTENT_TAG":137,"$accept":0,"$end":1},
+terminals_: {2:"error",5:"EOF",17:"tk_if",18:"tk_ParA",20:"tk_ParC",21:"tk_then",22:"tk_else",23:"tk_declare",24:"tk_function",25:"tk_local",26:"tk_dospts",27:"tk_id",29:"tk_as",31:"tk_labre",33:"tk_lcierra",34:"tk_ptcoma",35:"tk_coma",38:"tk_xs",41:"tk_interrogacion",42:"tk_asterisco",45:"tk_uppercase",46:"tk_lowercase",47:"tk_string",48:"tk_number",49:"tk_substring",50:"tk_for",56:"tk_let",57:"tk_2puntos_igual",60:"tk_where",61:"tk_order",62:"tk_by",63:"tk_return",65:"tk_dolar",67:"tk_in",68:"tk_at",69:"tk_to",71:"tk_doc",73:"tk_line",76:"tk_2bar",77:"tk_bar",82:"tk_corA",83:"tk_corC",84:"tk_menorigual",85:"tk_menor",86:"tk_mayorigual",87:"tk_mayor",88:"tk_mas",89:"tk_menos",90:"tk_div",91:"tk_mod",92:"tk_or",93:"tk_and",94:"tk_equal",95:"tk_diferent",96:"tk_data",99:"num",100:"tk_punto",101:"tk_2puntos",102:"tk_arroba",103:"tk_string_d",104:"tk_string_s",105:"tk_text",106:"tk_last",107:"tk_position",108:"tk_node",110:"tk_4puntos",111:"tk_ancestor",112:"tk_ancestor2",113:"tk_attribute",114:"tk_child",115:"tk_descendant",116:"tk_descendant2",117:"tk_following",118:"tk_following2",119:"tk_namespace",120:"tk_parent",121:"tk_preceding",122:"tk_preceding2",123:"tk_self",124:"tk_integer",125:"tk_decimal",126:"tk_boolean",127:"tk_normalizedString",128:"tk_token",129:"tk_date",130:"tk_dateTime",131:"tk_duration",132:"tk_time",133:"hexBinary",134:"tk_uri"},
+productions_: [0,[3,2],[3,2],[6,2],[6,1],[7,1],[7,1],[7,1],[7,1],[7,1],[7,1],[13,3],[14,4],[15,2],[15,3],[16,2],[16,3],[16,2],[11,14],[28,3],[28,1],[36,3],[30,4],[40,1],[40,1],[40,0],[32,1],[12,6],[12,4],[44,1],[44,1],[44,1],[44,1],[44,1],[8,4],[8,3],[52,2],[52,1],[53,1],[53,1],[53,1],[9,4],[59,3],[59,1],[54,2],[55,3],[55,3],[10,2],[10,2],[10,2],[37,2],[51,3],[51,1],[66,3],[66,5],[58,5],[58,5],[58,1],[70,4],[70,0],[43,3],[43,1],[4,3],[4,1],[74,2],[74,2],[75,2],[75,2],[75,3],[75,3],[75,1],[75,1],[81,4],[81,3],[78,1],[78,0],[19,3],[19,3],[19,3],[19,3],[19,3],[19,3],[19,3],[19,3],[19,3],[19,2],[19,2],[19,3],[19,3],[19,3],[19,3],[19,3],[19,1],[19,4],[19,1],[79,2],[79,2],[79,2],[98,1],[98,1],[98,1],[98,1],[98,1],[98,2],[98,2],[72,1],[72,1],[97,3],[97,3],[97,3],[97,3],[80,3],[80,4],[109,1],[109,1],[109,1],[109,1],[109,1],[109,1],[109,1],[109,1],[109,1],[109,1],[109,1],[109,1],[109,1],[39,1],[39,1],[39,1],[39,1],[39,1],[39,1],[39,1],[39,1],[39,1],[39,1],[39,1],[39,1],[64,9],[64,8],[64,5],[136,2],[136,1],[136,1],[137,1],[137,3],[137,6],[135,3],[135,3],[135,0]],
 performAction: function anonymous(yytext, yyleng, yylineno, yy, yystate /* action[1] */, $$ /* vstack */, _$ /* lstack */) {
 /* this == yyval */
 
 var $0 = $$.length - 1;
 switch (yystate) {
 case 1:
-   prod_1 = grammar_stack.pop();
+   
+					prod_1 = grammar_stack.pop();
 					prod_2 = grammar_stack.pop();
 			 		grammar_stack.push({'ini -> XPATH_U EOF': [prod_2, prod_1]});
 					// grammar_report =  getGrammarReport(grammar_stack); // cst = getCST(grammar_stack); // let arbol_ast = getASTTree($$[$0-1]);
@@ -9062,397 +9425,420 @@ break;
 case 2:
  ast = { xquery: $$[$0-1], errors: errors, cst: "cst", grammar_report: "grammar_report",  arbolAST : "arbol_ast" }; return ast; 
 break;
-case 3: case 26: case 55:
+case 3: case 36: case 141:
  $$[$0-1].push($$[$0]); this.$=$$[$0-1]; 
 break;
-case 4: case 19: case 27: case 33: case 51: case 56:
+case 4: case 20: case 37: case 43: case 61: case 142:
  this.$=[$$[$0]]; 
 break;
-case 5: case 6: case 7: case 8: case 9: case 10: case 13: case 14: case 16: case 22: case 30: case 35: case 36: case 47: case 61: case 62: case 72: case 73: case 93: case 95:
+case 5: case 6: case 7: case 8: case 9: case 10: case 13: case 15: case 17: case 26: case 40: case 45: case 46: case 57: case 70: case 71: case 92: case 94: case 147: case 148:
  this.$=$$[$0]; 
 break;
 case 11:
  this.$=queryBuilder.nuevoIf_Then_Else($$[$0-2], $$[$0-1], $$[$0], this._$.first_line, this._$.first_column+1); 
 break;
-case 12: case 21:
+case 12: case 22:
  this.$=$$[$0-1]; 
 break;
-case 15:
+case 14: case 16:
  this.$=[]; 
 break;
-case 17:
+case 18:
  this.$=queryBuilder.nuevaFuncion($$[$0-9], $$[$0-7], $$[$0-4], $$[$0-2], this._$.first_line, this._$.first_column+1); 
 break;
-case 18: case 32: case 41: case 50:
+case 19: case 42: case 51: case 60:
  $$[$0-2].push($$[$0]); this.$=$$[$0-2]; 
 break;
-case 20:
+case 21:
  this.$=queryBuilder.nuevoParametro($$[$0-2], $$[$0], this._$.first_line, this._$.first_column+1); 
 break;
-case 23:
+case 27:
  this.$=queryBuilder.nuevaLlamada($$[$0-3], $$[$0-1], this._$.first_line, this._$.first_column+1); 
 break;
-case 24:
- $$[$0-1].push($$[$0]); this.$ = queryBuilder.nuevoFor($$[$0-2], $$[$0-1], this._$.first_line, this._$.first_column+1); 
-break;
-case 25:
- this.$ = queryBuilder.nuevoFor($$[$0-1], [$$[$0]], this._$.first_line, this._$.first_column+1); 
-break;
-case 28: case 100:
- this.$ = $$[$0]; 
+case 28:
+ this.$=queryBuilder.llamadaNativa($$[$0-3], $$[$0-1], this._$.first_line, this._$.first_column+1); 
 break;
 case 29:
- this.$ = queryBuilder.nuevoOrderBy($$[$0], this._$.first_line, this._$.first_column+1); 
+ this.$ = Tipos.TO_UPPERCASE; 
+break;
+case 30:
+ this.$ = Tipos.TO_LOWERCASE; 
 break;
 case 31:
- this.$ = queryBuilder.nuevoLet($$[$0-2], $$[$0], this._$.first_line, this._$.first_column+1); 
+ this.$ = Tipos.TO_STRING; 
+break;
+case 32:
+ this.$ = Tipos.TO_NUMBER; 
+break;
+case 33:
+ this.$ = Tipos.SUBSTRING; 
 break;
 case 34:
- this.$ = queryBuilder.nuevoWhere($$[$0], this._$.first_line, this._$.first_column+1); 
+ $$[$0-1].push($$[$0]); this.$ = queryBuilder.nuevoFor($$[$0-2], $$[$0-1], this._$.first_line, this._$.first_column+1); 
 break;
-case 37: case 38: case 39:
- this.$ = queryBuilder.nuevoReturn($$[$0], this._$.first_line, this._$.first_column+1); 
+case 35:
+ this.$ = queryBuilder.nuevoFor($$[$0-1], [$$[$0]], this._$.first_line, this._$.first_column+1); 
 break;
-case 40:
- this.$=queryBuilder.nuevaVariable("$"+$$[$0], this._$.first_line, this._$.first_column+1); 
+case 38: case 99:
+ this.$ = $$[$0]; 
 break;
-case 42:
- this.$=[$$[$0]] 
+case 39:
+ this.$ = queryBuilder.nuevoOrderBy($$[$0], this._$.first_line, this._$.first_column+1); 
 break;
-case 43:
- this.$ = queryBuilder.nuevaDeclaracion($$[$0-2], null, $$[$0], this._$.first_line, this._$.first_column+1); 
+case 41:
+ this.$ = queryBuilder.nuevoLet($$[$0-2], $$[$0], this._$.first_line, this._$.first_column+1); 
 break;
 case 44:
- this.$ = queryBuilder.nuevaDeclaracion($$[$0-4], $$[$0-2], $$[$0], this._$.first_line, this._$.first_column+1); 
+ this.$ = queryBuilder.nuevoWhere($$[$0], this._$.first_line, this._$.first_column+1); 
 break;
-case 45:
- this.$ = queryBuilder.nuevoIntervalo($$[$0-3], $$[$0-1], this._$.first_line, this._$.first_column+1); 
+case 47: case 48: case 49:
+ this.$ = queryBuilder.nuevoReturn($$[$0], this._$.first_line, this._$.first_column+1); 
 break;
-case 46:
- $$[$0-1].unshift($$[$0-3]); this.$ = queryBuilder.nuevosValores($$[$0-1], this._$.first_line, this._$.first_column+1); 
+case 50:
+ this.$=queryBuilder.nuevaVariable("$"+$$[$0], this._$.first_line, this._$.first_column+1); 
 break;
 case 52:
- this.$ = queryBuilder.nuevoHTML($$[$0-7], $$[$0-6], $$[$0-4], $$[$0-1], this._$.first_line, this._$.first_column+1); 
+ this.$=[$$[$0]] 
 break;
 case 53:
- this.$ = queryBuilder.nuevoHTML($$[$0-6], $$[$0-5], null, $$[$0-1], this._$.first_line, this._$.first_column+1); 
+ this.$ = queryBuilder.nuevaDeclaracion($$[$0-2], null, $$[$0], this._$.first_line, this._$.first_column+1); 
 break;
 case 54:
- this.$ = queryBuilder.nuevoHTML($$[$0-3], $$[$0-2], null, null, this._$.first_line, this._$.first_column+1); 
+ this.$ = queryBuilder.nuevaDeclaracion($$[$0-4], $$[$0-2], $$[$0], this._$.first_line, this._$.first_column+1); 
 break;
-case 58:
- this.$ = queryBuilder.nuevoContenido($$[$0], this._$.first_line, this._$.first_column+1); 
+case 55:
+ this.$ = queryBuilder.nuevoIntervalo($$[$0-3], $$[$0-1], this._$.first_line, this._$.first_column+1); 
 break;
-case 59:
- this.$ = queryBuilder.nuevaInyeccion($$[$0-1], false, this._$.first_line, this._$.first_column+1); 
+case 56:
+ $$[$0-1].unshift($$[$0-3]); this.$ = queryBuilder.nuevosValores($$[$0-1], this._$.first_line, this._$.first_column+1); 
 break;
-case 60:
- this.$ = queryBuilder.nuevaInyeccion($$[$0-2], true, this._$.first_line, this._$.first_column+1); 
-break;
-case 63:
- this.$=null; 
-break;
-case 64:
+case 62:
  $$[$0-2].push($$[$0]); this.$=$$[$0-2];
 								 prod_1 = grammar_stack.pop();
 								 prod_2 = grammar_stack.pop();
 			 					 grammar_stack.push({'XPATH_U -> XPATH_U tk_line XPATH {S1.push(S3); SS = S1;}': [prod_2, 'token: tk_line\t Lexema: ' + $$[$0-2], prod_1]}); 
 break;
-case 65:
+case 63:
  this.$=[$$[$0]];
 				  prod_1 = grammar_stack.pop();
 			 	  grammar_stack.push({'XPATH_U -> XPATH {SS = [S1]}': [prod_1]}); 
 break;
-case 66:
+case 64:
  $$[$0-1].push($$[$0]); this.$=$$[$0-1];
 					  prod_1 = grammar_stack.pop();
 					  prod_2 = grammar_stack.pop();
 			 		  grammar_stack.push({'XPATH -> XPATH QUERY {S1.push(S2); SS = S1;}': [prod_2, prod_1]}); 
 break;
-case 67:
+case 65:
  this.$=[$$[$0]];
 			   prod_1 = grammar_stack.pop();
 			   grammar_stack.push({'XPATH -> QUERY {SS = [S1]}': [prod_1]}); 
 break;
-case 68:
+case 66:
  this.$=builder.newDoubleAxis($$[$0], this._$.first_line, this._$.first_column+1);
 					   prod_1 = grammar_stack.pop();
 			 		   grammar_stack.push({'QUERY -> tk_2bar QUERY SS=builder.newDoubleAxis(Param);': ['token: tk_2bar\t Lexema: ' + $$[$0-1], prod_1]}); 
 break;
-case 69:
+case 67:
  this.$=builder.newAxis($$[$0], this._$.first_line, this._$.first_column+1);
 					 prod_1 = grammar_stack.pop();
 			 		 grammar_stack.push({'QUERY -> tk_bar QUERY {SS=builder.newAxis(Param);}': ['token: tk_bar\t Lexema: ' + $$[$0-1], prod_1]}); 
 break;
-case 70:
+case 68:
 
 			var linea = this._$.first_line;
 			var columna = this._$.first_column+1;
 			this.$=builder.newAxis(builder.newExpression(builder.newValue($$[$0-1], Tipos.ASTERISCO, linea, columna), $$[$0], linea, columna), linea, columna);
 		
 break;
-case 71:
+case 69:
 
 			var linea = this._$.first_line;
 			var columna = this._$.first_column+1;
 			this.$=builder.newDoubleAxis(builder.newExpression(builder.newValue($$[$0-1], Tipos.ASTERISCO, linea, columna), $$[$0], linea, columna), linea, columna);
 		
 break;
-case 74:
+case 72:
  $$[$0-3].push(builder.newPredicate($$[$0-1], this._$.first_line, this._$.first_column+1)); this.$=$$[$0-3];
 									 prod_1 = grammar_stack.pop();
 									 prod_2 = grammar_stack.pop();
 						 			 grammar_stack.push({'CORCHET -> CORCHET tk_ParA E tk_ParC {S1.push(builder.NewPredicate(Param))}': [prod_2, 'token: tk_ParA\t Lexema: ' + $$[$0-2], prod_1, 'token: tk_ParC\t Lexema: ' + $$[$0]]}); 
 break;
-case 75:
+case 73:
  this.$=[builder.newPredicate($$[$0-1], this._$.first_line, this._$.first_column+1)];
 						 prod_1 = grammar_stack.pop();
 						 grammar_stack.push({'CORCHET -> tk_corA E tk_corC {SS=builder.newPredicate(Param)}': ['token: tk_corA\t Lexema: ' + $$[$0-2], prod_1, 'token: tk_corC\t Lexema: ' + $$[$0]]}); 
 break;
-case 76:
+case 74:
  this.$=$$[$0];
 					prod_1 = grammar_stack.pop();
 					grammar_stack.push({'CORCHETP -> CORCHET {SS=S1;}': [prod_1]}); 
 break;
-case 77:
+case 75:
  this.$=null;
 			grammar_stack.push({'CORCHETP -> Empty {SS=null}': ['EMPTY'] }); 
 break;
-case 78:
+case 76:
  this.$=builder.newOperation($$[$0-2], $$[$0], Tipos.RELACIONAL_MENORIGUAL, this._$.first_line, this._$.first_column+1);
 						prod_1 = grammar_stack.pop();
 				 		prod_2 = grammar_stack.pop();
 					    grammar_stack.push({'E -> E tk_menorigual E {SS=builder.newOperation(Param)}': [prod_2, 'token: tk_menorigual\t Lexema: ' + $$[$0-1], prod_1]}); 
 break;
-case 79:
+case 77:
  this.$=builder.newOperation($$[$0-2], $$[$0], Tipos.RELACIONAL_MENOR, this._$.first_line, this._$.first_column+1);
 					 prod_1 = grammar_stack.pop();
 				 	 prod_2 = grammar_stack.pop();
 				 	 grammar_stack.push({'E -> E tk_menor E {SS=builder.newOperation(Param)}': [prod_2, 'token: tk_menor\t Lexema: ' + $$[$0-1], prod_1]}); 
 break;
-case 80:
+case 78:
  this.$=builder.newOperation($$[$0-2], $$[$0], Tipos.RELACIONAL_MAYORIGUAL, this._$.first_line, this._$.first_column+1);
 						  prod_1 = grammar_stack.pop();
 				 		  prod_2 = grammar_stack.pop();
 						  grammar_stack.push({'E -> E tk_mayorigual E {SS=builder.newOperation(Param)}': [prod_2, 'token: tk_mayorigual\t Lexema: ' + $$[$0-1], prod_1]}); 
 break;
-case 81:
+case 79:
  this.$=builder.newOperation($$[$0-2], $$[$0], Tipos.RELACIONAL_MAYOR, this._$.first_line, this._$.first_column+1);
 					 prod_1 = grammar_stack.pop();
 				 	 prod_2 = grammar_stack.pop();
 				 	 grammar_stack.push({'E -> E tk_mayor E {SS=builder.newOperation(Param)}': [prod_2, 'token: tk_mayor\t Lexema: ' + $$[$0-1], prod_1]}); 
 break;
-case 82:
+case 80:
  this.$=builder.newOperation($$[$0-2], $$[$0], Tipos.OPERACION_SUMA, this._$.first_line, this._$.first_column+1);
 				   prod_1 = grammar_stack.pop();
 				   prod_2 = grammar_stack.pop();
 				   grammar_stack.push({'E -> E tk_mas E {SS=builder.newOperation(Param)}': [prod_2, 'token: tk_mas\t Lexema: ' + $$[$0-1], prod_1]}); 
 break;
-case 83:
+case 81:
  this.$=builder.newOperation($$[$0-2], $$[$0], Tipos.OPERACION_RESTA, this._$.first_line, this._$.first_column+1);
 					 prod_1 = grammar_stack.pop();
 				 	 prod_2 = grammar_stack.pop();
 				  	 grammar_stack.push({'E -> E tk_menos E {SS=builder.newOperation(Param)}': [prod_2, 'token: tk_menos\t Lexema: ' + $$[$0-1], prod_1]}); 
 break;
-case 84:
+case 82:
  this.$=builder.newOperation($$[$0-2], $$[$0], Tipos.OPERACION_MULTIPLICACION, this._$.first_line, this._$.first_column+1);
 						 prod_1 = grammar_stack.pop();
 				 		 prod_2 = grammar_stack.pop();
 				  		 grammar_stack.push({'E -> E tk_asterisco E {SS=builder.newOperation(Param)}': [prod_2, 'token: tk_asterisco\t Lexema: ' + $$[$0-1], prod_1]}); 
 break;
-case 85:
+case 83:
  this.$=builder.newOperation($$[$0-2], $$[$0], Tipos.OPERACION_DIVISION, this._$.first_line, this._$.first_column+1);
 				   prod_1 = grammar_stack.pop();
 				   prod_2 = grammar_stack.pop();
 				   grammar_stack.push({'E -> E tk_div E {SS=builder.newOperation(Param)}': [prod_2, 'token: tk_div\t Lexema: ' + $$[$0-1], prod_1]}); 
 break;
-case 86:
+case 84:
  this.$=builder.newOperation($$[$0-2], $$[$0], Tipos.OPERACION_MODULO, this._$.first_line, this._$.first_column+1);
 				   prod_1 = grammar_stack.pop();
 				   prod_2 = grammar_stack.pop();
 				   grammar_stack.push({'E -> E tk_mod E {SS=builder.newOperation(Param)}': [prod_2, 'token: tk_mod\t Lexema: ' + $$[$0-1], prod_1]}); 
 break;
-case 87:
+case 85:
  this.$=builder.newOperation(builder.newValue(0, Tipos.NUMBER, _$[$0-1].first_line, _$[$0-1].first_column+1), $$[$0], Tipos.OPERACION_RESTA, this.$.first_line, this.$.first_column+1); 
 								prod_1 = grammar_stack.pop();
 						  		grammar_stack.push({'E -: tk_menos E': ['token: tk_menos\t Lexema: ' + $$[$0-1], prod_1]});
 break;
-case 88:
+case 86:
+ this.$=builder.newOperation(builder.newValue(0, Tipos.NUMBER, _$[$0-1].first_line, _$[$0-1].first_column+1), $$[$0], Tipos.OPERACION_SUMA, this.$.first_line, this.$.first_column+1); 
+								prod_1 = grammar_stack.pop();
+						  		grammar_stack.push({'E -: tk_mas E': ['token: tk_mas\t Lexema: ' + $$[$0-1], prod_1]});
+break;
+case 87:
  this.$=$$[$0-1];
 						  prod_1 = grammar_stack.pop();
 						  grammar_stack.push({'E -> tk_ParA E tk_ParC {SS=S2}': ['token: tk_ParA\t Lexema: ' + $$[$0-2], prod_1, 'token: tk_ParC\t Lexema: ' + $$[$0]]}); 
 break;
-case 89:
+case 88:
  this.$=builder.newOperation($$[$0-2], $$[$0], Tipos.LOGICA_OR, this._$.first_line, this._$.first_column+1);
 				  prod_1 = grammar_stack.pop();
 				  prod_2 = grammar_stack.pop();
 				  grammar_stack.push({'E -> E tk_or E {SS=builder.newOperation(Param)}': [prod_2, 'token: tk_or\t Lexema: ' + $$[$0-1], prod_1]}); 
 break;
-case 90:
+case 89:
  this.$=builder.newOperation($$[$0-2], $$[$0], Tipos.LOGICA_AND, this._$.first_line, this._$.first_column+1);
 				   prod_1 = grammar_stack.pop();
 				   prod_2 = grammar_stack.pop();
 				   grammar_stack.push({'E -> E tk_and E {SS=builder.newOperation(Param)}': [prod_2, 'token: tk_and\t Lexema: ' + $$[$0-1], prod_1]}); 
 break;
-case 91:
+case 90:
  this.$=builder.newOperation($$[$0-2], $$[$0], Tipos.RELACIONAL_IGUAL, this._$.first_line, this._$.first_column+1); 
 					 prod_1 = grammar_stack.pop();
 					 prod_2 = grammar_stack.pop();
 					 grammar_stack.push({'E -> E tk_equal E {SS=builder.newOperation(Param)}': [prod_2, 'token: tk_equal\t Lexema: ' + $$[$0-1], prod_1]}); 
 break;
-case 92:
+case 91:
  this.$=builder.newOperation($$[$0-2], $$[$0], Tipos.RELACIONAL_DIFERENTE, this._$.first_line, this._$.first_column+1); 
 						prod_1 = grammar_stack.pop();
 						prod_2 = grammar_stack.pop();
 						grammar_stack.push({'E -> E tk_diferent E {SS=builder.newOperation(Param)}': [prod_2, 'token: tk_diferent\t Lexema: ' + $$[$0-1], prod_1]}); 
 break;
-case 94:
+case 93:
  $$[$0-1].push(insert_text(this._$.first_line, this._$.first_column+1)); this.$ = $$[$0-1]; 
 break;
-case 96:
+case 95:
  this.$=builder.newExpression($$[$0-1], $$[$0], this._$.first_line, this._$.first_column+1);
 						prod_1 = grammar_stack.pop();
 						prod_2 = grammar_stack.pop();
 						grammar_stack.push({'EXP_PR -> FUNC CORCHETP {SS=builder.newExpression(Param)}': [prod_2, prod_1]}); 
 break;
-case 97:
+case 96:
  this.$=builder.newExpression($$[$0-1], $$[$0], this._$.first_line, this._$.first_column+1); 
 								prod_1 = grammar_stack.pop();
 								prod_2 = grammar_stack.pop();
 								grammar_stack.push({'EXP_PR -> PRIMITIVO CORCHETP {SS=builder.newExpression(Param)}': [prod_2, prod_1]}); 
 break;
-case 98:
+case 97:
  this.$=insert_current($$[$0-1].variable, $$[$0], this._$.first_line, this._$.first_column+1); 
 break;
-case 99:
+case 98:
  this.$=builder.newNodename($$[$0], this._$.first_line, this._$.first_column+1);
 				   grammar_stack.push({'PRIMITIVO -> tk_id {SS=builder.newNodename(Param)}':['token: tk_text\t Lexema: ' + $$[$0]]}); 
 break;
-case 101:
+case 100:
  this.$=builder.newValue(Number($$[$0]), Tipos.NUMBER, this._$.first_line, this._$.first_column+1);
 				grammar_stack.push({'PRIMITIVO -> num {SS=builder.newValue(Param)}':['token: num\t Lexema: ' + $$[$0]]}); 
 break;
-case 102:
+case 101:
  this.$=builder.newCurrent($$[$0], this._$.first_line, this._$.first_column+1); 
 					 grammar_stack.push({'PRIMITIVO -> tk_punto {SS=builder.newCurrent(Param)}':['token: tk_punto\t Lexema: ' + $$[$0]]}); 
 break;
-case 103:
+case 102:
  this.$=builder.newParent($$[$0], this._$.first_line, this._$.first_column+1);
 					   grammar_stack.push({'PRIMITIVO -> tk_2puntos {SS=builder.newParent(Param)}':['token: tk_2puntos\t Lexema: ' + $$[$0]]}); 
 break;
-case 104:
+case 103:
  this.$=builder.newAttribute($$[$0], this._$.first_line, this._$.first_column+1);
 							grammar_stack.push({'PRIMITIVO -> tk_arroba tk_id {SS=builder.newAttribute(Param)}':['token: tk_arroba\t Lexema: ' + $$[$0-1], 'token: tk_id\t Lexema: ' + $$[$0]]}); 
 break;
-case 105:
+case 104:
  this.$=builder.newAttribute($$[$0], this._$.first_line, this._$.first_column+1); 
 							 grammar_stack.push({'PRIMITIVO -> tk_arroba tk_asterisco {SS=builder.newAttribute(Param)}':['token: tk_arroba\t Lexema: ' + $$[$0-1], 'token: tk_asterisco\t Lexema: ' + $$[$0]]});
 break;
-case 106:
+case 105:
  this.$=builder.newValue($$[$0], Tipos.STRING, this._$.first_line, this._$.first_column+1);
 						   grammar_stack.push({'PRIMITIVO -> tk_attribute_d {SS=builder.newValue(Param)}':['token: tk_attribute_d\t Lexema: ' + $$[$0]]}); 
 break;
-case 107:
+case 106:
  this.$=builder.newValue($$[$0], Tipos.STRING, this._$.first_line, this._$.first_column+1); 
 						   grammar_stack.push({'PRIMITIVO -> tk_attribute_s {SS=builder.newValue(Param)}':['token: tk_attribute_s\t Lexema: ' + $$[$0]]}); 
 break;
-case 108:
+case 107:
  this.$=builder.newValue($$[$0-2], Tipos.FUNCION_TEXT, this._$.first_line, this._$.first_column+1);
 								grammar_stack.push({'FUNC -> tk_text tk_ParA tk_ParC {SS=builder.newValue(Param)}':['token: tk_text\t Lexema: ' + $$[$0-2], 'token: tk_ParA\t Lexema: ' + $$[$0-1], 'token: tk_ParC\t Lexema: ' + $$[$0]]}); 
 break;
-case 109:
+case 108:
  this.$=builder.newValue($$[$0-2], Tipos.FUNCION_LAST, this._$.first_line, this._$.first_column+1);
 								grammar_stack.push({'FUNC -> tk_last tk_ParA tk_ParC {SS=builder.newValue(Param)}':['token: tk_last\t Lexema: ' + $$[$0-2], 'token: tk_ParA\t Lexema: ' + $$[$0-1], 'token: tk_ParC\t Lexema: ' + $$[$0]]}); 
 break;
-case 110:
+case 109:
  this.$=builder.newValue($$[$0-2], Tipos.FUNCION_POSITION, this._$.first_line, this._$.first_column+1); 
 									grammar_stack.push({'FUNC -> tk_position tk_ParA tk_ParC {SS=builder.newValue(Param)}':['token: tk_position\t Lexema: ' + $$[$0-2], 'token: tk_ParA\t Lexema: ' + $$[$0-1], 'token: tk_ParC\t Lexema: ' + $$[$0]]});
 break;
-case 111:
+case 110:
  this.$=builder.newValue($$[$0-2], Tipos.FUNCION_NODE, this._$.first_line, this._$.first_column+1); 
 								grammar_stack.push({'FUNC -> tk_node tk_ParA tk_ParC {SS=builder.newValue(Param)}':['token: tk_node\t Lexema: ' + $$[$0-2], 'token: tk_ParA\t Lexema: ' + $$[$0-1], 'token: tk_ParC\t Lexema: ' + $$[$0]]});
 break;
-case 112:
+case 111:
  this.$=builder.newAxisObject($$[$0-2], $$[$0], this._$.first_line, this._$.first_column+1);
 								prod_1 = grammar_stack.pop();
 								prod_2 = grammar_stack.pop();
 								grammar_stack.push({'AXIS -> AXISNAME tk_4puntos QUERY {SS=builder.newAxisObject(Param)}':[prod_2, 'token: tk_4puntos\t Lexema: ' + $$[$0-1], prod_1]}); 
 break;
-case 113:
+case 112:
  
 		var linea = this._$.first_line;
 		var columna = this._$.first_column+1;
 		this.$=builder.newAxisObject($$[$0-3], builder.newExpression(builder.newValue($$[$0-1], Tipos.ASTERISCO, linea, columna), $$[$0], linea, columna), linea, columna);
 	
 break;
-case 114:
+case 113:
  this.$ = Tipos.AXIS_ANCESTOR;
 						grammar_stack.push({'AXISNAME -> tk_ancestor {SS = Tipos.AxisTipo}':['token: tk_ancestor\t Lexema: ' + $$[$0]]}); 
 break;
-case 115:
+case 114:
  this.$ = Tipos.AXIS_ANCESTOR_OR_SELF;
 						grammar_stack.push({'AXISNAME -> tk_ancestor2 {SS = Tipos.AxisTipo}':['token: tk_ancestor2\t Lexema: ' + $$[$0]]}); 
 break;
-case 116:
+case 115:
  this.$ = Tipos.AXIS_ATTRIBUTE;
 						grammar_stack.push({'AXISNAME -> tk_attribute {SS = Tipos.AxisTipo}':['token: tk_attribute\t Lexema: ' + $$[$0]]}); 
 break;
-case 117:
+case 116:
  this.$ = Tipos.AXIS_CHILD;
 						grammar_stack.push({'AXISNAME -> tk_child {SS = Tipos.AxisTipo}':['token: tk_child\t Lexema: ' + $$[$0]]}); 
 break;
-case 118:
+case 117:
  this.$ = Tipos.AXIS_DESCENDANT;
 						grammar_stack.push({'AXISNAME -> tk_descendant {SS = Tipos.AxisTipo}':['token: tk_descendant\t Lexema: ' + $$[$0]]}); 
 break;
-case 119:
+case 118:
  this.$ = Tipos.AXIS_DESCENDANT_OR_SELF;
 						grammar_stack.push({'AXISNAME -> tk_descendant2 {SS = Tipos.AxisTipo}':['token: tk_descendant2\t Lexema: ' + $$[$0]]}); 
 break;
-case 120:
+case 119:
  this.$ = Tipos.AXIS_FOLLOWING;
 						grammar_stack.push({'AXISNAME -> tk_following {SS = Tipos.AxisTipo}':['token: tk_following\t Lexema: ' + $$[$0]]}); 
 break;
-case 121:
+case 120:
  this.$ = Tipos.AXIS_FOLLOWING_SIBLING;
 						grammar_stack.push({'AXISNAME -> tk_following2 {SS = Tipos.AxisTipo}':['token: tk_follownig2\t Lexema: ' + $$[$0]]}); 
 break;
-case 122:
+case 121:
  this.$ = Tipos.AXIS_NAMESPACE;
 						grammar_stack.push({'AXISNAME -> tk_namespace {SS = Tipos.AxisTipo}':['token: tk_namespace\t Lexema: ' + $$[$0]]}); 
 break;
-case 123:
+case 122:
  this.$ = Tipos.AXIS_PARENT;
 						grammar_stack.push({'AXISNAME -> tk_parent {SS = Tipos.AxisTipo}':['token: tk_parent\t Lexema: ' + $$[$0]]}); 
 break;
-case 124:
+case 123:
  this.$ = Tipos.AXIS_PRECEDING;
 						grammar_stack.push({'AXISNAME -> tk_preceding {SS = Tipos.AxisTipo}':['token: tk_preceding\t Lexema: ' + $$[$0]]}); 
 break;
-case 125:
+case 124:
  this.$ = Tipos.AXIS_PRECEDING_SIBLING;
 						grammar_stack.push({'AXISNAME -> tk_preceding2 {SS = Tipos.AxisTipo}':['token: tk_preceding2\t Lexema: ' + $$[$0]]}); 
 break;
-case 126:
+case 125:
  this.$ = Tipos.AXIS_SELF;
 						grammar_stack.push({'AXISNAME -> tk_self {SS = Tipos.AxisTipo}':['token: tk_self\t Lexema: ' + $$[$0]]}); 
 break;
-case 127: case 131: case 132: case 133: case 134: case 135: case 136: case 137: case 138:
+case 126: case 130: case 131: case 132: case 133: case 134: case 135: case 136: case 137:
  this.$ = Tipos.TIPADO_STRING; 
 break;
-case 128:
+case 127:
  this.$ = Tipos.TIPADO_INTEGER; 
 break;
-case 129:
+case 128:
  this.$ = Tipos.TIPADO_DECIMAL; 
 break;
-case 130:
+case 129:
  this.$ = Tipos.TIPADO_BOOLEANO; 
+break;
+case 138:
+ this.$ = queryBuilder.nuevoHTML($$[$0-7], $$[$0-6], $$[$0-4], $$[$0-1], this._$.first_line, this._$.first_column+1); 
+break;
+case 139:
+ this.$ = queryBuilder.nuevoHTML($$[$0-6], $$[$0-5], null, $$[$0-1], this._$.first_line, this._$.first_column+1); 
+break;
+case 140:
+ this.$ = queryBuilder.nuevoHTML($$[$0-3], $$[$0-2], null, null, this._$.first_line, this._$.first_column+1); 
+break;
+case 144:
+ this.$ = queryBuilder.nuevoContenido($$[$0], this._$.first_line, this._$.first_column+1); 
+break;
+case 145:
+ this.$ = queryBuilder.nuevaInyeccion($$[$0-1], false, this._$.first_line, this._$.first_column+1); 
+break;
+case 146:
+ this.$ = queryBuilder.nuevaInyeccion($$[$0-2], true, this._$.first_line, this._$.first_column+1); 
+break;
+case 149:
+ this.$=null; 
 break;
 }
 },
-table: [o($V0,$V1,{3:1,4:2,6:3,71:4,7:5,62:6,8:7,9:8,10:9,11:10,12:11,13:12,14:19,17:$V2,23:$V3,25:$V4,42:$V5,48:$V6,55:$V7,63:$V8}),{1:[3]},{5:[1,21],74:[1,22]},{5:[1,23],7:24,8:7,9:8,10:9,11:10,12:11,13:12,14:19,17:$V2,23:$V3,25:$V4,42:$V5,48:$V6,55:$V7},o($V9,[2,65],{75:25,79:28,80:29,93:30,94:31,37:32,105:33,64:39,27:$Va,57:$Vb,69:$Vc,76:$Vd,95:$Ve,96:$Vf,97:$Vg,98:$Vh,99:$Vi,100:$Vj,101:$Vk,102:$Vl,103:$Vm,104:$Vn,107:$Vo,108:$Vp,109:$Vq,110:$Vr,111:$Vs,112:$Vt,113:$Vu,114:$Vv,115:$Vw,116:$Vx,117:$Vy,118:$Vz,119:$VA}),o($VB,[2,4]),{27:$Va,37:32,57:$Vb,64:39,69:$Vc,75:60,76:$Vd,79:28,80:29,93:30,94:31,95:$Ve,96:$Vf,97:$Vg,98:$Vh,99:$Vi,100:$Vj,101:$Vk,102:$Vl,103:$Vm,104:$Vn,105:33,107:$Vo,108:$Vp,109:$Vq,110:$Vr,111:$Vs,112:$Vt,113:$Vu,114:$Vv,115:$Vw,116:$Vx,117:$Vy,118:$Vz,119:$VA},o($VB,[2,5]),o($VB,[2,6]),o($VB,[2,7]),o($VB,[2,8]),o($VB,[2,9]),o($VB,[2,10]),{18:[1,61]},{37:64,43:62,57:$Vb,58:63},{37:65,57:$Vb},o($V0,$V1,{62:6,14:19,56:66,19:67,13:68,71:72,12:74,17:$V2,18:$VC,25:$V4,63:$V8,65:$VD,72:$VE,87:$VF}),{24:[1,75]},{26:[1,76]},{15:77,21:[1,78]},{18:[1,79]},{1:[2,1]},o($V0,$V1,{62:6,71:80,63:$V8}),{1:[2,2]},o($VB,[2,3]),o($VG,[2,66]),{27:$Va,37:32,57:$Vb,64:39,69:$Vc,75:81,76:$Vd,77:[1,82],79:28,80:29,93:30,94:31,95:$Ve,96:$Vf,97:$Vg,98:$Vh,99:$Vi,100:$Vj,101:$Vk,102:$Vl,103:$Vm,104:$Vn,105:33,107:$Vo,108:$Vp,109:$Vq,110:$Vr,111:$Vs,112:$Vt,113:$Vu,114:$Vv,115:$Vw,116:$Vx,117:$Vy,118:$Vz,119:$VA},{27:$Va,37:32,57:$Vb,64:39,69:$Vc,75:83,76:$Vd,77:[1,84],79:28,80:29,93:30,94:31,95:$Ve,96:$Vf,97:$Vg,98:$Vh,99:$Vi,100:$Vj,101:$Vk,102:$Vl,103:$Vm,104:$Vn,105:33,107:$Vo,108:$Vp,109:$Vq,110:$Vr,111:$Vs,112:$Vt,113:$Vu,114:$Vv,115:$Vw,116:$Vx,117:$Vy,118:$Vz,119:$VA},o($VG,[2,72]),o($VG,[2,73]),o($VG,$VH,{78:85,81:86,82:$VI}),o($VG,$VH,{81:86,78:88,82:$VI}),o($VG,$VH,{81:86,78:89,82:$VI}),{106:[1,90]},{18:[1,91]},{18:[1,92]},{18:[1,93]},{18:[1,94]},o($VJ,[2,99]),o($VJ,[2,100]),o($VJ,[2,101]),o($VJ,[2,102]),o($VJ,[2,103]),{27:[1,95],77:[1,96]},{27:[1,97]},{106:[2,114]},{106:[2,115]},{106:[2,116]},{106:[2,117]},{106:[2,118]},{106:[2,119]},{106:[2,120]},{106:[2,121]},{106:[2,122]},{106:[2,123]},{106:[2,124]},{106:[2,125]},{106:[2,126]},o($VJ,[2,106]),o($VJ,[2,107]),o($VG,[2,67]),{64:98,99:$Vi,100:$Vj},{9:105,10:100,35:[1,101],44:99,45:102,46:103,47:104,48:$V6,52:$VK,53:$VL,55:$V7},o($VM,[2,42]),{59:[1,108],60:[1,109]},{49:[1,110]},o($VB,[2,37]),o($VB,[2,38],{65:$VN,67:$VO,73:$VP,77:$VQ,84:$VR,85:$VS,86:$VT,87:$VU,88:$VV,89:$VW,90:$VX,91:$VY,92:$VZ}),o($VB,[2,39]),{27:$V_},o($V0,$V1,{62:6,71:72,12:74,19:125,18:$VC,25:$V4,63:$V8,72:$VE,87:$VF}),o($V0,$V1,{62:6,71:72,12:74,19:126,18:$VC,25:$V4,63:$V8,72:$VE,87:$VF}),o($V$,[2,93],{75:25,79:28,80:29,93:30,94:31,37:32,105:33,64:39,27:$Va,57:$Vb,69:$Vc,76:$Vd,95:$Ve,96:$Vf,97:$Vg,98:$Vh,99:$Vi,100:$Vj,101:$Vk,102:$Vl,103:$Vm,104:$Vn,107:$Vo,108:$Vp,109:$Vq,110:$Vr,111:$Vs,112:$Vt,113:$Vu,114:$Vv,115:$Vw,116:$Vx,117:$Vy,118:$Vz,119:$VA}),{18:[1,127]},o($V$,[2,95]),{25:[1,128]},{27:[1,129]},{16:130,22:[1,131]},o($V0,$V1,{62:6,71:72,12:74,19:132,18:$VC,25:$V4,63:$V8,72:$VE,87:$VF}),o($V0,$V1,{62:6,71:72,12:74,19:133,18:$VC,25:$V4,63:$V8,72:$VE,87:$VF}),o($V9,[2,64],{75:25,79:28,80:29,93:30,94:31,37:32,105:33,64:39,27:$Va,57:$Vb,69:$Vc,76:$Vd,95:$Ve,96:$Vf,97:$Vg,98:$Vh,99:$Vi,100:$Vj,101:$Vk,102:$Vl,103:$Vm,104:$Vn,107:$Vo,108:$Vp,109:$Vq,110:$Vr,111:$Vs,112:$Vt,113:$Vu,114:$Vv,115:$Vw,116:$Vx,117:$Vy,118:$Vz,119:$VA}),o($VG,[2,68]),o($VG,$VH,{81:86,78:134,82:$VI}),o($VG,[2,69]),o($VG,$VH,{81:86,78:135,82:$VI}),o($VG,[2,96]),o($VG,[2,76],{82:[1,136]}),o($V0,$V1,{62:6,71:72,12:74,19:137,18:$VC,25:$V4,63:$V8,72:$VE,87:$VF}),o($VG,[2,97]),o($VG,[2,98]),{27:$Va,37:32,57:$Vb,64:39,69:$Vc,75:138,76:$Vd,77:[1,139],79:28,80:29,93:30,94:31,95:$Ve,96:$Vf,97:$Vg,98:$Vh,99:$Vi,100:$Vj,101:$Vk,102:$Vl,103:$Vm,104:$Vn,105:33,107:$Vo,108:$Vp,109:$Vq,110:$Vr,111:$Vs,112:$Vt,113:$Vu,114:$Vv,115:$Vw,116:$Vx,117:$Vy,118:$Vz,119:$VA},{20:[1,140]},{20:[1,141]},{20:[1,142]},{20:[1,143]},o($VJ,[2,104]),o($VJ,[2,105]),o([5,17,20,22,23,25,27,29,33,35,42,48,49,52,53,55,57,59,60,61,65,67,69,73,74,76,77,82,83,84,85,86,87,88,89,90,91,92,95,96,97,98,99,100,101,102,103,104,107,108,109,110,111,112,113,114,115,116,117,118,119],[2,40]),{20:[1,144]},{9:105,10:145,45:146,46:103,47:104,48:$V6,52:$VK,53:$VL,55:$V7},o($VB,[2,25]),{37:64,57:$Vb,58:147},o($V01,[2,27]),o($V01,[2,28]),o($V01,[2,29],{35:[1,148]}),o($V01,[2,30]),o($V0,$V1,{62:6,71:72,12:74,19:149,18:$VC,25:$V4,63:$V8,72:$VE,87:$VF}),{54:[1,150]},o($V0,$V1,{62:6,71:72,12:74,50:151,19:153,18:$V11,25:$V4,63:$V8,72:$VE,87:$VF}),{37:154,57:$Vb},o($V0,$V1,{62:6,71:72,12:74,19:153,50:155,18:$V11,25:$V4,63:$V8,72:$VE,87:$VF}),o($V0,$V1,{62:6,71:72,12:74,19:156,18:$VC,25:$V4,63:$V8,72:$VE,87:$VF}),o($V0,$V1,{62:6,71:72,12:74,19:157,18:$VC,25:$V4,63:$V8,72:$VE,87:$VF}),o($V0,$V1,{62:6,71:72,12:74,19:158,18:$VC,25:$V4,63:$V8,72:$VE,87:$VF}),o($V0,$V1,{62:6,71:72,12:74,19:159,18:$VC,25:$V4,63:$V8,72:$VE,87:$VF}),o($V0,$V1,{62:6,71:72,12:74,19:160,18:$VC,25:$V4,63:$V8,72:$VE,87:$VF}),o($V0,$V1,{62:6,71:72,12:74,19:161,18:$VC,25:$V4,63:$V8,72:$VE,87:$VF}),o($V0,$V1,{62:6,71:72,12:74,19:162,18:$VC,25:$V4,63:$V8,72:$VE,87:$VF}),o($V0,$V1,{62:6,71:72,12:74,19:163,18:$VC,25:$V4,63:$V8,72:$VE,87:$VF}),o($V0,$V1,{62:6,71:72,12:74,19:164,18:$VC,25:$V4,63:$V8,72:$VE,87:$VF}),o($V0,$V1,{62:6,71:72,12:74,19:165,18:$VC,25:$V4,63:$V8,72:$VE,87:$VF}),o($V0,$V1,{62:6,71:72,12:74,19:166,18:$VC,25:$V4,63:$V8,72:$VE,87:$VF}),o($V0,$V1,{62:6,71:72,12:74,19:167,18:$VC,25:$V4,63:$V8,72:$VE,87:$VF}),o($V0,$V1,{62:6,71:72,12:74,19:168,18:$VC,25:$V4,63:$V8,72:$VE,87:$VF}),o($V21,[2,63],{66:169,27:[1,170]}),o($V$,[2,87]),{20:$V31,65:$VN,67:$VO,73:$VP,77:$VQ,84:$VR,85:$VS,86:$VT,87:$VU,88:$VV,89:$VW,90:$VX,91:$VY,92:$VZ},o($V0,$V1,{62:6,71:172,63:$V8}),{26:[1,173]},{18:[1,174]},o($VB,[2,11]),o($V0,$V1,{62:6,14:19,71:72,12:74,19:175,13:177,17:$V2,18:[1,176],25:$V4,63:$V8,72:$VE,87:$VF}),{22:[2,13],65:$VN,67:$VO,73:$VP,77:$VQ,84:$VR,85:$VS,86:$VT,87:$VU,88:$VV,89:$VW,90:$VX,91:$VY,92:$VZ},{20:[1,178],65:$VN,67:$VO,73:$VP,77:$VQ,84:$VR,85:$VS,86:$VT,87:$VU,88:$VV,89:$VW,90:$VX,91:$VY,92:$VZ},o($VG,[2,71]),o($VG,[2,70]),o($V0,$V1,{62:6,71:72,12:74,19:179,18:$VC,25:$V4,63:$V8,72:$VE,87:$VF}),{65:$VN,67:$VO,73:$VP,77:$VQ,83:[1,180],84:$VR,85:$VS,86:$VT,87:$VU,88:$VV,89:$VW,90:$VX,91:$VY,92:$VZ},o($VG,[2,112]),o($VG,$VH,{81:86,78:181,82:$VI}),o($VJ,[2,108]),o($VJ,[2,109]),o($VJ,[2,110]),o($VJ,[2,111]),o($V0,[2,48]),o($VB,[2,24]),o($V01,[2,26]),o($VM,[2,41]),o($V0,$V1,{62:6,71:72,12:74,19:182,18:$VC,25:$V4,63:$V8,72:$VE,87:$VF}),o($V01,[2,34],{65:$VN,67:$VO,73:$VP,77:$VQ,84:$VR,85:$VS,86:$VT,87:$VU,88:$VV,89:$VW,90:$VX,91:$VY,92:$VZ}),o($V0,$V1,{62:6,71:72,12:74,19:183,18:$VC,25:$V4,63:$V8,72:$VE,87:$VF}),o($VM,[2,43]),o($V0,$V1,{62:6,71:72,12:74,19:184,18:$VC,25:$V4,63:$V8,72:$VE,87:$VF}),o($V41,[2,47],{65:$VN,67:$VO,73:$VP,77:$VQ,84:$VR,85:$VS,86:$VT,87:$VU,88:$VV,89:$VW,90:$VX,91:$VY,92:$VZ}),{59:[1,185]},o([5,17,23,25,33,42,48,52,53,55],[2,31]),o($V51,[2,78],{77:$VQ,86:$VT,87:$VU,88:$VV,89:$VW}),o($V51,[2,79],{77:$VQ,86:$VT,87:$VU,88:$VV,89:$VW}),o($V51,[2,80],{77:$VQ,86:$VT,87:$VU,88:$VV,89:$VW}),o($V51,[2,81],{77:$VQ,86:$VT,87:$VU,88:$VV,89:$VW}),o($V61,[2,82],{77:$VQ,88:$VV,89:$VW}),o($V61,[2,83],{77:$VQ,88:$VV,89:$VW}),o($V$,[2,84]),o($V$,[2,85]),o($V$,[2,86]),o([5,17,20,22,23,25,33,35,42,48,52,53,55,61,83,90],[2,89],{65:$VN,67:$VO,73:$VP,77:$VQ,84:$VR,85:$VS,86:$VT,87:$VU,88:$VV,89:$VW,91:$VY,92:$VZ}),o([5,17,20,22,23,25,33,35,42,48,52,53,55,61,83,90,91],[2,90],{65:$VN,67:$VO,73:$VP,77:$VQ,84:$VR,85:$VS,86:$VT,87:$VU,88:$VV,89:$VW,92:$VZ}),o($V51,[2,91],{77:$VQ,86:$VT,87:$VU,88:$VV,89:$VW}),o($V51,[2,92],{77:$VQ,86:$VT,87:$VU,88:$VV,89:$VW}),{67:[1,186],69:[1,187]},{73:[1,188]},o($V$,[2,88]),{20:[1,189],27:$Va,37:32,57:$Vb,64:39,69:$Vc,75:25,76:$Vd,79:28,80:29,93:30,94:31,95:$Ve,96:$Vf,97:$Vg,98:$Vh,99:$Vi,100:$Vj,101:$Vk,102:$Vl,103:$Vm,104:$Vn,105:33,107:$Vo,108:$Vp,109:$Vq,110:$Vr,111:$Vs,112:$Vt,113:$Vu,114:$Vv,115:$Vw,116:$Vx,117:$Vy,118:$Vz,119:$VA},{27:[1,190]},o($V0,$V1,{62:6,71:72,12:74,41:191,19:192,18:$VC,25:$V4,63:$V8,72:$VE,87:$VF}),o($VB,[2,14],{65:$VN,67:$VO,73:$VP,77:$VQ,84:$VR,85:$VS,86:$VT,87:$VU,88:$VV,89:$VW,90:$VX,91:$VY,92:$VZ}),o($V0,$V1,{62:6,71:72,12:74,19:126,18:$VC,20:[1,193],25:$V4,63:$V8,72:$VE,87:$VF}),o($VB,[2,16]),{21:[2,12]},{65:$VN,67:$VO,73:$VP,77:$VQ,83:[1,194],84:$VR,85:$VS,86:$VT,87:$VU,88:$VV,89:$VW,90:$VX,91:$VY,92:$VZ},o($VJ,[2,75]),o($VG,[2,113]),o($VM,[2,35],{65:$VN,67:$VO,73:$VP,77:$VQ,84:$VR,85:$VS,86:$VT,87:$VU,88:$VV,89:$VW,90:$VX,91:$VY,92:$VZ}),o($VM,[2,36],{65:$VN,67:$VO,73:$VP,77:$VQ,84:$VR,85:$VS,86:$VT,87:$VU,88:$VV,89:$VW,90:$VX,91:$VY,92:$VZ}),{20:$V31,35:[1,196],61:[1,195],65:$VN,67:$VO,73:$VP,77:$VQ,84:$VR,85:$VS,86:$VT,87:$VU,88:$VV,89:$VW,90:$VX,91:$VY,92:$VZ},o($V0,$V1,{62:6,71:72,12:74,19:153,50:197,18:$V11,25:$V4,63:$V8,72:$VE,87:$VF}),{27:$V71,31:$V81,56:201,65:[1,199],68:198,70:200},{67:[1,204]},{27:$V71,31:$V81,56:201,64:205,65:$VD,68:206,70:200,99:$Vi,100:$Vj},o($V$,[2,94]),{18:[1,207]},{20:[1,208],35:[1,209]},o($V91,[2,51],{65:$VN,67:$VO,73:$VP,77:$VQ,84:$VR,85:$VS,86:$VT,87:$VU,88:$VV,89:$VW,90:$VX,91:$VY,92:$VZ}),o($VB,[2,15]),o($VJ,[2,74]),o($V0,$V1,{62:6,71:72,12:74,19:210,18:$VC,25:$V4,63:$V8,72:$VE,87:$VF}),o($V0,$V1,{62:6,71:72,12:74,51:211,19:212,18:$VC,25:$V4,63:$V8,72:$VE,87:$VF}),o($VM,[2,44]),{27:$V71,31:$V81,65:[1,213],70:214},{27:$V_,69:[1,215]},o($Va1,[2,56]),o($Va1,[2,57]),o($Va1,[2,58]),o($V0,$V1,{62:6,71:216,63:$V8,72:[1,217]}),o($Vb1,[2,54]),o($V21,[2,61]),o($V21,[2,62],{70:214,27:$V71,31:$V81}),{28:218,36:219,37:220,57:$Vb},o($V$,[2,23]),o($V0,$V1,{62:6,71:72,12:74,19:221,18:$VC,25:$V4,63:$V8,72:$VE,87:$VF}),{20:[1,222],65:$VN,67:$VO,73:$VP,77:$VQ,84:$VR,85:$VS,86:$VT,87:$VU,88:$VV,89:$VW,90:$VX,91:$VY,92:$VZ},{20:[1,223],35:[1,224]},o($V91,[2,33],{65:$VN,67:$VO,73:$VP,77:$VQ,84:$VR,85:$VS,86:$VT,87:$VU,88:$VV,89:$VW,90:$VX,91:$VY,92:$VZ}),{69:[1,225]},o($Va1,[2,55]),{27:[1,226]},{27:$Va,33:[1,227],37:32,57:$Vb,64:39,69:$Vc,75:25,76:$Vd,79:28,80:29,93:30,94:31,95:$Ve,96:$Vf,97:$Vg,98:$Vh,99:$Vi,100:$Vj,101:$Vk,102:$Vl,103:$Vm,104:$Vn,105:33,107:$Vo,108:$Vp,109:$Vq,110:$Vr,111:$Vs,112:$Vt,113:$Vu,114:$Vv,115:$Vw,116:$Vx,117:$Vy,118:$Vz,119:$VA},{18:[1,228]},{20:[1,229],35:[1,230]},o($V91,[2,19]),{29:[1,231]},o($V91,[2,50],{65:$VN,67:$VO,73:$VP,77:$VQ,84:$VR,85:$VS,86:$VT,87:$VU,88:$VV,89:$VW,90:$VX,91:$VY,92:$VZ}),o($V41,[2,45]),o($V41,[2,46]),o($V0,$V1,{62:6,71:72,12:74,19:232,18:$VC,25:$V4,63:$V8,72:$VE,87:$VF}),{27:[1,233]},{67:[1,234]},o($Va1,[2,59]),o($V0,$V1,{62:6,71:235,63:$V8}),{29:[1,236]},{36:237,37:220,57:$Vb},{30:238,38:$Vc1},o($V91,[2,32],{65:$VN,67:$VO,73:$VP,77:$VQ,84:$VR,85:$VS,86:$VT,87:$VU,88:$VV,89:$VW,90:$VX,91:$VY,92:$VZ}),{67:[1,240]},o($Vb1,[2,53]),{20:[1,241],27:$Va,37:32,57:$Vb,64:39,69:$Vc,75:25,76:$Vd,79:28,80:29,93:30,94:31,95:$Ve,96:$Vf,97:$Vg,98:$Vh,99:$Vi,100:$Vj,101:$Vk,102:$Vl,103:$Vm,104:$Vn,105:33,107:$Vo,108:$Vp,109:$Vq,110:$Vr,111:$Vs,112:$Vt,113:$Vu,114:$Vv,115:$Vw,116:$Vx,117:$Vy,118:$Vz,119:$VA},{30:242,38:$Vc1},o($V91,[2,18]),o($V91,[2,20]),{26:[1,243]},o($Vb1,[2,52]),{33:[1,244]},{31:[1,245]},{39:246,120:[1,247],121:[1,248],122:[1,249],123:[1,250],124:[1,251],125:[1,252],126:[1,253],127:[1,254],128:[1,255],129:[1,256],130:[1,257],131:[1,258]},o($Va1,[2,60]),{6:260,7:5,8:7,9:8,10:9,11:10,12:11,13:12,14:19,17:$V2,23:$V3,25:$V4,32:259,42:$V5,48:$V6,55:$V7},{40:[1,261]},{40:[2,127]},{40:[2,128]},{40:[2,129]},{40:[2,130]},{40:[2,131]},{40:[2,132]},{40:[2,133]},{40:[2,134]},{40:[2,135]},{40:[2,136]},{40:[2,137]},{40:[2,138]},{33:[1,262]},{7:24,8:7,9:8,10:9,11:10,12:11,13:12,14:19,17:$V2,23:$V3,25:$V4,33:[2,22],42:$V5,48:$V6,55:$V7},o([20,31,35],[2,21]),{34:[1,263]},o($VB,[2,17])],
-defaultActions: {21:[2,1],23:[2,2],45:[2,114],46:[2,115],47:[2,116],48:[2,117],49:[2,118],50:[2,119],51:[2,120],52:[2,121],53:[2,122],54:[2,123],55:[2,124],56:[2,125],57:[2,126],178:[2,12],247:[2,127],248:[2,128],249:[2,129],250:[2,130],251:[2,131],252:[2,132],253:[2,133],254:[2,134],255:[2,135],256:[2,136],257:[2,137],258:[2,138]},
+table: [o($V0,$V1,{3:1,4:2,6:3,74:4,7:5,70:6,8:7,9:8,10:9,11:10,12:11,13:12,44:19,14:20,17:$V2,23:$V3,25:$V4,45:$V5,46:$V6,47:$V7,48:$V8,49:$V9,50:$Va,56:$Vb,63:$Vc,71:$Vd}),{1:[3]},{5:[1,27],73:[1,28]},{5:[1,29],7:30,8:7,9:8,10:9,11:10,12:11,13:12,14:20,17:$V2,23:$V3,25:$V4,44:19,45:$V5,46:$V6,47:$V7,48:$V8,49:$V9,50:$Va,56:$Vb,63:$Vc},o($Ve,[2,63],{75:31,79:34,80:35,97:36,98:37,37:38,109:39,72:45,27:$Vf,65:$Vg,76:$Vh,77:$Vi,99:$Vj,100:$Vk,101:$Vl,102:$Vm,103:$Vn,104:$Vo,105:$Vp,106:$Vq,107:$Vr,108:$Vs,111:$Vt,112:$Vu,113:$Vv,114:$Vw,115:$Vx,116:$Vy,117:$Vz,118:$VA,119:$VB,120:$VC,121:$VD,122:$VE,123:$VF}),o($VG,[2,4]),{27:$Vf,37:38,65:$Vg,72:45,75:66,76:$Vh,77:$Vi,79:34,80:35,97:36,98:37,99:$Vj,100:$Vk,101:$Vl,102:$Vm,103:$Vn,104:$Vo,105:$Vp,106:$Vq,107:$Vr,108:$Vs,109:39,111:$Vt,112:$Vu,113:$Vv,114:$Vw,115:$Vx,116:$Vy,117:$Vz,118:$VA,119:$VB,120:$VC,121:$VD,122:$VE,123:$VF},o($VG,[2,5]),o($VG,[2,6]),o($VG,[2,7]),o($VG,[2,8]),o($VG,[2,9]),o($VG,[2,10]),{18:[1,67]},{37:70,51:68,65:$Vg,66:69},{37:71,65:$Vg},o($V0,$V1,{70:6,44:19,14:20,64:72,19:73,13:74,74:79,12:81,17:$V2,18:$VH,25:$V4,45:$V5,46:$V6,47:$V7,48:$V8,49:$V9,71:$Vd,85:$VI,88:$VJ,89:$VK,96:$VL}),{24:[1,82]},{26:[1,83]},{18:[1,84]},{15:85,21:[1,86]},{18:[2,29]},{18:[2,30]},{18:[2,31]},{18:[2,32]},{18:[2,33]},{18:[1,87]},{1:[2,1]},o($V0,$V1,{70:6,74:88,71:$Vd}),{1:[2,2]},o($VG,[2,3]),o($VM,[2,64]),{27:$Vf,37:38,42:[1,90],65:$Vg,72:45,75:89,76:$Vh,77:$Vi,79:34,80:35,97:36,98:37,99:$Vj,100:$Vk,101:$Vl,102:$Vm,103:$Vn,104:$Vo,105:$Vp,106:$Vq,107:$Vr,108:$Vs,109:39,111:$Vt,112:$Vu,113:$Vv,114:$Vw,115:$Vx,116:$Vy,117:$Vz,118:$VA,119:$VB,120:$VC,121:$VD,122:$VE,123:$VF},{27:$Vf,37:38,42:[1,92],65:$Vg,72:45,75:91,76:$Vh,77:$Vi,79:34,80:35,97:36,98:37,99:$Vj,100:$Vk,101:$Vl,102:$Vm,103:$Vn,104:$Vo,105:$Vp,106:$Vq,107:$Vr,108:$Vs,109:39,111:$Vt,112:$Vu,113:$Vv,114:$Vw,115:$Vx,116:$Vy,117:$Vz,118:$VA,119:$VB,120:$VC,121:$VD,122:$VE,123:$VF},o($VM,[2,70]),o($VM,[2,71]),o($VM,$VN,{78:93,81:94,82:$VO}),o($VM,$VN,{81:94,78:96,82:$VO}),o($VM,$VN,{81:94,78:97,82:$VO}),{110:[1,98]},{18:[1,99]},{18:[1,100]},{18:[1,101]},{18:[1,102]},o($VP,[2,98]),o($VP,[2,99]),o($VP,[2,100]),o($VP,[2,101]),o($VP,[2,102]),{27:[1,103],42:[1,104]},{27:[1,105]},{110:[2,113]},{110:[2,114]},{110:[2,115]},{110:[2,116]},{110:[2,117]},{110:[2,118]},{110:[2,119]},{110:[2,120]},{110:[2,121]},{110:[2,122]},{110:[2,123]},{110:[2,124]},{110:[2,125]},o($VP,[2,105]),o($VP,[2,106]),o($VM,[2,65]),{72:106,103:$Vn,104:$Vo},{9:113,10:108,35:[1,109],52:107,53:110,54:111,55:112,56:$Vb,60:$VQ,61:$VR,63:$Vc},o($VS,[2,52]),{67:[1,116],68:[1,117]},{57:[1,118]},o($VG,[2,47]),o($VG,[2,48],{42:$VT,84:$VU,85:$VV,86:$VW,87:$VX,88:$VY,89:$VZ,90:$V_,91:$V$,92:$V01,93:$V11,94:$V21,95:$V31}),o($VG,[2,49]),{27:$V41},o($V0,$V1,{70:6,44:19,74:79,12:81,19:133,18:$VH,25:$V4,45:$V5,46:$V6,47:$V7,48:$V8,49:$V9,71:$Vd,88:$VJ,89:$VK,96:$VL}),o($V0,$V1,{70:6,44:19,74:79,12:81,19:134,18:$VH,25:$V4,45:$V5,46:$V6,47:$V7,48:$V8,49:$V9,71:$Vd,88:$VJ,89:$VK,96:$VL}),o($V0,$V1,{70:6,44:19,74:79,12:81,19:135,18:$VH,25:$V4,45:$V5,46:$V6,47:$V7,48:$V8,49:$V9,71:$Vd,88:$VJ,89:$VK,96:$VL}),o($V51,[2,92],{75:31,79:34,80:35,97:36,98:37,37:38,109:39,72:45,27:$Vf,65:$Vg,76:$Vh,77:$Vi,99:$Vj,100:$Vk,101:$Vl,102:$Vm,103:$Vn,104:$Vo,105:$Vp,106:$Vq,107:$Vr,108:$Vs,111:$Vt,112:$Vu,113:$Vv,114:$Vw,115:$Vx,116:$Vy,117:$Vz,118:$VA,119:$VB,120:$VC,121:$VD,122:$VE,123:$VF}),{18:[1,136]},o($V51,[2,94]),{25:[1,137]},{27:[1,138]},o($V0,$V1,{70:6,44:19,74:79,12:81,43:139,19:140,18:$VH,25:$V4,45:$V5,46:$V6,47:$V7,48:$V8,49:$V9,71:$Vd,88:$VJ,89:$VK,96:$VL}),{16:141,22:[1,142]},o($V0,$V1,{70:6,44:19,74:79,12:81,19:143,18:[1,144],25:$V4,45:$V5,46:$V6,47:$V7,48:$V8,49:$V9,71:$Vd,88:$VJ,89:$VK,96:$VL}),o($V0,$V1,{70:6,44:19,74:79,12:81,19:145,18:$VH,25:$V4,45:$V5,46:$V6,47:$V7,48:$V8,49:$V9,71:$Vd,88:$VJ,89:$VK,96:$VL}),o($Ve,[2,62],{75:31,79:34,80:35,97:36,98:37,37:38,109:39,72:45,27:$Vf,65:$Vg,76:$Vh,77:$Vi,99:$Vj,100:$Vk,101:$Vl,102:$Vm,103:$Vn,104:$Vo,105:$Vp,106:$Vq,107:$Vr,108:$Vs,111:$Vt,112:$Vu,113:$Vv,114:$Vw,115:$Vx,116:$Vy,117:$Vz,118:$VA,119:$VB,120:$VC,121:$VD,122:$VE,123:$VF}),o($VM,[2,66]),o($VM,$VN,{81:94,78:146,82:$VO}),o($VM,[2,67]),o($VM,$VN,{81:94,78:147,82:$VO}),o($VM,[2,95]),o($VM,[2,74],{82:[1,148]}),o($V0,$V1,{70:6,44:19,74:79,12:81,19:149,18:$VH,25:$V4,45:$V5,46:$V6,47:$V7,48:$V8,49:$V9,71:$Vd,88:$VJ,89:$VK,96:$VL}),o($VM,[2,96]),o($VM,[2,97]),{27:$Vf,37:38,42:[1,151],65:$Vg,72:45,75:150,76:$Vh,77:$Vi,79:34,80:35,97:36,98:37,99:$Vj,100:$Vk,101:$Vl,102:$Vm,103:$Vn,104:$Vo,105:$Vp,106:$Vq,107:$Vr,108:$Vs,109:39,111:$Vt,112:$Vu,113:$Vv,114:$Vw,115:$Vx,116:$Vy,117:$Vz,118:$VA,119:$VB,120:$VC,121:$VD,122:$VE,123:$VF},{20:[1,152]},{20:[1,153]},{20:[1,154]},{20:[1,155]},o($VP,[2,103]),o($VP,[2,104]),o([5,17,20,22,23,25,27,29,33,35,42,45,46,47,48,49,50,56,57,60,61,63,65,67,68,69,73,76,77,82,83,84,85,86,87,88,89,90,91,92,93,94,95,99,100,101,102,103,104,105,106,107,108,111,112,113,114,115,116,117,118,119,120,121,122,123],[2,50]),{20:[1,156]},{9:113,10:157,53:158,54:111,55:112,56:$Vb,60:$VQ,61:$VR,63:$Vc},o($VG,[2,35]),{37:70,65:$Vg,66:159},o($V61,[2,37]),o($V61,[2,38]),o($V61,[2,39],{35:[1,160]}),o($V61,[2,40]),o($V0,$V1,{70:6,44:19,74:79,12:81,19:161,18:$VH,25:$V4,45:$V5,46:$V6,47:$V7,48:$V8,49:$V9,71:$Vd,88:$VJ,89:$VK,96:$VL}),{62:[1,162]},o($V0,$V1,{70:6,44:19,74:79,12:81,58:163,19:165,18:$V71,25:$V4,45:$V5,46:$V6,47:$V7,48:$V8,49:$V9,71:$Vd,88:$VJ,89:$VK,96:$VL}),{37:166,65:$Vg},o($V0,$V1,{70:6,44:19,74:79,12:81,19:165,58:167,18:$V71,25:$V4,45:$V5,46:$V6,47:$V7,48:$V8,49:$V9,71:$Vd,88:$VJ,89:$VK,96:$VL}),o($V0,$V1,{70:6,44:19,74:79,12:81,19:168,18:$VH,25:$V4,45:$V5,46:$V6,47:$V7,48:$V8,49:$V9,71:$Vd,88:$VJ,89:$VK,96:$VL}),o($V0,$V1,{70:6,44:19,74:79,12:81,19:169,18:$VH,25:$V4,45:$V5,46:$V6,47:$V7,48:$V8,49:$V9,71:$Vd,88:$VJ,89:$VK,96:$VL}),o($V0,$V1,{70:6,44:19,74:79,12:81,19:170,18:$VH,25:$V4,45:$V5,46:$V6,47:$V7,48:$V8,49:$V9,71:$Vd,88:$VJ,89:$VK,96:$VL}),o($V0,$V1,{70:6,44:19,74:79,12:81,19:171,18:$VH,25:$V4,45:$V5,46:$V6,47:$V7,48:$V8,49:$V9,71:$Vd,88:$VJ,89:$VK,96:$VL}),o($V0,$V1,{70:6,44:19,74:79,12:81,19:172,18:$VH,25:$V4,45:$V5,46:$V6,47:$V7,48:$V8,49:$V9,71:$Vd,88:$VJ,89:$VK,96:$VL}),o($V0,$V1,{70:6,44:19,74:79,12:81,19:173,18:$VH,25:$V4,45:$V5,46:$V6,47:$V7,48:$V8,49:$V9,71:$Vd,88:$VJ,89:$VK,96:$VL}),o($V0,$V1,{70:6,44:19,74:79,12:81,19:174,18:$VH,25:$V4,45:$V5,46:$V6,47:$V7,48:$V8,49:$V9,71:$Vd,88:$VJ,89:$VK,96:$VL}),o($V0,$V1,{70:6,44:19,74:79,12:81,19:175,18:$VH,25:$V4,45:$V5,46:$V6,47:$V7,48:$V8,49:$V9,71:$Vd,88:$VJ,89:$VK,96:$VL}),o($V0,$V1,{70:6,44:19,74:79,12:81,19:176,18:$VH,25:$V4,45:$V5,46:$V6,47:$V7,48:$V8,49:$V9,71:$Vd,88:$VJ,89:$VK,96:$VL}),o($V0,$V1,{70:6,44:19,74:79,12:81,19:177,18:$VH,25:$V4,45:$V5,46:$V6,47:$V7,48:$V8,49:$V9,71:$Vd,88:$VJ,89:$VK,96:$VL}),o($V0,$V1,{70:6,44:19,74:79,12:81,19:178,18:$VH,25:$V4,45:$V5,46:$V6,47:$V7,48:$V8,49:$V9,71:$Vd,88:$VJ,89:$VK,96:$VL}),o($V0,$V1,{70:6,44:19,74:79,12:81,19:179,18:$VH,25:$V4,45:$V5,46:$V6,47:$V7,48:$V8,49:$V9,71:$Vd,88:$VJ,89:$VK,96:$VL}),o($V0,$V1,{70:6,44:19,74:79,12:81,19:180,18:$VH,25:$V4,45:$V5,46:$V6,47:$V7,48:$V8,49:$V9,71:$Vd,88:$VJ,89:$VK,96:$VL}),o($V81,[2,149],{135:181,27:[1,182]}),o($V51,[2,85]),o($V51,[2,86]),{20:$V91,42:$VT,84:$VU,85:$VV,86:$VW,87:$VX,88:$VY,89:$VZ,90:$V_,91:$V$,92:$V01,93:$V11,94:$V21,95:$V31},o($V0,$V1,{70:6,74:184,71:$Vd}),{26:[1,185]},{18:[1,186]},{20:[1,187],35:$Va1},o($Vb1,[2,61],{42:$VT,84:$VU,85:$VV,86:$VW,87:$VX,88:$VY,89:$VZ,90:$V_,91:$V$,92:$V01,93:$V11,94:$V21,95:$V31}),o($VG,[2,11]),o($V0,$V1,{70:6,44:19,14:20,74:79,12:81,19:189,13:191,17:$V2,18:[1,190],25:$V4,45:$V5,46:$V6,47:$V7,48:$V8,49:$V9,71:$Vd,88:$VJ,89:$VK,96:$VL}),{22:[2,13],42:$VT,84:$VU,85:$VV,86:$VW,87:$VX,88:$VY,89:$VZ,90:$V_,91:$V$,92:$V01,93:$V11,94:$V21,95:$V31},o($V0,$V1,{70:6,44:19,74:79,12:81,19:135,18:$VH,20:[1,192],25:$V4,45:$V5,46:$V6,47:$V7,48:$V8,49:$V9,71:$Vd,88:$VJ,89:$VK,96:$VL}),{20:[1,193],42:$VT,84:$VU,85:$VV,86:$VW,87:$VX,88:$VY,89:$VZ,90:$V_,91:$V$,92:$V01,93:$V11,94:$V21,95:$V31},o($VM,[2,69]),o($VM,[2,68]),o($V0,$V1,{70:6,44:19,74:79,12:81,19:194,18:$VH,25:$V4,45:$V5,46:$V6,47:$V7,48:$V8,49:$V9,71:$Vd,88:$VJ,89:$VK,96:$VL}),{42:$VT,83:[1,195],84:$VU,85:$VV,86:$VW,87:$VX,88:$VY,89:$VZ,90:$V_,91:$V$,92:$V01,93:$V11,94:$V21,95:$V31},o($VM,[2,111]),o($VM,$VN,{81:94,78:196,82:$VO}),o($VP,[2,107]),o($VP,[2,108]),o($VP,[2,109]),o($VP,[2,110]),o($V0,[2,58]),o($VG,[2,34]),o($V61,[2,36]),o($VS,[2,51]),o($V0,$V1,{70:6,44:19,74:79,12:81,19:197,18:$VH,25:$V4,45:$V5,46:$V6,47:$V7,48:$V8,49:$V9,71:$Vd,88:$VJ,89:$VK,96:$VL}),o($V61,[2,44],{42:$VT,84:$VU,85:$VV,86:$VW,87:$VX,88:$VY,89:$VZ,90:$V_,91:$V$,92:$V01,93:$V11,94:$V21,95:$V31}),o($V0,$V1,{70:6,44:19,74:79,12:81,19:198,18:$VH,25:$V4,45:$V5,46:$V6,47:$V7,48:$V8,49:$V9,71:$Vd,88:$VJ,89:$VK,96:$VL}),o($VS,[2,53]),o($V0,$V1,{70:6,44:19,74:79,12:81,19:199,18:$VH,25:$V4,45:$V5,46:$V6,47:$V7,48:$V8,49:$V9,71:$Vd,88:$VJ,89:$VK,96:$VL}),o($Vc1,[2,57],{42:$VT,84:$VU,85:$VV,86:$VW,87:$VX,88:$VY,89:$VZ,90:$V_,91:$V$,92:$V01,93:$V11,94:$V21,95:$V31}),{67:[1,200]},o([5,17,23,25,33,45,46,47,48,49,50,56,60,61,63],[2,41]),o($Vd1,[2,76],{42:$VT,88:$VY,89:$VZ,90:$V_,91:$V$}),o($Vd1,[2,77],{42:$VT,88:$VY,89:$VZ,90:$V_,91:$V$}),o($Vd1,[2,78],{42:$VT,88:$VY,89:$VZ,90:$V_,91:$V$}),o($Vd1,[2,79],{42:$VT,88:$VY,89:$VZ,90:$V_,91:$V$}),o($Ve1,[2,80],{42:$VT,90:$V_,91:$V$}),o($Ve1,[2,81],{42:$VT,90:$V_,91:$V$}),o($V51,[2,82]),o($V51,[2,83]),o($V51,[2,84]),o([5,17,20,22,23,25,33,35,45,46,47,48,49,50,56,60,61,63,69,83,92],[2,88],{42:$VT,84:$VU,85:$VV,86:$VW,87:$VX,88:$VY,89:$VZ,90:$V_,91:$V$,93:$V11,94:$V21,95:$V31}),o([5,17,20,22,23,25,33,35,45,46,47,48,49,50,56,60,61,63,69,83,92,93],[2,89],{42:$VT,84:$VU,85:$VV,86:$VW,87:$VX,88:$VY,89:$VZ,90:$V_,91:$V$,94:$V21,95:$V31}),o($Vd1,[2,90],{42:$VT,88:$VY,89:$VZ,90:$V_,91:$V$}),o($Vd1,[2,91],{42:$VT,88:$VY,89:$VZ,90:$V_,91:$V$}),{77:[1,202],87:[1,201]},{94:[1,203]},o($V51,[2,87]),{20:[1,204],27:$Vf,37:38,65:$Vg,72:45,75:31,76:$Vh,77:$Vi,79:34,80:35,97:36,98:37,99:$Vj,100:$Vk,101:$Vl,102:$Vm,103:$Vn,104:$Vo,105:$Vp,106:$Vq,107:$Vr,108:$Vs,109:39,111:$Vt,112:$Vu,113:$Vv,114:$Vw,115:$Vx,116:$Vy,117:$Vz,118:$VA,119:$VB,120:$VC,121:$VD,122:$VE,123:$VF},{27:[1,205]},o($V0,$V1,{70:6,44:19,74:79,12:81,19:140,43:206,18:$VH,25:$V4,45:$V5,46:$V6,47:$V7,48:$V8,49:$V9,71:$Vd,88:$VJ,89:$VK,96:$VL}),o($V51,[2,28]),o($V0,$V1,{70:6,44:19,74:79,12:81,19:207,18:$VH,25:$V4,45:$V5,46:$V6,47:$V7,48:$V8,49:$V9,71:$Vd,88:$VJ,89:$VK,96:$VL}),o($VG,[2,15],{42:$VT,84:$VU,85:$VV,86:$VW,87:$VX,88:$VY,89:$VZ,90:$V_,91:$V$,92:$V01,93:$V11,94:$V21,95:$V31}),o($V0,$V1,{70:6,44:19,74:79,12:81,19:135,18:$VH,20:[1,208],25:$V4,45:$V5,46:$V6,47:$V7,48:$V8,49:$V9,71:$Vd,88:$VJ,89:$VK,96:$VL}),o($VG,[2,17]),{22:[2,14]},{21:[2,12]},{42:$VT,83:[1,209],84:$VU,85:$VV,86:$VW,87:$VX,88:$VY,89:$VZ,90:$V_,91:$V$,92:$V01,93:$V11,94:$V21,95:$V31},o($VP,[2,73]),o($VM,[2,112]),o($VS,[2,45],{42:$VT,84:$VU,85:$VV,86:$VW,87:$VX,88:$VY,89:$VZ,90:$V_,91:$V$,92:$V01,93:$V11,94:$V21,95:$V31}),o($VS,[2,46],{42:$VT,84:$VU,85:$VV,86:$VW,87:$VX,88:$VY,89:$VZ,90:$V_,91:$V$,92:$V01,93:$V11,94:$V21,95:$V31}),{20:$V91,35:[1,211],42:$VT,69:[1,210],84:$VU,85:$VV,86:$VW,87:$VX,88:$VY,89:$VZ,90:$V_,91:$V$,92:$V01,93:$V11,94:$V21,95:$V31},o($V0,$V1,{70:6,44:19,74:79,12:81,19:165,58:212,18:$V71,25:$V4,45:$V5,46:$V6,47:$V7,48:$V8,49:$V9,71:$Vd,88:$VJ,89:$VK,96:$VL}),{27:$Vf1,31:$Vg1,64:216,85:[1,214],136:213,137:215},{87:[1,219]},{27:$Vf1,31:$Vg1,64:216,72:220,85:$VI,103:$Vn,104:$Vo,136:221,137:215},o($V51,[2,93]),{18:[1,222]},{20:[1,223],35:$Va1},o($Vb1,[2,60],{42:$VT,84:$VU,85:$VV,86:$VW,87:$VX,88:$VY,89:$VZ,90:$V_,91:$V$,92:$V01,93:$V11,94:$V21,95:$V31}),o($VG,[2,16]),o($VP,[2,72]),o($V0,$V1,{70:6,44:19,74:79,12:81,19:224,18:$VH,25:$V4,45:$V5,46:$V6,47:$V7,48:$V8,49:$V9,71:$Vd,88:$VJ,89:$VK,96:$VL}),o($V0,$V1,{70:6,44:19,74:79,12:81,59:225,19:226,18:$VH,25:$V4,45:$V5,46:$V6,47:$V7,48:$V8,49:$V9,71:$Vd,88:$VJ,89:$VK,96:$VL}),o($VS,[2,54]),{27:$Vf1,31:$Vg1,85:[1,227],137:228},{27:$V41,77:[1,229]},o($Vh1,[2,142]),o($Vh1,[2,143]),o($Vh1,[2,144]),o($V0,$V1,{70:6,74:230,71:$Vd,96:[1,231]}),o($Vi1,[2,140]),o($V81,[2,147]),o($V81,[2,148],{137:228,27:$Vf1,31:$Vg1}),{28:232,36:233,37:234,65:$Vg},o($V51,[2,27]),{20:[1,235],42:$VT,84:$VU,85:$VV,86:$VW,87:$VX,88:$VY,89:$VZ,90:$V_,91:$V$,92:$V01,93:$V11,94:$V21,95:$V31},{20:[1,236],35:[1,237]},o($Vb1,[2,43],{42:$VT,84:$VU,85:$VV,86:$VW,87:$VX,88:$VY,89:$VZ,90:$V_,91:$V$,92:$V01,93:$V11,94:$V21,95:$V31}),{77:[1,238]},o($Vh1,[2,141]),{27:[1,239]},{27:$Vf,33:[1,240],37:38,65:$Vg,72:45,75:31,76:$Vh,77:$Vi,79:34,80:35,97:36,98:37,99:$Vj,100:$Vk,101:$Vl,102:$Vm,103:$Vn,104:$Vo,105:$Vp,106:$Vq,107:$Vr,108:$Vs,109:39,111:$Vt,112:$Vu,113:$Vv,114:$Vw,115:$Vx,116:$Vy,117:$Vz,118:$VA,119:$VB,120:$VC,121:$VD,122:$VE,123:$VF},{18:[1,241]},{20:[1,242],35:[1,243]},o($Vb1,[2,20]),{29:[1,244]},o($Vc1,[2,55]),o($Vc1,[2,56]),o($V0,$V1,{70:6,44:19,74:79,12:81,19:245,18:$VH,25:$V4,45:$V5,46:$V6,47:$V7,48:$V8,49:$V9,71:$Vd,88:$VJ,89:$VK,96:$VL}),{27:[1,246]},{87:[1,247]},o($Vh1,[2,145]),o($V0,$V1,{70:6,74:248,71:$Vd}),{29:[1,249]},{36:250,37:234,65:$Vg},{30:251,38:$Vj1},o($Vb1,[2,42],{42:$VT,84:$VU,85:$VV,86:$VW,87:$VX,88:$VY,89:$VZ,90:$V_,91:$V$,92:$V01,93:$V11,94:$V21,95:$V31}),{87:[1,253]},o($Vi1,[2,139]),{20:[1,254],27:$Vf,37:38,65:$Vg,72:45,75:31,76:$Vh,77:$Vi,79:34,80:35,97:36,98:37,99:$Vj,100:$Vk,101:$Vl,102:$Vm,103:$Vn,104:$Vo,105:$Vp,106:$Vq,107:$Vr,108:$Vs,109:39,111:$Vt,112:$Vu,113:$Vv,114:$Vw,115:$Vx,116:$Vy,117:$Vz,118:$VA,119:$VB,120:$VC,121:$VD,122:$VE,123:$VF},{30:255,38:$Vj1},o($Vb1,[2,19]),o($Vb1,[2,21]),{26:[1,256]},o($Vi1,[2,138]),{33:[1,257]},{31:[1,258]},{39:259,47:[1,260],124:[1,261],125:[1,262],126:[1,263],127:[1,264],128:[1,265],129:[1,266],130:[1,267],131:[1,268],132:[1,269],133:[1,270],134:[1,271]},o($Vh1,[2,146]),{6:273,7:5,8:7,9:8,10:9,11:10,12:11,13:12,14:20,17:$V2,23:$V3,25:$V4,32:272,44:19,45:$V5,46:$V6,47:$V7,48:$V8,49:$V9,50:$Va,56:$Vb,63:$Vc},o($Vk1,[2,25],{40:274,41:[1,275],42:[1,276]}),o($Vl1,[2,126]),o($Vl1,[2,127]),o($Vl1,[2,128]),o($Vl1,[2,129]),o($Vl1,[2,130]),o($Vl1,[2,131]),o($Vl1,[2,132]),o($Vl1,[2,133]),o($Vl1,[2,134]),o($Vl1,[2,135]),o($Vl1,[2,136]),o($Vl1,[2,137]),{33:[1,277]},{7:30,8:7,9:8,10:9,11:10,12:11,13:12,14:20,17:$V2,23:$V3,25:$V4,33:[2,26],44:19,45:$V5,46:$V6,47:$V7,48:$V8,49:$V9,50:$Va,56:$Vb,63:$Vc},o($Vk1,[2,22]),o($Vk1,[2,23]),o($Vk1,[2,24]),{34:[1,278]},o($VG,[2,18])],
+defaultActions: {21:[2,29],22:[2,30],23:[2,31],24:[2,32],25:[2,33],27:[2,1],29:[2,2],51:[2,113],52:[2,114],53:[2,115],54:[2,116],55:[2,117],56:[2,118],57:[2,119],58:[2,120],59:[2,121],60:[2,122],61:[2,123],62:[2,124],63:[2,125],192:[2,14],193:[2,12]},
 parseError: function parseError (str, hash) {
     if (hash.recoverable) {
         this.trace(str);
@@ -9621,9 +10007,6 @@ let re = /[^\n\t\r ]+/g
 	}
 	function insert_text(_linea, _columna) {
 		return builder.newDoubleAxis(builder.newExpression(builder.newValue("text()", Tipos.FUNCION_TEXT, _linea, _columna), null, _linea, _columna), _linea, _columna);
-	}
-	function insert_let_values(_id, _valores, _linea, _columna) {
-		return queryBuilder.nuevoLet(_id, queryBuilder.nuevosValores(_valores, _linea, _columna), _linea, _columna);
 	}
 /* generated by jison-lex 0.3.4 */
 var lexer = (function(){
@@ -9959,71 +10342,71 @@ case 1:// XQUERYComment
 break;
 case 2:// MultiLineComment
 break;
-case 3:return 95
+case 3:return 99
 break;
-case 4:return 48
+case 4:return 45
 break;
-case 5:return 84
+case 5:return 46
 break;
-case 6:return 85
+case 6:return 48
 break;
-case 7:return 65
+case 7:return 49
 break;
-case 8:return 67
+case 8:return 56
 break;
-case 9:return 76
+case 9:return 84
 break;
-case 10:return 69
+case 10:return 86
 break;
-case 11:return 49
+case 11:return 85
 break;
-case 12:return 73
+case 12:return 87
 break;
-case 13:return 97
+case 13:return 76
 break;
-case 14:return 96
+case 14:return 77
 break;
-case 15:return 106
+case 15:return 57
 break;
-case 16:return 98
+case 16:return 94
 break;
-case 17:return 57
+case 17:return 101
 break;
-case 18:return 82
+case 18:return 100
 break;
-case 19:return 83
+case 19:return 110
 break;
-case 20:return 18
+case 20:return 102
 break;
-case 21:return 20
+case 21:return 65
 break;
-case 22:return 31
+case 22:return 82
 break;
-case 23:return 33
+case 23:return 83
 break;
-case 24:return 77
+case 24:return 18
 break;
-case 25:return 88
+case 25:return 20
 break;
-case 26:return 108
+case 26:return 31
 break;
-case 27:return 107
+case 27:return 33
 break;
-case 28:return 109
+case 28:return 42
 break;
-case 29:return 110
+case 29:return 90
 break;
 case 30:return 112
 break;
 case 31:return 111
 break;
-case 32:return 114
+case 32:return 113
 break;
-case 33:return 113
+case 33:return 114
 break;
-case 34:return 115
+case 34:return 116
 break;
-case 35:return 116
+case 35:return 115
 break;
 case 36:return 118
 break;
@@ -10031,150 +10414,158 @@ case 37:return 117
 break;
 case 38:return 119
 break;
-case 39:return 104
+case 39:return 120
 break;
-case 40:return 102
+case 40:return 122
 break;
-case 41:return 101
+case 41:return 121
 break;
-case 42:return 103
+case 42:return 123
 break;
-case 43:return 74
+case 43:return 108
 break;
-case 44:return 86
+case 44:return 106
 break;
-case 45:return 87
+case 45:return 105
 break;
-case 46:return 92
+case 46:return 107
 break;
-case 47:return 90
+case 47:return 73
 break;
-case 48:return 91
+case 48:return 88
 break;
 case 49:return 89
 break;
-case 50:return 63
+case 50:return 95
 break;
-case 51:return 42
+case 51:return 92
 break;
-case 52:return 60
+case 52:return 93
 break;
-case 53:return 59
+case 53:return 91
 break;
-case 54:return 52
+case 54:return 71
 break;
-case 55:return 53
+case 55:return 50
 break;
-case 56:return 54
+case 56:return 68
 break;
-case 57:return 55
+case 57:return 67
 break;
-case 58:return 61
+case 58:return 60
 break;
-case 59:return 35
+case 59:return 61
 break;
-case 60:return 72
+case 60:return 62
 break;
-case 61:return 17
+case 61:return 63
 break;
-case 62:return 21
+case 62:return 69
 break;
-case 63:return 22
+case 63:return 35
 break;
-case 64:return 23
+case 64:return 96
 break;
-case 65:return 24
+case 65:return 17
 break;
-case 66:return 25
+case 66:return 21
 break;
-case 67:return 29
+case 67:return 22
 break;
-case 68:return 38
+case 68:return 23
 break;
-case 69:return 26
+case 69:return 24
 break;
-case 70:return 34
+case 70:return 25
 break;
-case 71:return 40
+case 71:return 29
 break;
-case 72:return 120
+case 72:return 38
 break;
-case 73:return 124
+case 73:return 26
 break;
-case 74:return 125
+case 74:return 34
 break;
-case 75:return 126
+case 75:return 41
 break;
-case 76:return 127
+case 76:return 47
 break;
-case 77:return 128
+case 77:return 127
 break;
-case 78:return 129
+case 78:return 128
 break;
-case 79:return 121
+case 79:return 129
 break;
-case 80:return 122
+case 80:return 130
 break;
-case 81:return 123
+case 81:return 131
 break;
-case 82:return 'tk_true'
+case 82:return 132
 break;
-case 83:return 'tk_false'
+case 83:return 124
 break;
-case 84:return 130
+case 84:return 125
 break;
-case 85:return 131
+case 85:return 126
 break;
-case 86: attribute = ''; this.begin("string_doubleq"); 
+case 86:return 'tk_true'
 break;
-case 87: attribute += yy_.yytext; 
+case 87:return 'tk_false'
 break;
-case 88: attribute += "\""; 
+case 88:return 133
 break;
-case 89: attribute += "\n"; 
+case 89:return 134
 break;
-case 90: attribute += " ";  
+case 90: attribute = ''; this.begin("string_doubleq"); 
 break;
-case 91: attribute += "\t"; 
+case 91: attribute += yy_.yytext; 
 break;
-case 92: attribute += "\\"; 
+case 92: attribute += "\""; 
 break;
-case 93: attribute += "\'"; 
+case 93: attribute += "\n"; 
 break;
-case 94: attribute += "\r"; 
+case 94: attribute += " ";  
 break;
-case 95: yy_.yytext = attribute; this.popState(); return 99; 
+case 95: attribute += "\t"; 
 break;
-case 96: attribute = ''; this.begin("string_singleq"); 
+case 96: attribute += "\\"; 
 break;
-case 97: attribute += yy_.yytext; 
+case 97: attribute += "\'"; 
 break;
-case 98: attribute += "\""; 
+case 98: attribute += "\r"; 
 break;
-case 99: attribute += "\n"; 
+case 99: yy_.yytext = attribute; this.popState(); return 103; 
 break;
-case 100: attribute += " ";  
+case 100: attribute = ''; this.begin("string_singleq"); 
 break;
-case 101: attribute += "\t"; 
+case 101: attribute += yy_.yytext; 
 break;
-case 102: attribute += "\\"; 
+case 102: attribute += "\""; 
 break;
-case 103: attribute += "\'"; 
+case 103: attribute += "\n"; 
 break;
-case 104: attribute += "\r"; 
+case 104: attribute += " ";  
 break;
-case 105: yy_.yytext = attribute; this.popState(); return 100; 
+case 105: attribute += "\t"; 
 break;
-case 106:return 27
+case 106: attribute += "\\"; 
 break;
-case 107:return 5
+case 107: attribute += "\'"; 
 break;
-case 108: errors.push({ tipo: "Léxico", error: yy_.yytext, origen: "XQuery", linea: yy_.yylloc.first_line, columna: yy_.yylloc.first_column+1 }); return 'INVALID'; 
+case 108: attribute += "\r"; 
+break;
+case 109: yy_.yytext = attribute; this.popState(); return 104; 
+break;
+case 110:return 27
+break;
+case 111:return 5
+break;
+case 112: errors.push({ tipo: "Léxico", error: yy_.yytext, origen: "XQuery", linea: yy_.yylloc.first_line, columna: yy_.yylloc.first_column+1 }); return 'INVALID'; 
 break;
 }
 },
-rules: [/^(?:\s+)/i,/^(?:\(:[\s\S\n]*?:\))/i,/^(?:<!--[\s\S\n]*?-->)/i,/^(?:[0-9]+(\.[0-9]+)?\b)/i,/^(?:let\b)/i,/^(?:(<=|le))/i,/^(?:(>=|ge))/i,/^(?:(<|lt))/i,/^(?:(>|gt))/i,/^(?:\/\/)/i,/^(?:\/)/i,/^(?::=)/i,/^(?:(=|eq))/i,/^(?:\.\.)/i,/^(?:\.)/i,/^(?:::)/i,/^(?:@)/i,/^(?:\$)/i,/^(?:\[)/i,/^(?:\])/i,/^(?:\()/i,/^(?:\))/i,/^(?:\{)/i,/^(?:\})/i,/^(?:\*)/i,/^(?:div\b)/i,/^(?:ancestor-or-self\b)/i,/^(?:ancestor\b)/i,/^(?:attribute\b)/i,/^(?:child\b)/i,/^(?:descendant-or-self\b)/i,/^(?:descendant\b)/i,/^(?:following-sibling\b)/i,/^(?:following\b)/i,/^(?:namespace\b)/i,/^(?:parent\b)/i,/^(?:preceding-sibling\b)/i,/^(?:preceding\b)/i,/^(?:self\b)/i,/^(?:node\b)/i,/^(?:last\b)/i,/^(?:text\b)/i,/^(?:position\b)/i,/^(?:\|)/i,/^(?:\+)/i,/^(?:-)/i,/^(?:(!=|ne))/i,/^(?:or\b)/i,/^(?:and\b)/i,/^(?:mod\b)/i,/^(?:doc\b)/i,/^(?:for\b)/i,/^(?:at\b)/i,/^(?:in\b)/i,/^(?:where\b)/i,/^(?:order\b)/i,/^(?:by\b)/i,/^(?:return\b)/i,/^(?:to\b)/i,/^(?:,)/i,/^(?:data\b)/i,/^(?:if\b)/i,/^(?:then\b)/i,/^(?:else\b)/i,/^(?:declare\b)/i,/^(?:function\b)/i,/^(?:local\b)/i,/^(?:as\b)/i,/^(?:xs\b)/i,/^(?::)/i,/^(?:;)/i,/^(?:\?)/i,/^(?:string\b)/i,/^(?:normalizedString\b)/i,/^(?:token\b)/i,/^(?:date\b)/i,/^(?:dateTime\b)/i,/^(?:duration\b)/i,/^(?:time\b)/i,/^(?:integer\b)/i,/^(?:decimal\b)/i,/^(?:boolean\b)/i,/^(?:true\b)/i,/^(?:false\b)/i,/^(?:hexBinary\b)/i,/^(?:anyURI\b)/i,/^(?:["])/i,/^(?:[^"\\]+)/i,/^(?:\\")/i,/^(?:\\n)/i,/^(?:\s)/i,/^(?:\\t)/i,/^(?:\\\\)/i,/^(?:\\\\')/i,/^(?:\\r)/i,/^(?:["])/i,/^(?:['])/i,/^(?:[^'\\]+)/i,/^(?:\\")/i,/^(?:\\n)/i,/^(?:\s)/i,/^(?:\\t)/i,/^(?:\\\\)/i,/^(?:\\\\')/i,/^(?:\\r)/i,/^(?:['])/i,/^(?:[\w\u00e1\u00e9\u00ed\u00f3\u00fa\u00c1\u00c9\u00cd\u00d3\u00da\u00f1\u00d1]+)/i,/^(?:$)/i,/^(?:.)/i],
-conditions: {"content":{"rules":[],"inclusive":false},"string_singleq":{"rules":[97,98,99,100,101,102,103,104,105],"inclusive":false},"string_doubleq":{"rules":[87,88,89,90,91,92,93,94,95],"inclusive":false},"INITIAL":{"rules":[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,96,106,107,108],"inclusive":true}}
+rules: [/^(?:\s+)/i,/^(?:\(:[\s\S\n]*?:\))/i,/^(?:<!--[\s\S\n]*?-->)/i,/^(?:[0-9]+(\.[0-9]+)?\b)/i,/^(?:upper-case\b)/i,/^(?:lower-case\b)/i,/^(?:number\b)/i,/^(?:substring\b)/i,/^(?:let\b)/i,/^(?:(<=|le))/i,/^(?:(>=|ge))/i,/^(?:(<|lt))/i,/^(?:(>|gt))/i,/^(?:\/\/)/i,/^(?:\/)/i,/^(?::=)/i,/^(?:(=|eq))/i,/^(?:\.\.)/i,/^(?:\.)/i,/^(?:::)/i,/^(?:@)/i,/^(?:\$)/i,/^(?:\[)/i,/^(?:\])/i,/^(?:\()/i,/^(?:\))/i,/^(?:\{)/i,/^(?:\})/i,/^(?:\*)/i,/^(?:div\b)/i,/^(?:ancestor-or-self\b)/i,/^(?:ancestor\b)/i,/^(?:attribute\b)/i,/^(?:child\b)/i,/^(?:descendant-or-self\b)/i,/^(?:descendant\b)/i,/^(?:following-sibling\b)/i,/^(?:following\b)/i,/^(?:namespace\b)/i,/^(?:parent\b)/i,/^(?:preceding-sibling\b)/i,/^(?:preceding\b)/i,/^(?:self\b)/i,/^(?:node\b)/i,/^(?:last\b)/i,/^(?:text\b)/i,/^(?:position\b)/i,/^(?:\|)/i,/^(?:\+)/i,/^(?:-)/i,/^(?:(!=|ne))/i,/^(?:or\b)/i,/^(?:and\b)/i,/^(?:mod\b)/i,/^(?:doc\b)/i,/^(?:for\b)/i,/^(?:at\b)/i,/^(?:in\b)/i,/^(?:where\b)/i,/^(?:order\b)/i,/^(?:by\b)/i,/^(?:return\b)/i,/^(?:to\b)/i,/^(?:,)/i,/^(?:data\b)/i,/^(?:if\b)/i,/^(?:then\b)/i,/^(?:else\b)/i,/^(?:declare\b)/i,/^(?:function\b)/i,/^(?:local\b)/i,/^(?:as\b)/i,/^(?:xs\b)/i,/^(?::)/i,/^(?:;)/i,/^(?:\?)/i,/^(?:string\b)/i,/^(?:normalizedString\b)/i,/^(?:token\b)/i,/^(?:date\b)/i,/^(?:dateTime\b)/i,/^(?:duration\b)/i,/^(?:time\b)/i,/^(?:integer\b)/i,/^(?:decimal\b)/i,/^(?:boolean\b)/i,/^(?:true\b)/i,/^(?:false\b)/i,/^(?:hexBinary\b)/i,/^(?:anyURI\b)/i,/^(?:["])/i,/^(?:[^"\\]+)/i,/^(?:\\")/i,/^(?:\\n)/i,/^(?:\s)/i,/^(?:\\t)/i,/^(?:\\\\)/i,/^(?:\\\\')/i,/^(?:\\r)/i,/^(?:["])/i,/^(?:['])/i,/^(?:[^'\\]+)/i,/^(?:\\")/i,/^(?:\\n)/i,/^(?:\s)/i,/^(?:\\t)/i,/^(?:\\\\)/i,/^(?:\\\\')/i,/^(?:\\r)/i,/^(?:['])/i,/^(?:[\w\u00e1\u00e9\u00ed\u00f3\u00fa\u00c1\u00c9\u00cd\u00d3\u00da\u00f1\u00d1]+)/i,/^(?:$)/i,/^(?:.)/i],
+conditions: {"string_singleq":{"rules":[101,102,103,104,105,106,107,108,109],"inclusive":false},"string_doubleq":{"rules":[91,92,93,94,95,96,97,98,99],"inclusive":false},"INITIAL":{"rules":[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,100,110,111,112],"inclusive":true}}
 });
 return lexer;
 })();
@@ -10227,7 +10618,7 @@ function OrderBy(_instruccion, _ambito, _iterators) {
         for (let i = 0; i < _iterators.length; i++) { // [$x, $y, $z]
             const iterator = _iterators[i]; // { Contexto }
             let _x = Expresion_1.default(_instruccion, _ambito, iterator, (_a = iterator.variable) === null || _a === void 0 ? void 0 : _a.id); // _instruccion = [comparissons]
-            if (_x)
+            if (_x && !_x.error)
                 sorted.push(sortIterators(_x, iterator));
         }
     }
@@ -12369,8 +12760,8 @@ module.exports = { SA: SelectAxis, GetAxis: getAxis };
 "use strict";
 
 const Enum_1 = __webpack_require__(/*! ../../../../model/xpath/Enum */ "MEUw");
-function Aritmetica(_expresion, _ambito, _contexto) {
-    let operators = init(_expresion.opIzq, _expresion.opDer, _ambito, _expresion.tipo, _contexto);
+function Aritmetica(_expresion, _ambito, _contexto, _id) {
+    let operators = init(_expresion.opIzq, _expresion.opDer, _ambito, _expresion.tipo, _contexto, _id);
     if (operators === null || operators.error)
         return operators;
     switch (operators.tipo) {
@@ -12390,15 +12781,19 @@ function Aritmetica(_expresion, _ambito, _contexto) {
             return null;
     }
 }
-function init(_opIzq, _opDer, _ambito, _tipo, _contexto) {
+function init(_opIzq, _opDer, _ambito, _tipo, _contexto, _id) {
     const Expresion = __webpack_require__(/*! ../Expresion */ "gajf");
-    let op1 = Expresion(_opIzq, _ambito, _contexto);
+    let op1 = Expresion(_opIzq, _ambito, _contexto, _id);
     if (op1 === null || op1.error)
         return op1;
-    let op2 = Expresion(_opDer, _ambito, _contexto);
+    let op2 = Expresion(_opDer, _ambito, _contexto, _id);
     if (op2 === null || op2.error)
         return op2;
     let tipo = _tipo;
+    if (op1.constructor.name === "Contexto")
+        op1 = _ambito.extractValue(op1);
+    if (op2.constructor.name === "Contexto")
+        op2 = _ambito.extractValue(op2);
     if (op1.tipo === Enum_1.Tipos.FUNCION_LAST && op2.tipo === Enum_1.Tipos.NUMBER) {
         op1 = _contexto.getLength();
         op2 = Number(op2.valor);
@@ -12487,35 +12882,35 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 const Enum_1 = __webpack_require__(/*! ../../../../model/xpath/Enum */ "MEUw");
 const Contexto_1 = __webpack_require__(/*! ../../../Contexto */ "ivfU");
 const Match_1 = __importDefault(__webpack_require__(/*! ./Match */ "jdP8"));
-function Relacional(_expresion, _ambito, _contexto, id) {
-    let operators = init(_expresion.opIzq, _expresion.opDer, _ambito, _expresion.tipo, _contexto, id);
+function Relacional(_expresion, _ambito, _contexto, _id) {
+    let operators = init(_expresion.opIzq, _expresion.opDer, _ambito, _expresion.tipo, _contexto, _id);
     if (operators === null || operators.error)
         return operators;
     if (Array.isArray(operators))
         return operators;
     switch (operators.tipo) {
         case Enum_1.Tipos.RELACIONAL_MAYOR:
-            return mayor(operators.op1, operators.op2);
+            return mayor(operators.op1, operators.op2, operators.exp);
         case Enum_1.Tipos.RELACIONAL_MAYORIGUAL:
-            return mayorigual(operators.op1, operators.op2);
+            return mayorigual(operators.op1, operators.op2, operators.exp);
         case Enum_1.Tipos.RELACIONAL_MENOR:
-            return menor(operators.op1, operators.op2);
+            return menor(operators.op1, operators.op2, operators.exp);
         case Enum_1.Tipos.RELACIONAL_MENORIGUAL:
-            return menorigual(operators.op1, operators.op2);
+            return menorigual(operators.op1, operators.op2, operators.exp);
         case Enum_1.Tipos.RELACIONAL_IGUAL:
-            return igual(operators.op1, operators.op2);
+            return igual(operators.op1, operators.op2, operators.exp);
         case Enum_1.Tipos.RELACIONAL_DIFERENTE:
-            return diferente(operators.op1, operators.op2);
+            return diferente(operators.op1, operators.op2, operators.exp);
         default:
             return null;
     }
 }
-function init(_opIzq, _opDer, _ambito, _tipo, _contexto, id) {
+function init(_opIzq, _opDer, _ambito, _tipo, _contexto, _id) {
     const Expresion = __webpack_require__(/*! ../Expresion */ "gajf");
-    let op1 = Expresion(_opIzq, _ambito, _contexto, id);
+    let op1 = Expresion(_opIzq, _ambito, _contexto, _id);
     if (op1 === null || op1.error)
         return op1;
-    let op2 = Expresion(_opDer, _ambito, _contexto, id);
+    let op2 = Expresion(_opDer, _ambito, _contexto, _id);
     if (op2 === null || op2.error)
         return op2;
     let tipo = _tipo;
@@ -12568,8 +12963,10 @@ function init(_opIzq, _opDer, _ambito, _tipo, _contexto, id) {
             return { op1: opIzq, op2: opDer, tipo: tipo };
         }
         else if (op1.tipo === Enum_1.Tipos.NUMBER && op2.tipo === Enum_1.Tipos.NUMBER) {
-            op1 = Number(op1.valor);
-            op2 = Number(op2.valor);
+            // op1 = Number(op1.valor);
+            // op2 = Number(op2.valor);
+            // console.log(op1, 8989888, op2)
+            return { op1: op1, op2: op2, tipo: tipo, exp: Enum_1.Tipos.BOOLEANO };
         }
         else if (op1.tipo === Enum_1.Tipos.ELEMENTOS || op2.tipo === Enum_1.Tipos.ELEMENTOS) {
             if (op1.tipo === Enum_1.Tipos.ELEMENTOS && (op2.tipo === Enum_1.Tipos.STRING || op2.tipo === Enum_1.Tipos.NUMBER)) {
@@ -12649,13 +13046,16 @@ function init(_opIzq, _opDer, _ambito, _tipo, _contexto, id) {
             }
         }
         else {
-            return { error: "Igualdad no compatible.", tipo: "Semántico", origen: "Query", linea: _opIzq.linea, columna: _opIzq.columna };
+            return { op1: op1, op2: op2, tipo: tipo, exp: Enum_1.Tipos.BOOLEANO };
+            // return { error: "Igualdad no compatible.", tipo: "Semántico", origen: "Query", linea: _opIzq.linea, columna: _opIzq.columna }
         }
         return { op1: op1, op2: op2, tipo: tipo };
     }
     return { error: "Relación no procesada.", tipo: "Semántico", origen: "Query", linea: _opIzq.linea, columna: _opIzq.columna };
 }
-function mayor(_opIzq, _opDer) {
+function mayor(_opIzq, _opDer, _exp) {
+    if (_exp === Enum_1.Tipos.BOOLEANO)
+        return [{ valor: (_opIzq.valor > _opDer.valor), tipo: _exp }];
     if (_opIzq.id)
         return { e1: _opIzq.valor, e2: _opDer, tipo: Enum_1.Tipos.ELEMENTOS, desigualdad: Enum_1.Tipos.RELACIONAL_MAYOR };
     if (_opIzq.tipo === Enum_1.Tipos.ATRIBUTOS)
@@ -12667,7 +13067,9 @@ function mayor(_opIzq, _opDer) {
         tipo: Enum_1.Tipos.RELACIONAL_MAYOR
     };
 }
-function mayorigual(_opIzq, _opDer) {
+function mayorigual(_opIzq, _opDer, _exp) {
+    if (_exp === Enum_1.Tipos.BOOLEANO)
+        return [{ valor: (_opIzq.valor >= _opDer.valor), tipo: _exp }];
     if (_opIzq.id)
         return { e1: _opIzq.valor, e2: _opDer, tipo: Enum_1.Tipos.ELEMENTOS, desigualdad: Enum_1.Tipos.RELACIONAL_MAYORIGUAL };
     if (_opIzq.tipo === Enum_1.Tipos.ATRIBUTOS)
@@ -12679,7 +13081,9 @@ function mayorigual(_opIzq, _opDer) {
         tipo: Enum_1.Tipos.RELACIONAL_MAYORIGUAL
     };
 }
-function menor(_opIzq, _opDer) {
+function menor(_opIzq, _opDer, _exp) {
+    if (_exp === Enum_1.Tipos.BOOLEANO)
+        return [{ valor: (_opIzq.valor < _opDer.valor), tipo: _exp }];
     if (_opIzq.id)
         return { e1: _opIzq.valor, e2: _opDer, tipo: Enum_1.Tipos.ELEMENTOS, desigualdad: Enum_1.Tipos.RELACIONAL_MENOR };
     if (_opIzq.tipo === Enum_1.Tipos.ATRIBUTOS)
@@ -12691,7 +13095,9 @@ function menor(_opIzq, _opDer) {
         tipo: Enum_1.Tipos.RELACIONAL_MENOR
     };
 }
-function menorigual(_opIzq, _opDer) {
+function menorigual(_opIzq, _opDer, _exp) {
+    if (_exp === Enum_1.Tipos.BOOLEANO)
+        return [{ valor: (_opIzq.valor <= _opDer.valor), tipo: _exp }];
     if (_opIzq.id)
         return { e1: _opIzq.valor, e2: _opDer, tipo: Enum_1.Tipos.ELEMENTOS, desigualdad: Enum_1.Tipos.RELACIONAL_MENORIGUAL };
     if (_opIzq.tipo === Enum_1.Tipos.ATRIBUTOS)
@@ -12703,7 +13109,9 @@ function menorigual(_opIzq, _opDer) {
         tipo: Enum_1.Tipos.RELACIONAL_MENORIGUAL
     };
 }
-function igual(_opIzq, _opDer) {
+function igual(_opIzq, _opDer, _exp) {
+    if (_exp === Enum_1.Tipos.BOOLEANO)
+        return [{ valor: (_opIzq.valor == _opDer.valor), tipo: _exp }];
     if (_opIzq.tipo === Enum_1.Tipos.ELEMENTOS)
         return { e1: _opIzq, e2: _opDer, tipo: Enum_1.Tipos.ELEMENTOS, desigualdad: Enum_1.Tipos.RELACIONAL_IGUAL };
     if (_opIzq.tipo === Enum_1.Tipos.FUNCION_POSITION || _opDer.tipo === Enum_1.Tipos.FUNCION_POSITION)
@@ -12716,7 +13124,9 @@ function igual(_opIzq, _opDer) {
         return { condicion: _opDer.valor, tipo: Enum_1.Tipos.FUNCION_TEXT };
     return { e1: _opIzq, e2: _opDer, tipo: Enum_1.Tipos.ELEMENTOS, desigualdad: Enum_1.Tipos.RELACIONAL_IGUAL };
 }
-function diferente(_opIzq, _opDer) {
+function diferente(_opIzq, _opDer, _exp) {
+    if (_exp === Enum_1.Tipos.BOOLEANO)
+        return [{ valor: (_opIzq.valor != _opDer.valor), tipo: _exp }];
     if (_opIzq.tipo === Enum_1.Tipos.ELEMENTOS)
         return { e1: _opIzq, e2: _opDer, tipo: Enum_1.Tipos.ELEMENTOS, desigualdad: Enum_1.Tipos.RELACIONAL_DIFERENTE };
     if (_opIzq.tipo === Enum_1.Tipos.FUNCION_POSITION || _opDer.tipo === Enum_1.Tipos.FUNCION_POSITION)
@@ -12748,18 +13158,36 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 const Expresion_1 = __importDefault(__webpack_require__(/*! ../xpath/Expresion/Expresion */ "gajf"));
 const Contexto_1 = __webpack_require__(/*! ../Contexto */ "ivfU");
+const Enum_1 = __webpack_require__(/*! ../../model/xpath/Enum */ "MEUw");
 function IfConditional(_condicion, _instruccionesThen, _instruccionesElse, _ambito, _contexto, id) {
     let tmp = new Contexto_1.Contexto(_contexto);
     let condicion = Expresion_1.default(_condicion, _ambito, tmp, id);
-    // console.log(_condicion)
-    if (condicion && condicion[0].getLength() > 0) {
-        let instrucciones = Expresion_1.default(_instruccionesThen, _ambito, condicion[0], id);
+    if (condicion === null || condicion.error)
+        return condicion;
+    let cumple = cumpleCondicion(condicion[0], _contexto);
+    if (cumple) {
+        cumple.tablaVariables = _contexto.tablaVariables;
+        let instrucciones = Expresion_1.default(_instruccionesThen, _ambito, cumple, id);
+        // console.log(instrucciones, 3383838338)
         return instrucciones;
     }
     else {
         let instrucciones = Expresion_1.default(_instruccionesElse, _ambito, _contexto, id);
+        // console.log(instrucciones, 3383838338)
         return instrucciones;
     }
+}
+function cumpleCondicion(_condicion, _tmp) {
+    if (_condicion.constructor.name === "Contexto") {
+        if (_condicion.getLength() > 0)
+            return _condicion;
+        else
+            return null;
+    }
+    else if (_condicion.valor === true && _condicion.tipo === Enum_1.Tipos.BOOLEANO)
+        return _tmp;
+    else
+        return null;
 }
 module.exports = IfConditional;
 
@@ -12818,6 +13246,67 @@ if (_environments_environment__WEBPACK_IMPORTED_MODULE_3__["environment"].produc
 }
 _angular_platform_browser__WEBPACK_IMPORTED_MODULE_0__["platformBrowser"]().bootstrapModule(_app_app_module__WEBPACK_IMPORTED_MODULE_2__["AppModule"])
     .catch(err => console.error(err));
+
+
+/***/ }),
+
+/***/ "zmd1":
+/*!****************************************************!*\
+  !*** ./src/js/controller/xquery/Funciones/Exec.js ***!
+  \****************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+const Contexto_1 = __webpack_require__(/*! ../../Contexto */ "ivfU");
+const Variable_1 = __webpack_require__(/*! ../../../model/xml/Ambito/Variable */ "C8dJ");
+const Enum_1 = __webpack_require__(/*! ../../../model/xpath/Enum */ "MEUw");
+const Expresion_1 = __importDefault(__webpack_require__(/*! ../../xpath/Expresion/Expresion */ "gajf"));
+function Exec(_instr, _ambito, _contexto, _id) {
+    let name = _instr.name;
+    let parametros = _instr.parametros;
+    let funcion = _ambito.getFunction(name, parametros.length);
+    if (!funcion)
+        return { error: 'La función no existe, o bien, el número de parámetros no coincide.', linea: _instr.linea, columna: _instr.columna, origen: "XQuery", tipo: "Semántico" };
+    // Declaración de parámetros
+    let a = [];
+    a = a.concat(_contexto.tablaVariables);
+    let tmp = new Contexto_1.Contexto(_contexto, a);
+    let aux = [];
+    for (let i = 0; i < parametros.length; i++) {
+        const parametro = parametros[i];
+        tmp = new Contexto_1.Contexto(_contexto, a);
+        let variable = new Variable_1.Variable(funcion.parametros[i].id, Enum_1.Tipos.VARIABLE, parametro.linea, parametro.columna, 'local:' + name);
+        let contexto = Expresion_1.default(parametro, _ambito, tmp);
+        if (contexto === null || contexto.error)
+            return contexto;
+        if (contexto.constructor.name === "Contexto")
+            contexto = _ambito.extractValue(contexto);
+        aux.push({ variable: variable, contexto: contexto });
+    }
+    // Asignar los valores
+    for (let i = 0; i < aux.length; i++) {
+        const variable = aux[i].variable;
+        const contexto = aux[i].contexto;
+        if (contexto) {
+            variable.setValue(contexto);
+            tmp.addVariable(variable);
+        }
+    }
+    tmp = new Contexto_1.Contexto(_contexto, a);
+    // Ejecutar las instrucciones de la función
+    const Bloque_XQuery = __webpack_require__(/*! ../Bloque_XQuery */ "+qh/");
+    let _bloque = Bloque_XQuery.getIterators(funcion.sentencias, _ambito, tmp, _id);
+    _ambito.tablaVariables = tmp.tablaVariables;
+    if (_bloque.parametros)
+        return _bloque.parametros[0];
+    return _bloque;
+}
+module.exports = Exec;
 
 
 /***/ }),
