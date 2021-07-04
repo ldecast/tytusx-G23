@@ -232,13 +232,34 @@ export class Ambito {
         return _array;
     }
 
-    getGlobal() {
-        let e: Ambito;
-        for (e = this; e != null; e = e.anterior) {
-            if (e.anterior === null)
-                return e;
-        }
-        return null
+    extractValue(_contexto: Contexto) {
+        let element = _contexto.getArray()[0];
+        if (element.value)
+            return {
+                valor: element.value,
+                tipo: (!isNaN(element.value) && !isNaN(parseFloat(element.value))) ? Tipos.NUMBER : Tipos.STRING
+            }
+        if (element.id_open)
+            return {
+                valor: element.id_open,
+                tipo: (!isNaN(element.id_open) && !isNaN(parseFloat(element.id_open))) ? Tipos.NUMBER : Tipos.STRING
+            }
+        if (element.id)
+            return {
+                valor: element.id,
+                tipo: (!isNaN(element.id) && !isNaN(parseFloat(element.id))) ? Tipos.NUMBER : Tipos.STRING
+            }
+        if ((!isNaN(element) && !isNaN(parseFloat(element))))
+            return {
+                valor: element,
+                tipo: Tipos.NUMBER
+            }
+        if (typeof (element) === "string")
+            return {
+                valor: element,
+                tipo: Tipos.STRING
+            }
+        return null;
     }
 
 

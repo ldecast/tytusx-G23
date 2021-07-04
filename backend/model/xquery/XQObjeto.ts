@@ -180,4 +180,14 @@ export class XQObjeto {
         }
     }
 
+    llamadaNativa(_name: string, _parametros: Array<any>, _linea: number, _columna: number) {
+        return {
+            name: _name,
+            parametros: _parametros,
+            tipo: Tipos.LLAMADA_NATIVA,
+            linea: _linea,
+            columna: _columna
+        }
+    }
+
 }

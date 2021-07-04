@@ -24,9 +24,8 @@ function Exec(_instr: any, _ambito: Ambito, _contexto: Contexto, _id?: any) { //
         let contexto = Expresion(parametro, _ambito, tmp);
         if (contexto === null || contexto.error) return contexto;
         if (contexto.constructor.name === "Contexto")
-            contexto = extractValue(contexto);
+            contexto = _ambito.extractValue(contexto);
         aux.push({ variable: variable, contexto: contexto });
-        // console.log(variable.id, contexto, '\n')
     }
 
     // Asignar los valores
@@ -46,26 +45,6 @@ function Exec(_instr: any, _ambito: Ambito, _contexto: Contexto, _id?: any) { //
     _ambito.tablaVariables = tmp.tablaVariables;
     if (_bloque.parametros) return _bloque.parametros[0];
     return _bloque;
-}
-
-function extractValue(_contexto: Contexto) {
-    let element = _contexto.getArray()[0];
-    if (element.value)
-        return {
-            valor: element.value,
-            tipo: (!isNaN(element.value) && !isNaN(parseFloat(element.value))) ? Tipos.NUMBER : Tipos.STRING
-        }
-    if (element.id_open)
-        return {
-            valor: element.id_open,
-            tipo: (!isNaN(element.id_open) && !isNaN(parseFloat(element.id_open))) ? Tipos.NUMBER : Tipos.STRING
-        }
-    if (element.id)
-        return {
-            valor: element.id,
-            tipo: (!isNaN(element.id) && !isNaN(parseFloat(element.id))) ? Tipos.NUMBER : Tipos.STRING
-        }
-    return null;
 }
 
 export = Exec;
