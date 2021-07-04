@@ -6,6 +6,7 @@ import { Tipos } from "../../model/xpath/Enum";
 function IfConditional(_condicion: any, _instruccionesThen: Array<any>, _instruccionesElse: Array<any>, _ambito: Ambito, _contexto: Contexto, id?: any) {
     let tmp = new Contexto(_contexto);
     let condicion: any = Expresion(_condicion, _ambito, tmp, id);
+    if (condicion === null || condicion.error) return condicion;
     let cumple = cumpleCondicion(condicion[0], _contexto);
     if (cumple) {
         let instrucciones = Expresion(_instruccionesThen, _ambito, cumple, id);
@@ -20,7 +21,6 @@ function IfConditional(_condicion: any, _instruccionesThen: Array<any>, _instruc
 }
 
 function cumpleCondicion(_condicion: any, _tmp: Contexto): Contexto | null {
-    // if (!_condicion) return false;
     if (_condicion.constructor.name === "Contexto") {
         if (_condicion.getLength() > 0) return _condicion;
         else return null;

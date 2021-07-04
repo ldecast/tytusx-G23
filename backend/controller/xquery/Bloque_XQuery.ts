@@ -15,7 +15,6 @@ import Exec from "./Funciones/Exec";
 
 let reset: Contexto;
 let output: Array<Contexto> = [];
-let _str: Array<string>;
 
 function Bloque(_instruccion: Array<any>, _ambito: Ambito, _retorno: Contexto, id?: any): any {
     output = [];
@@ -64,14 +63,17 @@ function Bloque(_instruccion: Array<any>, _ambito: Ambito, _retorno: Contexto, i
         output.push(_retorno);
 }
 
-function getOutput(_instruccion: Array<any>, _ambito: Ambito, _retorno: Contexto, _string: Array<string>) {
-    _str = _string;
+function getOutput(_instruccion: Array<any>, _ambito: Ambito, _retorno: Contexto) {
     let _bloque = Bloque(_instruccion, _ambito, _retorno);
+    if (_bloque.error) {
+        if (_bloque.error.error) return _bloque.error;
+        return _bloque;
+    }
     /* let cadena = (_str.length > 0) ? _str.join('\n') : writeOutput(); */
     let cadena = (_bloque && _bloque.valor !== undefined) ? (_bloque.valor) : writeOutput();
     let codigo3d = ""; // Agregar función que devuelva código tres direcciones
     console.log(cadena);
-    return { cadena: String(cadena), codigo3d: codigo3d };
+    return { cadena: replaceEntity(String(cadena)), codigo3d: codigo3d };
 }
 
 function getIterators(_instruccion: Array<any>, _ambito: Ambito, _retorno: Contexto, _id?: any): any {

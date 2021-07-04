@@ -21,7 +21,7 @@ function Exec(_instr: any, _ambito: Ambito, _contexto: Contexto, _id?: any) { //
         const parametro = parametros[i];
         tmp = new Contexto(_contexto, a);
         // LetClause({ variable: funcion.parametros[i].id }, parametro, _ambito, tmp, _id);
-        let variable = new Variable(funcion.parametros[i].id, Tipos.VARIABLE, parametro.linea, parametro.columna);
+        let variable = new Variable(funcion.parametros[i].id, Tipos.VARIABLE, parametro.linea, parametro.columna, 'local:' + name);
         let contexto = Expresion(parametro, _ambito, tmp);
         aux.push({ variable: variable, contexto: contexto });
         // console.log(variable.id, contexto, '\n')
@@ -42,6 +42,7 @@ function Exec(_instr: any, _ambito: Ambito, _contexto: Contexto, _id?: any) { //
     const Bloque_XQuery = require("../Bloque_XQuery");
     let _bloque = Bloque_XQuery.getIterators(funcion.sentencias, _ambito, tmp, _id);
     // console.log(_bloque, 339393939);
+    _ambito.tablaVariables = tmp.tablaVariables;
     if (_bloque.parametros) return _bloque.parametros[0];
     return _bloque;
 }

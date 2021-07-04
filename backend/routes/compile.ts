@@ -6,7 +6,7 @@ import { Global } from '../model/xml/Ambito/Global';
 import { Element } from '../model/xml/Element';
 
 function compile(req: any) {
-    let errors = [];
+    let errors: Array<any> = [];
     try {
         // Datos de la petición desde Angular
         let xml = req.xml;
@@ -58,18 +58,24 @@ function compile(req: any) {
         let root = new Contexto();
         root.elementos = [new Element("[object XMLDocument]", [], "", cadena.ambito.tablaSimbolos, "0", "0", "[object XMLDocument]")];
         let bloque;
+        let consola: string = "";
         if (xQuery_ast.xquery) {
             bloque = Bloque.getOutput(xQuery_ast.xquery, cadena.ambito, root); // Procesa las instrucciones de XQuery (fase 2)
         }
         else if (xQuery_ast.xpath) {
             bloque = XPath(xQuery_ast.xpath, cadena.ambito, root); // Procesa las instrucciones si sólo viene XPath (fase 1)
         }
+        if (bloque.cadena) consola = bloque.cadena;
+        if (bloque.error) {
+            errors.push(bloque);
+            consola = bloque.error;
+        }
         let simbolos = cadena.ambito.getArraySymbols(); // Arreglo con los símbolos
 
         let output = {
             arreglo_simbolos: simbolos,
             arreglo_errores: errors,
-            output: bloque?.cadena,
+            output: consola,
             encoding: encoding,
             codigo3d: bloque?.codigo3d
         }
