@@ -11,7 +11,7 @@ function LetClause(_id: any, _valor: any, _ambito: Ambito, _contexto: Contexto, 
     // console.log(_valor,3020220)
     if (contexto) {
         variable.setValue(contexto);
-        _ambito.addVariable(variable);
+        tmp.addVariable(variable);
     }
     // console.log(variable, 3333333);
 }

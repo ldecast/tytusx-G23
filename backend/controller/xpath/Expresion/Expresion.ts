@@ -28,8 +28,10 @@ function Expresion(_expresion: any, _ambito: Ambito, _contexto: Contexto, _id?: 
             }
             return null;
         }
-        if (_ambito.existeVariable(exp) !== -1) {
-            let valueFromVar = _ambito.getVar(exp);
+        // console.log(_contexto.tablaValores)
+        if (_contexto.existeVariable(exp) !== -1) {
+            let valueFromVar = _contexto.getVar(exp);
+            // console.log(valueFromVar?.valor,2929292)
             if (valueFromVar?.contexto) {
                 _ambito.contextFromVar = valueFromVar;
                 return { valor: ".", tipo: Tipos.ELEMENTOS, linea: _expresion.linea, columna: _expresion.columna, contextFromVar: valueFromVar.contexto };

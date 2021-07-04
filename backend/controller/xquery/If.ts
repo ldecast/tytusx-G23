@@ -15,7 +15,7 @@ function IfConditional(_condicion: any, _instruccionesThen: Array<any>, _instruc
     }
     else {
         let instrucciones = Expresion(_instruccionesElse, _ambito, _contexto, id);
-        // console.log(_instruccionesElse, 3383838338)
+        // console.log(instrucciones, 3383838338)
         return instrucciones;
     }
 }
