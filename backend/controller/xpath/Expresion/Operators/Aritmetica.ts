@@ -31,6 +31,11 @@ function init(_opIzq: any, _opDer: any, _ambito: Ambito, _tipo: Tipos, _contexto
     if (op2 === null || op2.error) return op2;
     let tipo: Tipos = _tipo;
 
+    if (op1.constructor.name === "Contexto")
+        op1 = extractValue(op1);
+    if (op2.constructor.name === "Contexto")
+        op2 = extractValue(op2);
+
     if (op1.tipo === Tipos.FUNCION_LAST && op2.tipo === Tipos.NUMBER) {
         op1 = _contexto.getLength();
         op2 = Number(op2.valor);
@@ -57,6 +62,26 @@ function init(_opIzq: any, _opDer: any, _ambito: Ambito, _tipo: Tipos, _contexto
     }
     else return { error: "Solamente se pueden operar aritméticamente valores numéricos.", tipo: "Semántico", origen: "Query", linea: _opIzq.linea, columna: _opIzq.columna }
     return { op1: op1, op2: op2, tipo: tipo };
+}
+
+function extractValue(_contexto: Contexto) {
+    let element = _contexto.getArray()[0];
+    if (element.value)
+        return {
+            valor: element.value,
+            tipo: (!isNaN(element.value) && !isNaN(parseFloat(element.value))) ? Tipos.NUMBER : Tipos.STRING
+        }
+    if (element.id_open)
+        return {
+            valor: element.id_open,
+            tipo: (!isNaN(element.id_open) && !isNaN(parseFloat(element.id_open))) ? Tipos.NUMBER : Tipos.STRING
+        }
+    if (element.id)
+        return {
+            valor: element.id,
+            tipo: (!isNaN(element.id) && !isNaN(parseFloat(element.id))) ? Tipos.NUMBER : Tipos.STRING
+        }
+    return null;
 }
 
 function suma(_opIzq: any, _opDer: any) {

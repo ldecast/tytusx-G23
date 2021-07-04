@@ -30,10 +30,10 @@ export class Ambito {
         this.tablaFunciones.unshift(_function);
     }
 
-    getFunction(_name: string): Funcion | null {
+    getFunction(_name: string, _numParams: number): Funcion | null {
         for (let i = 0; i < this.tablaFunciones.length; i++) {
             const funcion = this.tablaFunciones[i];
-            if (_name == funcion.name) {
+            if (_name == funcion.name && _numParams == funcion.parametros.length) {
                 return funcion;
             }
         }
@@ -341,7 +341,7 @@ export class Ambito {
             id: _funcion.name,
             value: "Función creada por el usuario",
             tipo: "Function",
-            entorno: "global",
+            entorno: "local",
             linea: _funcion.linea,
             columna: _funcion.columna
         }
