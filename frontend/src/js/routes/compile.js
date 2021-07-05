@@ -8,25 +8,14 @@ const Bloque_XPath_1 = __importDefault(require("../controller/xpath/Bloque_XPath
 const Ambito_1 = require("../model/xml/Ambito/Ambito");
 const Global_1 = require("../model/xml/Ambito/Global");
 const Element_1 = require("../model/xml/Element");
+const parser_xml = require('../analyzers/xml_up');
+const parser_xQuery = require('../analyzers/xquery');
 function compile(req) {
     let errors = [];
     try {
         // Datos de la petición desde Angular
         let xml = req.xml;
         let xQuery = req.query;
-        let grammar_selected = req.grammar;
-        // Gramáticas a usarse según la selección: 1=ascendente, 2=descendente
-        let parser_xml, parser_xQuery;
-        switch (grammar_selected) {
-            case 1:
-                parser_xml = require('../analyzers/xml_up');
-                parser_xQuery = require('../analyzers/xquery');
-                break;
-            case 2:
-                parser_xml = require('../analyzers/xml_up');
-                parser_xQuery = require('../analyzers/xquery');
-                break;
-        }
         // Análisis de XML
         let xml_ast = parser_xml.parse(xml);
         let encoding = xml_ast.encoding; // Encoding del documento XML
@@ -60,7 +49,8 @@ function compile(req) {
         let bloque;
         let consola = "";
         if (xQuery_ast.xquery) {
-            bloque = Bloque_XQuery_1.default.getOutput(xQuery_ast.xquery, cadena.ambito, root); // Procesa las instrucciones de XQuery (fase 2)
+            let _str = [];
+            bloque = Bloque_XQuery_1.default.getOutput(xQuery_ast.xquery, cadena.ambito, root, _str); // Procesa las instrucciones de XQuery (fase 2)
         }
         else if (xQuery_ast.xpath) {
             bloque = Bloque_XPath_1.default(xQuery_ast.xpath, cadena.ambito, root); // Procesa las instrucciones si sólo viene XPath (fase 1)
@@ -85,9 +75,9 @@ function compile(req) {
     catch (error) {
         console.log(error);
         if (error.message)
-            errors.push({ tipo: "Sintáctico", error: String(error.message), origen: "Entrada", linea: "", columna: "" });
+            errors.push({ tipo: "Sintáctico", error: String(error.message), origen: "Entrada", linea: "-", columna: "-" });
         else
-            errors.push({ tipo: "Desconocido", error: "Error en tiempo de ejecución.", origen: "", linea: "", columna: "" });
+            errors.push({ tipo: "Desconocido", error: "Error en tiempo de ejecución.", origen: "", linea: "-", columna: "-" });
         let output = {
             arreglo_simbolos: [],
             arreglo_errores: errors,

@@ -16,7 +16,7 @@ function returnQuery(_expresion, _ambito, _iterators) {
         // console.log(_x)
     }
     let _str = BuildElement_1.default(expresion);
-    if (_expresion.tipo === Enum_1.Tipos.HTML) {
+    if (_expresion.tipo === Enum_1.Tipos.HTML && !String(_str[0]).startsWith('<')) {
         _str.unshift({ valor: '<' + _expresion.id_open + '>' });
         _str.push({ valor: '</' + _expresion.id_close + '>' });
     }

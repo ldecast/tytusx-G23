@@ -105,10 +105,9 @@ class XQObjeto {
             columna: _columna
         };
     }
-    nuevaInyeccion(_path, _onlyData, _linea, _columna) {
+    nuevaInyeccion(_path, _linea, _columna) {
         return {
-            path: _path,
-            onlyData: _onlyData,
+            valor: _path,
             tipo: Enum_1.Tipos.INYECCION,
             linea: _linea,
             columna: _columna

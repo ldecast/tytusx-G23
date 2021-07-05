@@ -63,10 +63,18 @@ function ExpresionQuery(_expresion: any, _ambito: Ambito, _contexto: Contexto, _
     }
 
     if (tipo === Tipos.HTML) {
+        // console.log(_expresion)
         let content: Array<any> = [];
         for (let i = 0; i < _expresion.value.length; i++) {
             const value = Expresion(_expresion.value[i], _ambito, _contexto, _id);
-            if (value) content = content.concat(value);
+            // console.log(value)
+            if (value && value.texto && value.texto.length > 0) {
+                for (let i = 0; i < value.texto.length; i++) {
+                    const text = value.texto[i];
+                    value.texto[i] = `<${_expresion.id_open}>${text}</${_expresion.id_close}>`;
+                }
+            }
+            if (value && !value.error) content = content.concat(value);
             // else content.pop();
         }
         return content;
@@ -77,17 +85,9 @@ function ExpresionQuery(_expresion: any, _ambito: Ambito, _contexto: Contexto, _
     }
 
     if (tipo === Tipos.INYECCION) {
-        let e_0 = Expresion(_expresion.path[0], _ambito, _contexto, _id);
-        if (!e_0) return null;
-        if (_contexto.items.length > 0) return _contexto;
         const Bloque = require("../Bloque_XQuery");
-        let elements: Array<any> = []; /* elements.push(e_0); */
-        let _x = Bloque.getIterators(_expresion.path, _ambito, _contexto, _id);
-        if (_x && _x.length > 0) {
-            _contexto = _x;
-            elements = elements.concat(_x);
-        }
-        return elements;
+        let _x = Bloque.getIterators(_expresion.valor, _ambito, _contexto, _id);
+        return _x;
     }
 
     else if (tipo === Tipos.LLAMADA_FUNCION) {

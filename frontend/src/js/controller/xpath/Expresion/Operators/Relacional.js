@@ -233,8 +233,11 @@ function menorigual(_opIzq, _opDer, _exp) {
     };
 }
 function igual(_opIzq, _opDer, _exp) {
-    if (_exp === Enum_1.Tipos.BOOLEANO)
-        return [{ valor: (_opIzq.valor == _opDer.valor), tipo: _exp }];
+    if (_exp === Enum_1.Tipos.BOOLEANO) {
+        let e1 = Array.isArray(_opIzq) ? _opIzq[0].valor : _opIzq.valor;
+        let e2 = Array.isArray(_opDer) ? _opDer[0].valor : _opDer.valor;
+        return [{ valor: (e1 === e2), tipo: _exp }];
+    }
     if (_opIzq.tipo === Enum_1.Tipos.ELEMENTOS)
         return { e1: _opIzq, e2: _opDer, tipo: Enum_1.Tipos.ELEMENTOS, desigualdad: Enum_1.Tipos.RELACIONAL_IGUAL };
     if (_opIzq.tipo === Enum_1.Tipos.FUNCION_POSITION || _opDer.tipo === Enum_1.Tipos.FUNCION_POSITION)
@@ -248,8 +251,11 @@ function igual(_opIzq, _opDer, _exp) {
     return { e1: _opIzq, e2: _opDer, tipo: Enum_1.Tipos.ELEMENTOS, desigualdad: Enum_1.Tipos.RELACIONAL_IGUAL };
 }
 function diferente(_opIzq, _opDer, _exp) {
-    if (_exp === Enum_1.Tipos.BOOLEANO)
-        return [{ valor: (_opIzq.valor != _opDer.valor), tipo: _exp }];
+    if (_exp === Enum_1.Tipos.BOOLEANO) {
+        let e1 = Array.isArray(_opIzq) ? _opIzq[0].valor : _opIzq.valor;
+        let e2 = Array.isArray(_opDer) ? _opDer[0].valor : _opDer.valor;
+        return [{ valor: (e1 !== e2), tipo: _exp }];
+    }
     if (_opIzq.tipo === Enum_1.Tipos.ELEMENTOS)
         return { e1: _opIzq, e2: _opDer, tipo: Enum_1.Tipos.ELEMENTOS, desigualdad: Enum_1.Tipos.RELACIONAL_DIFERENTE };
     if (_opIzq.tipo === Enum_1.Tipos.FUNCION_POSITION || _opDer.tipo === Enum_1.Tipos.FUNCION_POSITION)

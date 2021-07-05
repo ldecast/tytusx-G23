@@ -15,6 +15,7 @@ const Exec_1 = __importDefault(require("./Funciones/Exec"));
 const Nativas_1 = __importDefault(require("./Funciones/Nativas"));
 let reset;
 let output = [];
+let _str;
 function Bloque(_instruccion, _ambito, _retorno, id) {
     output = [];
     reset = _retorno;
@@ -43,10 +44,16 @@ function Bloque(_instruccion, _ambito, _retorno, id) {
             return For_1.default(instr, _ambito, _retorno);
         }
         else if (instr.tipo === Enum_1.Tipos.LLAMADA_FUNCION) {
-            return Exec_1.default(instr, _ambito, _retorno, id);
+            let _exec = Exec_1.default(instr, _ambito, _retorno, id);
+            if (_exec.valor !== undefined || _exec.valor !== null)
+                _str.push(_exec.valor);
+            continue;
         }
         else if (instr.tipo === Enum_1.Tipos.LLAMADA_NATIVA) {
-            return Nativas_1.default(instr, _ambito, _retorno, id);
+            let _nativ = Nativas_1.default(instr, _ambito, _retorno, id);
+            if (_nativ.valor !== undefined || _nativ.valor !== null)
+                _str.push(_nativ.valor);
+            continue;
         }
         else if (instr.tipo === Enum_1.Tipos.IF_THEN_ELSE) {
             return If_1.default(instr.condicionIf, instr.instruccionesThen, instr.instruccionesElse, _ambito, _retorno, id);
@@ -68,15 +75,18 @@ function Bloque(_instruccion, _ambito, _retorno, id) {
     if (i > 0 && _retorno)
         output.push(_retorno);
 }
-function getOutput(_instruccion, _ambito, _retorno) {
+function getOutput(_instruccion, _ambito, _retorno, _string) {
+    _str = _string;
     let _bloque = Bloque(_instruccion, _ambito, _retorno);
     if (_bloque && _bloque.error) {
         if (_bloque.error.error)
             return _bloque.error;
         return _bloque;
     }
-    /* let cadena = (_str.length > 0) ? _str.join('\n') : writeOutput(); */
-    let cadena = (_bloque && _bloque.valor !== undefined) ? (_bloque.valor) : writeOutput();
+    if ((_bloque && _bloque.valor !== undefined))
+        _str.push(_bloque.valor);
+    let cadena = (_str.length > 0) ? _str.join('\n') : writeOutput();
+    /* let cadena = (_bloque && _bloque.valor !== undefined) ? (_bloque.valor) : writeOutput(); */
     return { cadena: replaceEntity(String(cadena)) };
 }
 function getIterators(_instruccion, _ambito, _retorno, _id) {

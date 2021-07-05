@@ -577,6 +577,7 @@ function getGrammarReport(obj){
 "duration"				return 'tk_duration'
 "time"					return 'tk_time'
 "integer"				return 'tk_integer'
+"int"				    return 'tk_int'
 "decimal"				return 'tk_decimal'
 "boolean"				return 'tk_boolean'
 "true"					return 'tk_true'
@@ -663,8 +664,12 @@ ini: XPATH_U EOF{
 		}
 ;
 
-XQUERY: XQUERY INSTR_QUERY  { $1.push($2); $$=$1; }
-        | INSTR_QUERY { $$=[$1]; }
+XQUERY: XQUERY INSTR_QUERY COMX { $1.push($2); $$=$1; }
+        | INSTR_QUERY COMX { $$=[$1]; }
+;
+
+COMX: tk_coma
+    |
 ;
 
 INSTR_QUERY: FOR_LOOP { $$=$1; }
@@ -683,11 +688,13 @@ IF: tk_if tk_ParA E tk_ParC { $$=$3; }
 
 THEN: tk_then E { $$=$2; }
 	| tk_then tk_ParA tk_ParC { $$=[]; }
+	| tk_then HTML { $$=$2; }
 ;
 
 ELSE: tk_else E { $$=$2; }
 	| tk_else tk_ParA tk_ParC { $$=[]; }
 	| tk_else IF_THEN_ELSE { $$=$2; }
+    | tk_else HTML { $$=$2; }
 ;
 
 FUNCIONES: tk_declare tk_function tk_local tk_dospts tk_id tk_ParA LISTA_PARAMETROS tk_ParC tk_as DATATPYE tk_labre INSTR_FUNCIONES tk_lcierra tk_ptcoma
@@ -983,6 +990,7 @@ AXISNAME: tk_ancestor { $$ = Tipos.AXIS_ANCESTOR;
 
 RESERVED_TYPES: tk_string { $$ = Tipos.TIPADO_STRING; }
 		| tk_integer { $$ = Tipos.TIPADO_INTEGER; }
+		| tk_int { $$ = Tipos.TIPADO_INTEGER; }
 		| tk_decimal { $$ = Tipos.TIPADO_DECIMAL; }
 		| tk_boolean { $$ = Tipos.TIPADO_BOOLEANO; }
 		| tk_normalizedString { $$ = Tipos.TIPADO_STRING; }
@@ -998,19 +1006,27 @@ RESERVED_TYPES: tk_string { $$ = Tipos.TIPADO_STRING; }
 
 
 /******************************************************************* Ya no se implementó HTML, se puede ignorar *******************************************************************/
-HTML: tk_menor tk_id ATTRIBUTE_LIST tk_mayor CONTENT_LL tk_menor tk_bar tk_id tk_mayor { $$ = queryBuilder.nuevoHTML($2, $3, $5, $8, this._$.first_line, this._$.first_column+1); }
-    | tk_menor tk_id ATTRIBUTE_LIST tk_mayor tk_menor tk_bar tk_id tk_mayor { $$ = queryBuilder.nuevoHTML($2, $3, null, $7, this._$.first_line, this._$.first_column+1); }
-    | tk_menor tk_id ATTRIBUTE_LIST tk_bar tk_mayor { $$ = queryBuilder.nuevoHTML($2, $3, null, null, this._$.first_line, this._$.first_column+1); }
+HTML: tk_menor CNT ATTRIBUTE_LIST tk_mayor CONTENT_LL tk_menor tk_bar CNT tk_mayor { $$ = queryBuilder.nuevoHTML($2, $3, $5, $8, this._$.first_line, this._$.first_column+1); }
+    | tk_menor CNT ATTRIBUTE_LIST tk_mayor tk_menor tk_bar CNT tk_mayor { $$ = queryBuilder.nuevoHTML($2, $3, null, $7, this._$.first_line, this._$.first_column+1); }
+    | tk_menor CNT ATTRIBUTE_LIST tk_bar tk_mayor { $$ = queryBuilder.nuevoHTML($2, $3, null, null, this._$.first_line, this._$.first_column+1); }
 ;
 
 CONTENT_LL: CONTENT_LL CONTENT_TAG { $1.push($2); $$=$1; }
         | CONTENT_TAG { $$=[$1]; }
-        | HTML
+        // | HTML
 ;
 
-CONTENT_TAG: tk_id { $$ = queryBuilder.nuevoContenido($1, this._$.first_line, this._$.first_column+1); } // era tk_content
-            | tk_labre XPATH tk_lcierra { $$ = queryBuilder.nuevaInyeccion($2, false, this._$.first_line, this._$.first_column+1); }
-            | tk_labre tk_data tk_ParA XPATH tk_ParC tk_lcierra { $$ = queryBuilder.nuevaInyeccion($4, true, this._$.first_line, this._$.first_column+1); }
+CONTENT_TAG: CNT { $$ = queryBuilder.nuevoContenido($1, this._$.first_line, this._$.first_column+1); } // era tk_content
+            | tk_labre E tk_lcierra { $$ = queryBuilder.nuevaInyeccion($2, this._$.first_line, this._$.first_column+1); }
+;
+
+CNT: tk_id { $$=$1; }
+    | tk_and { $$=$1; }
+    | tk_coma { $$=$1; }
+    | tk_punto { $$=$1; }
+    | tk_ParC { $$=$1; }
+    | tk_equal { $$=$1; }
+    | tk_child { $$=$1; }
 ;
 
 ATTRIBUTE_LIST: tk_id tk_equal STRING { $$=$3; }

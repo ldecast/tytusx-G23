@@ -1,0 +1,200 @@
+#include<stdio.h>
+float Heap[100000];
+float Stack[100000];
+float SP;
+float HP;
+float T0,T1,T2,T3,T4,T5;
+
+void native_print_str () {
+    T0 = Stack[SP];
+    T1 = Heap[(int)T0];
+L0:
+    if( T1==-1 ) goto L1;
+    printf("%c",(int)T1);
+    T0 = T0+1;
+    T1 = Heap[(int)T0];
+    goto L0;
+L1:
+    return; 
+}
+
+void native_concat_str_str () {
+    Stack[SP] = HP;
+    T0 = SP+1;
+    T0 = Stack[(int)T0];
+    T1 = Heap[(int)T0];
+L0:
+    if( T1==-1 ) goto L1;
+    Heap[HP] = T1;
+    HP = HP+1;
+    T0 = T0+1;
+    T1 = Heap[(int)T0];
+    goto L0;
+L1:
+    T0 = SP+2;
+    T0 = Stack[(int)T0];
+    T1 = Heap[(int)T0];
+L2:
+    if( T1==-1 ) goto L3;
+    Heap[HP] = T1;
+    HP = HP+1;
+    T0 = T0+1;
+    T1 = Heap[(int)T0];
+    goto L2;
+L3:
+    Heap[HP] = -1;
+    HP = HP+1;
+    return; 
+}
+
+void native_compare_str_str () {
+    T0 = SP+1;
+    T0 = Stack[(int)T0];
+    T1 = Heap[(int)T0];
+    T2 = SP+2;
+    T2 = Stack[(int)T2];
+    T3 = Heap[(int)T2];
+L2:
+    if( T1==-1 ) goto L3;
+    if( T1==T3 ) goto L4;
+    Stack[SP] = 0;
+    goto L3;
+L4:
+    T0 = T0+1;
+    T1 = Heap[(int)T0];
+    T2 = T2+1;
+    T3 = Heap[(int)T2];
+    Stack[SP] = 1;
+    goto L2;
+L3:
+    if( T3==-1 ) goto L5;
+    Stack[SP] = 0;
+L5:
+    return; 
+}
+
+void native_menor_str () {
+    Stack[SP] = 0;
+    T0 = SP+1;
+    T0 = Stack[(int)T0];
+    T1 = SP+2;
+    T1 = Stack[(int)T1];
+    T2 = Heap[(int)T0];
+    T3 = Heap[(int)T1];
+L0:
+    if( T2==-1 ) goto L3;
+    if( T3==-1 ) goto L3;
+L1:
+    if( T2!=T3 ) goto L3;
+    T0 = T0+1;
+    T1 = T1+1;
+    T2 = Heap[(int)T0];
+    T3 = Heap[(int)T1];
+    goto L0;
+L3:
+    if( T2>=T3 ) goto L4;
+    Stack[SP] = 1;
+L4:
+    return; 
+}
+
+void native_menorigual_str () {
+    Stack[SP] = 0;
+    T0 = SP+1;
+    T0 = Stack[(int)T0];
+    T1 = SP+2;
+    T1 = Stack[(int)T1];
+    T2 = Heap[(int)T0];
+    T3 = Heap[(int)T1];
+L0:
+    if( T2==-1 ) goto L3;
+    if( T3==-1 ) goto L3;
+L1:
+    if( T2!=T3 ) goto L3;
+    T0 = T0+1;
+    T1 = T1+1;
+    T2 = Heap[(int)T0];
+    T3 = Heap[(int)T1];
+    goto L0;
+L3:
+    if( T2>T3 ) goto L4;
+    Stack[SP] = 1;
+L4:
+    return; 
+}
+
+void native_mayor_str () {
+    Stack[SP] = 0;
+    T0 = SP+1;
+    T0 = Stack[(int)T0];
+    T1 = SP+2;
+    T1 = Stack[(int)T1];
+    T2 = Heap[(int)T0];
+    T3 = Heap[(int)T1];
+L0:
+    if( T2==-1 ) goto L3;
+    if( T3==-1 ) goto L3;
+L1:
+    if( T2!=T3 ) goto L3;
+    T0 = T0+1;
+    T1 = T1+1;
+    T2 = Heap[(int)T0];
+    T3 = Heap[(int)T1];
+    goto L0;
+L3:
+    if( T2<=T3 ) goto L4;
+    Stack[SP] = 1;
+L4:
+    return; 
+}
+
+void native_mayorigual_str () {
+    Stack[SP] = 0;
+    T0 = SP+1;
+    T0 = Stack[(int)T0];
+    T1 = SP+2;
+    T1 = Stack[(int)T1];
+    T2 = Heap[(int)T0];
+    T3 = Heap[(int)T1];
+L0:
+    if( T2==-1 ) goto L3;
+    if( T3==-1 ) goto L3;
+L1:
+    if( T2!=T3 ) goto L3;
+    T0 = T0+1;
+    T1 = T1+1;
+    T2 = Heap[(int)T0];
+    T3 = Heap[(int)T1];
+    goto L0;
+L3:
+    if( T2<T3 ) goto L4;
+    Stack[SP] = 1;
+L4:
+    return; 
+}
+
+void main_Inicio_empty () {
+    T4 = HP;
+    Heap[HP] = 104;
+    HP = HP+1;
+    Heap[HP] = 111;
+    HP = HP+1;
+    Heap[HP] = 108;
+    HP = HP+1;
+    Heap[HP] = 97;
+    HP = HP+1;
+    Heap[HP] = -1;
+    HP = HP+1;
+    SP = SP+1;
+    Stack[SP] = T4;
+    native_print_str(); 
+    SP = SP-1;
+L0:
+    return; 
+}
+
+void main () {
+    main_Inicio_empty(); 
+    T5 = Stack[SP];
+    return; 
+}

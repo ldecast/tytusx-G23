@@ -827,33 +827,23 @@ cadena_err                              [0-9]+("."[0-9]+)?([a-zA-Z0-9_.-]|{unico
 %% // GRAMATICA DE DOCUMENTO XML ANALISIS ASCENDENTE
 
 
-INI: XML_DECLARATION ROOT EOF               {/*$1[0].printTest(0);console.log($1[0].getTree());*/
-                                            prod_1 = grammar_stack.pop();
-                                            prod_2 = grammar_stack.pop();
-                                            grammar_stack.push({'INI-> XML_DECLARATION ROOT EOF {﹩ = [﹩1, ﹩2]}': [prod_2, prod_1, 'EOF' ]});
-                                            //printstrack(grammar_stack, 0); //TODO: Delete is just for testing purposes
-                                            grammar_report =  getGrammarReport(grammar_stack);
-                                            cst = getCST(grammar_stack);
-
-                                            if($1!= null){
-                                                encoding = new Encoding($1);
-                                                ast = { ast: $2, encoding: encoding, errors: errors, cst: cst, grammar_report: grammar_report};
-                                            } else{
-                                                errors.push({ tipo: "Sintáctico", error: "La codificación del XML no es válida.", origen: "XML", linea: this._$.first_line, columna: this._$.first_column+1 });
-                                                ast = { ast: $2, encoding: null,  errors: errors, cst: cst, grammar_report: grammar_report};
-                                            }
-                                            errors = [];
-                                            return ast;
-                                            }
-    | XML_DECLARATION  EOF                  {
-                                            prod_1 = grammar_stack.pop();
-                                            grammar_stack.push({'INI -> XML_DECLARATION  EOF {	errors.add(new Error()); ﹩﹩ = null;}': [prod_1, 'EOF' ]});
-                                            grammar_report =  getGrammarReport(grammar_stack);
-                                            encoding = new Encoding($1);
-                                            ast = { ast: null, encoding: encoding,  errors: errors, cst: null, grammar_report: grammar_report };
-                                            errors = [];
-                                            return ast;
-                                            }
+INI: XML_DECLARATION ROOT EOF   {
+                                    prod_1 = grammar_stack.pop();
+                                    prod_2 = grammar_stack.pop();
+                                    grammar_stack.push({'INI-> XML_DECLARATION ROOT EOF {﹩ = [﹩1, ﹩2]}': [prod_2, prod_1, 'EOF' ]});
+                                    //printstrack(grammar_stack, 0); //TODO: Delete is just for testing purposes
+                                    grammar_report =  getGrammarReport(grammar_stack);
+                                    cst = getCST(grammar_stack);
+                                    if($1!= null){
+                                        encoding = new Encoding($1);
+                                        ast = { ast: $2, encoding: encoding, errors: errors, cst: cst, grammar_report: grammar_report};
+                                    } else{
+                                        errors.push({ tipo: "Sintáctico", error: "La codificación del XML no es válida.", origen: "XML", linea: this._$.first_line, columna: this._$.first_column+1 });
+                                        ast = { ast: $2, encoding: null,  errors: errors, cst: cst, grammar_report: grammar_report};
+                                    }
+                                    errors = [];
+                                    return ast;
+                                }
     | ROOT EOF                              {
                                             prod_1 = grammar_stack.pop();
                                             grammar_stack.push({'INI -> ROOT EOF {	errors.add(new Error()); ﹩﹩ = null;}': [prod_1, 'EOF' ]});
@@ -864,15 +854,6 @@ INI: XML_DECLARATION ROOT EOF               {/*$1[0].printTest(0);console.log($1
                                             errors = [];
                                             return ast;
                                             }
-	| EOF                                   {
-                                            grammar_stack.push({'INI -> EOF {	errors.add(new Error()); ﹩﹩ = null;}': [ 'EOF']});
-                                            grammar_report =  getGrammarReport(grammar_stack);
-                                            errors.push({ tipo: "Sintáctico", error: "El archivo viene vacío.", origen: "XML", linea: @1.first_line, columna: @1.first_column+1 });
-
-	                                        ast = { ast: null, encoding: null,  errors: errors, cst: null, grammar_report: grammar_report }
-	                                        errors = [];
-	                                        return ast;
-	                                        }
 	| error EOF                             {
 	                                        grammar_stack.push({'INI -> error EOF {	errors.add(new Error()); ﹩﹩ = null;}': ['Token: error\t Lexema: ', 'EOF' ]});
                                             grammar_report =  getGrammarReport(grammar_stack);

@@ -13,7 +13,7 @@ function pushIterators(input: Array<any>): Array<any> {
         if (path.notFound) {
             return [{ notFound: 'No se encontraron elementos.' }];
         }
-        if (path.valor || path.valor === 0) {
+        if (path.valor !== undefined && path.valor !== null) {
             iterators.unshift(path.valor);
         }
         if (path.cadena === Tipos.TEXTOS) {
