@@ -1239,13 +1239,13 @@ function Bloque(_instruccion, _ambito, _retorno, id) {
         }
         else if (instr.tipo === Enum_1.Tipos.LLAMADA_FUNCION) {
             let _exec = Exec_1.default(instr, _ambito, _retorno, id);
-            if (_exec.valor)
+            if (_exec.valor !== undefined || _exec.valor !== null)
                 _str.push(_exec.valor);
             continue;
         }
         else if (instr.tipo === Enum_1.Tipos.LLAMADA_NATIVA) {
             let _nativ = Nativas_1.default(instr, _ambito, _retorno, id);
-            if (_nativ.valor)
+            if (_nativ.valor !== undefined || _nativ.valor !== null)
                 _str.push(_nativ.valor);
             continue;
         }
@@ -1411,7 +1411,7 @@ function pushIterators(input) {
         if (path.notFound) {
             return [{ notFound: 'No se encontraron elementos.' }];
         }
-        if (path.valor || path.valor === 0) {
+        if (path.valor !== undefined && path.valor !== null) {
             iterators.unshift(path.valor);
         }
         if (path.cadena === Enum_1.Tipos.TEXTOS) {
@@ -3947,7 +3947,7 @@ class Optimizador {
         return this.codigoOptimizado;
     }
     reportar() {
-        this.reporte.generarReporteOptimizacion();
+        return this.reporte.generarReporteOptimizacion();
     }
 }
 exports.Optimizador = Optimizador;
@@ -4274,7 +4274,7 @@ class XQueryTranslator {
             this.xQueryTranslate();
         }
         else if (xpath != undefined) {
-            this.ast = this.ast['xpath'];
+            this.ast = this.ast['xpath'][0];
             this.xPathTranslate();
         }
         else {
@@ -4300,6 +4300,81 @@ class XQueryTranslator {
         }
     }
     xPathTranslate() {
+        let lastElement = this.ast[this.ast.length - 1];
+        let text_print = false;
+        try {
+            if (lastElement['tipo'] == 'SELECT_FROM_ROOT' || lastElement['tipo'] == 'SELECT_FROM_CURRENT') {
+                if (lastElement['expresion']['expresion']['tipo'] == 'FUNCION_TEXT') {
+                    text_print = true;
+                    this.ast.pop();
+                }
+            }
+        }
+        catch (error) {
+            console.error(error);
+            // expected output: ReferenceError: nonExistentFunction is not defined
+            // Note - error messages will vary depending on browser
+        }
+        let main_func = this.XPAT_DECLARACION(this.ast);
+        let helperFunc = this.getNextFun();
+        this.header = this.header + `
+void ${helperFunc}();
+`;
+        this.code = this.code + `void ${helperFunc}(){
+        ${main_func['function']}();
+    
+    SF = SF + 1;`;
+        if (text_print) {
+            this.code = this.code + `
+        print_textFunc();
+`;
+        }
+        else {
+            this.code = this.code + `
+        printResultXPath();
+`;
+        }
+        this.code = this.code + `SF = SF - 1;
+
+}   
+        `;
+        this.global_vars.push(helperFunc);
+    }
+    XPAT_DECLARACION(obj) {
+        console.log(obj);
+        //let length = obj['iterators'].length;
+        let function_name = null;
+        for (let i = obj.length - 1; i >= 0; i--) {
+            switch (obj[i]['tipo']) {
+                case 'SELECT_FROM_CURRENT':
+                    //console.log('SELECT_FROM_CURRENT');
+                    //console.log(obj['iterators'][i]);
+                    function_name = this.EXPRESION(obj[i]['expresion'], (i == 0), function_name, FOR_TYPE.SELECT_FROM_CURRENT);
+                    break;
+                case 'SELECT_FROM_ROOT':
+                    console.log(obj[i]['expresion']);
+                    //console.log('SELECT_FROM_ROOT');
+                    //console.log(obj['iterators'][i]);
+                    function_name = this.EXPRESION(obj[i]['expresion'], (i == 0), function_name, FOR_TYPE.SELECT_FROM_ROOT);
+                    break;
+                case 'EXPRESION':
+                    console.log('EXPRESION');
+                    function_name = this.EXPRESION(obj[i], (i == 0), function_name, FOR_TYPE.EXPRESION);
+                    break;
+                case 'SELECT_AXIS':
+                    console.log('SELECT_AXIS');
+                    function_name = this.EXPRESION(obj[i], (i == 0), function_name, FOR_TYPE.SELECT_AXIS);
+                    break;
+                case 'VALORES':
+                    console.log('VALORES');
+                    break;
+                default:
+                    console.log(obj);
+                    console.log("ERROR 3\n" + obj['iterators'][i]);
+                    break;
+            }
+        }
+        return { 'function': function_name, 'temp': '' };
     }
     FOR_LOOP(obj) {
         console.log(obj);
@@ -4375,7 +4450,7 @@ void ${function_name}(){
     RETURN_STATEMENT(obj) {
         let function_name = null;
         for (let i = obj['expresion'].length - 1; i >= 0; i--) {
-            console.log(obj['expresion'][i]);
+            //console.log(obj['expresion'][i]);
             if (i == 0) {
                 break;
             }
@@ -4453,12 +4528,13 @@ void ${function_name}();
         this.code = this.code + `
     label_x1:
     if(HEAP[result] == 0){goto label_x0;}
-
+    if(HEAP[result] == -1){goto label_x2;}
         STACK_FUNC[SF] = HEAP[result];
         SF = SF + 1;
         print_tag();
         SF = SF - 1;
         //print_child_by_index(HEAP[result]);
+        label_x2:
         result++;
         goto label_x1;
         label_x0:;
@@ -4616,14 +4692,304 @@ void ${function_name}();
         }
         return func_return;
     }
-    predicate(obj) {
-        //console.log(obj);
-        let function_name = this.getNextFun();
-        if (obj != null) {
-            console.log("Predicado" + function_name);
+    predicate(arr) {
+        if (arr == null) {
+            return;
+        }
+        let function_name = null;
+        console;
+        for (let i = 0; i < arr.length; i++) {
+            console.log(arr[i]['condicion']);
+            switch (arr[i]['condicion']['tipo']) {
+                case 'RELACIONAL_IGUAL':
+                    function_name = this.predEqual(arr[i]['condicion']['opIzq'], arr[i]['condicion']['opDer']);
+                    //console.log(arr[i]['condicion']['opIzq']);
+                    //console.log(arr[i]['condicion']['opDer']);
+                    break;
+            }
+            if (i > 0) {
+                break;
+            } // TODO: Solo maneja un predicado
         }
         return function_name;
     }
+    predEqual(left, right) {
+        let function_name = null;
+        switch (left[0]['tipo']) {
+            case 'SELECT_FROM_ROOT':
+            case 'SELECT_FROM_CURRENT':
+                break;
+            case 'EXPRESION':
+                if (left[0]['expresion']['tipo'] == 'SELECT_ATTRIBUTES') {
+                    if (right[0]['expresion']['tipo'] == 'NUMBER') {
+                        function_name = this.predAttrNum(left[0]['expresion']['expresion'], right[0]['expresion']['valor']);
+                    }
+                    else if (right[0]['expresion']['tipo'] == 'STRING') {
+                        function_name = this.predAttrStr(left[0]['expresion']['expresion'], right[0]['expresion']['valor']);
+                    }
+                }
+                break;
+            default:
+                console.log("Error 9");
+        }
+        return function_name;
+    }
+    //Esta funcion debe dar una lista de indices y el tipo
+    predAttrNum(attr_name, val) {
+        let function_name = this.getNextFun();
+        this.header = this.header + `
+void ${function_name}();
+`;
+        this.code = this.code + `void ${function_name}(){
+    int t30 = SF - 1;
+    int element = STACK_FUNC[t30];
+    int attr_lf_name = HP;
+`;
+        for (let i = 0; i < attr_name.length; i++) {
+            this.code = this.code + `   HEAP[(int)HP] = ${attr_name[i].charCodeAt(0)}; //STR_val = ${attr_name[i]}
+    HP = HP + 1;
+`;
+        }
+        this.code = this.code + `   HEAP[(int)HP] = 0;
+    HP = HP + 1;`;
+        this.code = this.code + `
+        
+        label_x1:
+    if(HEAP[element] == 0){goto label_x0;}
+    int t32 = HEAP[element];
+    t32 = t32 + 2; // Index to attr
+    int t33 = STACK[t32]; // index to heap of attr if ==  -1 no attributes
+    float valueToCompare = ${val};
+    int valueMissing = 1;
+    if(t33 == -1){goto label_x2;}
+
+    label_x4:
+    if(HEAP[t33] == 0){goto label_x3;}
+
+    int attr_index = HEAP[t33];
+    if(t33 == -1){goto label_x5;}
+
+
+    int attr_name = HEAP[attr_index];
+    attr_index = attr_index + 1;
+    int attr_type = HEAP[attr_index];
+    attr_index = attr_index + 1;
+    float attr_value = HEAP[attr_index];
+    //Comparar nombre
+
+    STACK_FUNC[SF] = attr_lf_name;
+    SF = SF + 1;
+    STACK_FUNC[SF] = attr_name;
+    SF = SF + 1;
+    compareTwoStrings();
+    int compareResult = STACK_FUNC[SF];
+    SF = SF - 1;
+    SF = SF - 1;
+
+    if(compareResult != 1){goto label_x6; }
+    if(attr_value != valueToCompare){goto label_x7;}
+    valueMissing = 0;
+    label_x7:
+    label_x6:
+    label_x5:
+    t33++;
+    goto label_x4;
+    label_x3:
+
+    label_x2:
+        if(valueMissing != 1){ goto label_x8;}
+        HEAP[element] = -1;
+    label_x8:
+        //print_child_by_index(HEAP[element]);
+
+        element++;
+        goto label_x1;
+
+    label_x0:
+
+;
+}`;
+        return function_name;
+    }
+    predAttrStr(attr_name, val) {
+        let function_name = this.getNextFun();
+        this.header = this.header + `
+void ${function_name}();
+`;
+        this.code = this.code + `void ${function_name}(){
+    int t30 = SF - 1;
+    int element = STACK_FUNC[t30];
+    int attr_lf_name = HP;
+`;
+        for (let i = 0; i < attr_name.length; i++) {
+            this.code = this.code + `   HEAP[(int)HP] = ${attr_name[i].charCodeAt(0)}; //STR_val = ${attr_name[i]}
+    HP = HP + 1;
+`;
+        }
+        this.code = this.code + `   HEAP[(int)HP] = 0;
+    HP = HP + 1;
+    int attr_lf_val = HP;
+    `;
+        for (let i = 0; i < val.length; i++) {
+            this.code = this.code + `   HEAP[(int)HP] = ${val[i].charCodeAt(0)}; //STR_val = ${val[i]}
+    HP = HP + 1;
+`;
+        }
+        this.code = this.code + `   HEAP[(int)HP] = 0;
+    HP = HP + 1;
+    
+    label_x1:
+    while(HEAP[element] == 0){goto label_x0;}
+    int t32 = HEAP[element];
+    t32 = t32 + 2; // Index to attr
+    int t33 = STACK[t32]; // index to heap of attr if ==  -1 no attributes
+    int valueMissing = 1;
+
+    if(t33 == -1){goto label_x2;}
+
+    label_x4:
+    if(HEAP[t33] == 0){goto label_x3;}
+    int attr_index = HEAP[t33];
+
+    if(t33 == -1){goto label_x5;}
+    int attr_name = HEAP[attr_index];
+    attr_index = attr_index + 1;
+    int attr_type = HEAP[attr_index];
+    attr_index = attr_index + 1;
+    int attr_value_index = HEAP[attr_index];
+    //Comparar nombre
+
+    STACK_FUNC[SF] = attr_lf_name;
+    SF = SF + 1;
+    STACK_FUNC[SF] = attr_name;
+    SF = SF + 1;
+    compareTwoStrings();
+    int compareResult = STACK_FUNC[SF];
+    SF = SF - 1;
+    SF = SF - 1;
+
+    if(compareResult != 1){goto label_x6;}
+    STACK_FUNC[SF] = attr_lf_val;
+    SF = SF + 1;
+    STACK_FUNC[SF] = attr_value_index;
+    SF = SF + 1;
+    compareTwoStrings();
+    int val_comparison = STACK_FUNC[SF];
+    SF = SF - 1;
+    SF = SF - 1;
+    if(val_comparison != 1){ goto label_x7;}
+    valueMissing = 0;
+    label_x7:
+    label_x6:
+    label_x5:
+    t33++;
+    goto label_x4;
+    label_x3:
+    label_x2:
+    if(valueMissing != 1){goto label_x8;}
+    HEAP[element] = -1;
+    label_x8:
+    element++;
+    goto label_x1;
+    label_x0:
+    ;
+
+    
+    
+    `;
+        this.code = this.code + `
+
+}`;
+        return function_name;
+    }
+    predNormalExp(node_name) {
+        let function_name = this.getNextFun();
+        let var1 = this.getNextVar();
+        let var2 = this.getNextVar();
+        let var3 = this.getNextVar();
+        let var4 = this.getNextVar();
+        let var5 = this.getNextVar();
+        let var6 = this.getNextVar();
+        let var15 = this.getNextVar();
+        let tag6 = this.getNextTag();
+        let tag8 = this.getNextTag();
+        let tag9 = this.getNextTag();
+        let tag10 = this.getNextTag();
+        let tag11 = this.getNextTag();
+        let tag12 = this.getNextTag();
+        this.header = this.header + `
+void ${function_name}();
+`;
+        this.code = this.code + `
+void ${function_name}(){
+    
+    
+    int ${var1} = SF - 1;
+    int ${var15} = STACK_FUNC[${var1}];//List in HEAP to pointers on STACK
+    
+    STACK_FUNC[SF] = HP; //Pointer to Node value
+    SF = SF + 1;
+`;
+        for (let i = 0; i < node_name.length; i++) {
+            this.code = this.code + `   HEAP[(int)HP] = ${node_name[i].charCodeAt(0)}; //STR_val = ${node_name[i]}
+    HP = HP + 1;
+`;
+        }
+        this.code = this.code + `    HEAP[(int)HP] = 0;
+    HP = HP + 1;
+
+    int ${var4} = HP; // sets the start of the result list
+    HEAP[(int) HP] = 0; // If no Nodes found then the list will start with 0
+
+    int ${var3} = ${var15};
+    int ${var2} = HEAP[${var3}];
+    
+    ${tag12}://inicio del primer for
+    if(${var2} == 0){goto ${tag8};}//exit extern for
+    if(${var2} == -1){goto ${tag11};}
+    ${var2} = ${var2} + 3; //index to children of first node in HEAP    //${var2} = 4
+    int tag_child_index = STACK[${var2}];
+    if(tag_child_index == -1){goto ${tag11};}
+    int child = HEAP[tag_child_index];
+
+
+    ${tag10}:
+    if(child == 0){goto ${tag9};}
+
+    int ${var5} = STACK[child];
+    STACK_FUNC[SF] = ${var5};
+    SF = SF + 1;
+    compareTwoStrings();
+    int ${var6} = (int) STACK_FUNC[SF];
+    if(${var6} != 1){goto ${tag6};}
+    HEAP[(int)HP] = child;
+    HP = HP + 1;
+    ${tag6}:
+    STACK_FUNC[SF] = 0;
+    SF = SF - 1;
+    STACK_FUNC[SF] = 0;
+    tag_child_index = tag_child_index + 1;
+    child = HEAP[tag_child_index];
+    goto ${tag10};
+    ${tag9}:
+
+
+    ${tag11}: // Next iteration extern for / Exit inner for
+    ${var3} = ${var3} + 1;
+    ${var2} = HEAP[${var3}];
+    goto ${tag12}; //Repeat extern for
+    ${tag8}://Exit extern for
+    HEAP[(int) HP] = 0;
+    HP = HP + 1;
+    STACK_FUNC[SF] = 0;
+    SF = SF - 1;
+    STACK_FUNC[SF] = 0;
+    
+    int result = ${var4};
+    STACK_FUNC[SF] = result;// merged_list
+`;
+    }
+    predAttr_int() { }
     /*ASTERISCO*/
     setAsteriskRoot(node_name, predicate_f, next_fun, axis) {
         let function_name = this.getNextFun();
@@ -4653,7 +5019,7 @@ void ${function_name}(){
 `;
         if (predicate_f != null) {
             this.code = this.code + `${predicate_f}();
-            result = STACK_FUNC[SF]; 
+            //result = STACK_FUNC[SF]; 
             `;
         }
         this.code = this.code + `SF = SF - 1;
@@ -4704,7 +5070,7 @@ void ${function_name}(){
 `;
         if (predicate_f != null) {
             this.code = this.code + `${predicate_f}();
-            result = STACK_FUNC[SF]; 
+            //result = STACK_FUNC[SF]; 
             `;
         }
         this.code = this.code + `SF = SF - 1;
@@ -4764,7 +5130,7 @@ void ${function_name}(){
 `;
         if (predicate_f != null) {
             this.code = this.code + `${predicate_f}();
-            result = STACK_FUNC[SF]; 
+            //result = STACK_FUNC[SF]; 
             `;
         }
         this.code = this.code + `SF = SF - 1;
@@ -4878,7 +5244,7 @@ void ${function_name}(){
 `;
         if (predicate_f != null) {
             this.code = this.code + `${predicate_f}();
-            result = STACK_FUNC[SF]; 
+            //result = STACK_FUNC[SF]; 
             `;
         }
         this.code = this.code + `SF = SF - 1;
@@ -5069,7 +5435,7 @@ void ${function_name}(){
 `;
         if (predicate_f != null) {
             this.code = this.code + `${predicate_f}();
-            result = STACK_FUNC[SF]; 
+            //result = STACK_FUNC[SF]; 
             `;
         }
         this.code = this.code + `SF = SF - 1;
@@ -5138,7 +5504,7 @@ void ${function_name}(){
 `;
         if (predicate_f != null) {
             this.code = this.code + `${predicate_f}();
-            result = STACK_FUNC[SF]; 
+            //result = STACK_FUNC[SF]; 
             `;
         }
         this.code = this.code + `   
@@ -5165,26 +5531,12 @@ void ${function_name}(){
     result = STACK_FUNC[SF];
     SF = SF - 1;
     STACK_FUNC[SF] = 0;
-
+    STACK_FUNC[SF] = result;
+    
 `;
         }
-        this.code = this.code + ` /*STACK_FUNC[SF] = ${main_var};
-    SF = SF + 1;    
-    ${next_fun}();
-    int result = STACK_FUNC[SF];
-    SF = SF - 1;
-    STACK_FUNC[SF] = 0;*/
-`;
         this.code = this.code + `
-    //TODELETE
-    int counter = 0;
-    while(HEAP[result] != 0){
-        print_child_by_index(HEAP[result]);
-        result++;
-        counter ++;
-    }
-
-    printf("Total: %d", SF);
+        STACK_FUNC[SF] = result;
 }    
 `;
         this.functions_Arr = [];
@@ -5261,7 +5613,7 @@ void ${function_name}(){//setSearchMethodFromStack
 `;
         if (predicate_f != null) {
             this.code = this.code + `${predicate_f}();
-            result = STACK_FUNC[SF]; 
+            //result = STACK_FUNC[SF]; 
             `;
         }
         this.code = this.code + `
@@ -5292,33 +5644,17 @@ void ${function_name}(){//setSearchMethodFromStack
     result = STACK_FUNC[SF];
     SF = SF - 1;
     STACK_FUNC[SF] = 0;
+    STACK_FUNC[SF] = result;
     
 `;
         }
         this.code = this.code + `
-    //TODELETE
-    int counter = 0;
-    while(HEAP[result] != 0){
-        print_child_by_index(HEAP[result]);
-        result++;
-        counter ++;
-    }
 
-    printf("Total: %d", SF);
 }    
 `;
         this.functions_Arr = [];
         return function_name;
     }
-    setSearchNodeDoubleBar(node_name, predicate_f, next_fun) {
-        let main_var = this.getNextVar();
-        return main_var;
-    }
-    setSearchNodeOneBar(node_name, predicate_f, next_fun) {
-        let main_var = this.getNextVar();
-        return main_var;
-    }
-    //TEST
     setHelpFunctions() {
         let var1 = this.getNextVar();
         let var2 = this.getNextVar();
@@ -5421,6 +5757,27 @@ void ${function_name}(){//setSearchMethodFromStack
         let tag39 = this.getNextTag();
         let tag40 = this.getNextTag();
         this.code = this.code + `
+        
+        void print_textFunc(){
+    int t0 = SF - 1;
+    int list = STACK_FUNC[t0];
+
+    label_x1:
+    if(HEAP[list] == 0){goto label_x0;}
+        int stk_pointer = HEAP[list];
+        int val = stk_pointer + 1;
+        STACK_FUNC[SF] = STACK[val];
+        SF = SF + 1;
+        print_content();
+        printf("\\n");
+        SF = SF - 1;
+        list++;
+
+        goto label_x1;
+    label_x0:
+    ;
+}
+
 void isItemInList(){
     int ${var55} = SF - 1;
     int ${var56} = STACK_FUNC[${var55}];
@@ -5748,7 +6105,22 @@ void print_close_tag(){
 
  
 
-
+void printResultXPath(){
+    int t0 = SF - 1;
+    int result = STACK_FUNC[t0];
+    label_x1:
+    if(HEAP[result] == 0){goto label_x0;}
+    if(HEAP[result] == -1){goto label_x2;}
+    STACK_FUNC[SF] = HEAP[result];
+    SF = SF + 1;
+    print_tag();
+    SF = SF - 1;
+    //print_child_by_index(HEAP[result]);
+    label_x2:
+    result++;
+    goto label_x1;
+    label_x0:;
+}
 
 //merge a list with a list of lists
 void mergeLists(){
@@ -5841,13 +6213,6 @@ void addItemToList(){
     label_x1:
     ;
 }
-
-
-
-
-
-
-
 
 
 
@@ -6128,7 +6493,7 @@ void mergeTwoLists(){
 
 
 /*************************TODELETE***************************************/
-
+/*
 void print_tags_from_heap(){
     //printf("First: %d\\n", SF);
     //SF = SF - 1;
@@ -6159,7 +6524,7 @@ void print_value_by_index(int index) {
     //int t0 = STACK[index];
     int t0 = index;
     char val = (char) HEAP[t0];
-    while (val != '\\0') { printf("%c", val); t0++; val = (char) HEAP[t0];
+    while (val != 0) { printf("%c", val); t0++; val = (char) HEAP[t0];
 
     }
     printf("\\n");
@@ -6170,7 +6535,7 @@ void print_child_by_index(int index) {
     int t0 = STACK[index];
     //int t0 = index;
     char val = (char) HEAP[t0];
-    while (val != '\\0') { printf("%c", val); t0++; val = (char) HEAP[t0];
+    while (val != 0) { printf("%c", val); t0++; val = (char) HEAP[t0];
 
     }
     printf("\\n");
@@ -6185,7 +6550,12 @@ void printHeap(){
         printf("HEAP[%d] = %f\\n", i, HEAP[i]);
     }
 
-}
+}*/
+
+
+
+
+
 `;
         this.header = this.header + `void compareTwoStrings();
 void print_tag();
@@ -6212,8 +6582,8 @@ void AxisPreceding();
 void AxisPrecedingSibling();
 void AxisSelf();
 void mergeTwoLists();
-
-
+void printResultXPath();
+void  print_textFunc();
 /*************************TODELETE***************************************/
 void print_tags_from_heap();
 void print_value_by_index(int);
@@ -6676,7 +7046,7 @@ function returnQuery(_expresion, _ambito, _iterators) {
         // console.log(_x)
     }
     let _str = BuildElement_1.default(expresion);
-    if (_expresion.tipo === Enum_1.Tipos.HTML) {
+    if (_expresion.tipo === Enum_1.Tipos.HTML && !String(_str[0]).startsWith('<')) {
         _str.unshift({ valor: '<' + _expresion.id_open + '>' });
         _str.push({ valor: '</' + _expresion.id_close + '>' });
     }
@@ -6750,7 +7120,8 @@ function optimizar(req) {
         let salida = OptiSintactico.OptiSintactico.optimizarC3D(entrada, tree);
         let output = {
             arreglo_errores: errors,
-            output: salida,
+            optimizado: salida[0],
+            html: salida[1],
             dot: graph
         };
         errors = [];
@@ -6764,7 +7135,7 @@ function optimizar(req) {
             errors.push({ tipo: "Desconocido", error: "Error en tiempo de ejecución.", origen: "", linea: "", columna: "" });
         let output = {
             arreglo_errores: errors,
-            output: (error.message) ? String(error.message) : String(error),
+            output: req.traduccion,
             encoding: "utf-8"
         };
         errors = [];
@@ -7495,9 +7866,9 @@ function Nativa(_instr, _ambito, _contexto, _id) {
                 break;
             case Enum_1.Tipos.SUBSTRING:
                 if (valores.length === 3)
-                    output = String(valores[0].valor).substring(parseInt(valores[1].valor), parseInt(valores[2].valor));
+                    output = String(valores[0].valor).substring(parseInt(valores[1].valor) - 1, parseInt(valores[2].valor) + 2);
                 else if (valores.length === 2)
-                    output = String(valores[0].valor).substring(parseInt(valores[1].valor));
+                    output = String(valores[0].valor).substring(parseInt(valores[1].valor) - 1);
                 else
                     return { error: `La cantidad de ${valores.length} parámetros no coinciden con los esperados en la función substring.`, tipo: "Semántico", origen: "XQuery", linea: _instr.linea, columna: _instr.columna };
                 tipo = Enum_1.Tipos.STRING;
@@ -7513,7 +7884,10 @@ function Nativa(_instr, _ambito, _contexto, _id) {
         };
     }
     catch (error) {
-        return err;
+        return {
+            valor: valores[0].valor,
+            tipo: (name === Enum_1.Tipos.TO_NUMBER) ? Enum_1.Tipos.NUMBER : Enum_1.Tipos.STRING
+        };
     }
 }
 module.exports = Nativa;
@@ -8175,10 +8549,18 @@ function ExpresionQuery(_expresion, _ambito, _contexto, _id) {
         return contexto;
     }
     if (tipo === Enum_1.Tipos.HTML) {
+        // console.log(_expresion)
         let content = [];
         for (let i = 0; i < _expresion.value.length; i++) {
             const value = Expresion_1.default(_expresion.value[i], _ambito, _contexto, _id);
-            if (value)
+            // console.log(value)
+            if (value && value.texto && value.texto.length > 0) {
+                for (let i = 0; i < value.texto.length; i++) {
+                    const text = value.texto[i];
+                    value.texto[i] = `<${_expresion.id_open}>${text}</${_expresion.id_close}>`;
+                }
+            }
+            if (value && !value.error)
                 content = content.concat(value);
             // else content.pop();
         }
@@ -8188,19 +8570,9 @@ function ExpresionQuery(_expresion, _ambito, _contexto, _id) {
         return { valor: _expresion.contenido };
     }
     if (tipo === Enum_1.Tipos.INYECCION) {
-        let e_0 = Expresion_1.default(_expresion.path[0], _ambito, _contexto, _id);
-        if (!e_0)
-            return null;
-        if (_contexto.items.length > 0)
-            return _contexto;
         const Bloque = __webpack_require__(/*! ../Bloque_XQuery */ "+qh/");
-        let elements = []; /* elements.push(e_0); */
-        let _x = Bloque.getIterators(_expresion.path, _ambito, _contexto, _id);
-        if (_x && _x.length > 0) {
-            _contexto = _x;
-            elements = elements.concat(_x);
-        }
-        return elements;
+        let _x = Bloque.getIterators(_expresion.valor, _ambito, _contexto, _id);
+        return _x;
     }
     else if (tipo === Enum_1.Tipos.LLAMADA_FUNCION) {
         const Exec = __webpack_require__(/*! ../Funciones/Exec */ "zmd1");
@@ -8242,7 +8614,7 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-function AppComponent_tr_122_Template(rf, ctx) { if (rf & 1) {
+function AppComponent_tr_121_Template(rf, ctx) { if (rf & 1) {
     _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](0, "tr");
     _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](1, "th", 52);
     _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](2);
@@ -8284,7 +8656,7 @@ function AppComponent_tr_122_Template(rf, ctx) { if (rf & 1) {
     _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵadvance"](2);
     _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtextInterpolate"](item_r3.columna);
 } }
-function AppComponent_tr_144_Template(rf, ctx) { if (rf & 1) {
+function AppComponent_tr_143_Template(rf, ctx) { if (rf & 1) {
     _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](0, "tr");
     _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](1, "th", 52);
     _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](2);
@@ -8404,7 +8776,15 @@ class AppComponent {
 where $x/price>30
 order by $x/title
 return $x/title`;
-        this.traduccion = this.salida = '';
+        this.salida = `<title lang="en">Learning XML</title>
+<title lang="en">XQuery Kick Start</title>`;
+        this.traduccion = `#include <stdio.h>
+
+int main()
+{
+  return 0;
+}
+`;
         this.simbolos = this.errores = [];
         this.fname = ['input.xml', 'query.txt', 'translation.c'];
     }
@@ -8456,8 +8836,11 @@ return $x/title`;
                 traduccion: this.traduccion,
             };
             let data = __webpack_require__(/*! ../js/routes/optimizar */ "JPgm").optimizar(x);
-            this.traduccion = data.output;
+            if (data.optimizado)
+                this.traduccion = data.optimizado;
             this.errores = data.arreglo_errores;
+            if (data.html)
+                this.exportFile(data.html, "C3D.html");
             console.log('Data received!');
         }
         else
@@ -8587,6 +8970,7 @@ return $x/title`;
                 switch (id) {
                     case 1:
                         this.entrada = String(text);
+                        this.consulta = '';
                         break;
                     case 2:
                         this.consulta = String(text);
@@ -8616,7 +9000,7 @@ return $x/title`;
     }
 }
 AppComponent.ɵfac = function AppComponent_Factory(t) { return new (t || AppComponent)(); };
-AppComponent.ɵcmp = _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵdefineComponent"]({ type: AppComponent, selectors: [["app-root"]], decls: 149, vars: 13, consts: [[1, "container-fluid", "title", "pt-2", "pb-1"], ["role", "toolbar", 1, "btn-toolbar"], [1, "mb-2", "btn-group"], [1, "dropdown"], ["type", "button", "id", "dropdownMenu", "data-toggle", "dropdown", "aria-haspopup", "flase", "aria-expanded", "false", 1, "btn", "btn-dark", "rounded-0"], [1, "dropdown-menu", "rounded-0", "bg-dark"], ["type", "button", 1, "dropdown-item", "text-white", "item", 3, "click"], ["id", "fileInput1", "type", "file", "accept", ".xml", 2, "display", "none", 3, "ngModel", "change", "ngModelChange"], ["id", "fileInput2", "type", "file", 2, "display", "none", 3, "ngModel", "change", "ngModelChange"], ["id", "fileInput3", "type", "file", "accept", ".c", 2, "display", "none", 3, "ngModel", "change", "ngModelChange"], ["type", "button", 1, "btn", "btn-dark", "rounded-0", 3, "click"], ["type", "button", "id", "dropdownMenu", "data-toggle", "dropdown", "aria-haspopup", "true", "aria-expanded", "false", 1, "btn", "btn-dark", "rounded-0", "dropdown-toggle"], ["role", "group", 1, "btn-group", "sel_g"], ["id", "grammar_selector", 1, "form-select", "btn", "btn-dark", "rounded-0"], ["disabled", ""], ["selected", "", "value", "1"], ["value", "2"], [1, "container-fluid", "px-5", "pt-2"], ["novalidate", "", 1, "mb-4", 3, "ngSubmit"], ["iForm", "ngForm"], [1, "row", "mb-5", "file-query"], [1, "col-10"], [1, "my-0", "text-white", "subtitulo"], ["id", "consulta", "name", "consulta", 1, "", 3, "options", "ngModel", "ngModelChange"], [1, "col-2", "align-self-center"], ["type", "submit", 1, "btn", "mt-5", "btn-outline-light", "boton", "btn-lg"], [1, "fas", "fa-code"], ["type", "button", 1, "btn", "mt-3", "btn-outline-light", "boton", "btn-lg", 3, "click"], [1, "fas", "fa-language"], [1, "row", "mb-5", "file-editors"], [1, "col-lg-6", "col-sm-12"], ["id", "entrada", "name", "entrada", 1, "codebox", 3, "options", "ngModel", "ngModelChange"], ["id", "salida", "name", "salida", 1, "codebox", 3, "options", "ngModel", "ngModelChange"], [1, "row"], [1, "col-6"], [1, "my-0", "text-white", "subtitulo_t"], [1, "col-6", "text-right"], ["type", "button", 1, "btn", "btn-dark", "rounded-0", "text-right", 3, "click"], [1, "fas", "fa-broom"], [1, "row", "mb-5", "file-console"], [1, "col-12"], ["id", "traduccion", "name", "traduccion", 1, "codebox", 3, "options", "ngModel", "ngModelChange"], [1, "row", "my-5"], [1, "my-1", "text-white", "subtitulo"], [1, "table", "table-striped", "table-dark"], ["scope", "col"], ["scope", "col", 1, "text-center"], [4, "ngFor", "ngForOf"], [1, "mt-2", "mb-1", "text-white", "subtitulo"], [1, "text-center", "text-lg-start"], [1, "text-center", "p-3", 2, "background-color", "rgba(0, 0, 0, 0.2)"], [1, "foot", "my-0"], ["scope", "row"], [1, "text-center"]], template: function AppComponent_Template(rf, ctx) { if (rf & 1) {
+AppComponent.ɵcmp = _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵdefineComponent"]({ type: AppComponent, selectors: [["app-root"]], decls: 148, vars: 13, consts: [[1, "container-fluid", "title", "pt-2", "pb-1"], ["role", "toolbar", 1, "btn-toolbar"], [1, "mb-2", "btn-group"], [1, "dropdown"], ["type", "button", "id", "dropdownMenu", "data-toggle", "dropdown", "aria-haspopup", "flase", "aria-expanded", "false", 1, "btn", "btn-dark", "rounded-0"], [1, "dropdown-menu", "rounded-0", "bg-dark"], ["type", "button", 1, "dropdown-item", "text-white", "item", 3, "click"], ["id", "fileInput1", "type", "file", "accept", ".xml", 2, "display", "none", 3, "ngModel", "change", "ngModelChange"], ["id", "fileInput2", "type", "file", 2, "display", "none", 3, "ngModel", "change", "ngModelChange"], ["id", "fileInput3", "type", "file", "accept", ".c", 2, "display", "none", 3, "ngModel", "change", "ngModelChange"], ["type", "button", 1, "btn", "btn-dark", "rounded-0", 3, "click"], ["type", "button", "id", "dropdownMenu", "data-toggle", "dropdown", "aria-haspopup", "true", "aria-expanded", "false", 1, "btn", "btn-dark", "rounded-0", "dropdown-toggle"], ["role", "group", 1, "btn-group", "sel_g"], ["id", "grammar_selector", 1, "form-select", "btn", "btn-dark", "rounded-0"], ["disabled", ""], ["selected", "", "value", "1"], ["value", "2"], [1, "container-fluid", "px-5", "pt-2"], ["novalidate", "", 1, "mb-4", 3, "ngSubmit"], ["iForm", "ngForm"], [1, "row", "mb-5", "file-query"], [1, "col-10"], [1, "my-0", "text-white", "subtitulo"], ["id", "consulta", "name", "consulta", 1, "", 3, "options", "ngModel", "ngModelChange"], [1, "col-2", "align-self-center"], ["type", "submit", 1, "btn", "mt-5", "btn-outline-light", "boton", "btn-lg"], [1, "fas", "fa-code"], ["type", "button", 1, "btn", "mt-3", "btn-outline-light", "boton", "btn-lg", 3, "click"], [1, "fas", "fa-language"], [1, "row", "mb-5", "file-editors"], [1, "col-lg-6", "col-sm-12"], ["id", "entrada", "name", "entrada", 1, "codebox", 3, "options", "ngModel", "ngModelChange"], ["id", "salida", "name", "salida", 1, "codebox", 3, "options", "ngModel", "ngModelChange"], [1, "row", "pt-3"], [1, "col-6"], [1, "my-0", "text-white", "subtitulo_t"], [1, "col-6", "text-right"], ["type", "button", 1, "btn", "btn-dark", "rounded-0", "text-right", 3, "click"], [1, "fas", "fa-broom"], [1, "row", "mb-5", "file-console"], [1, "col-12"], ["id", "traduccion", "name", "traduccion", 1, "codebox", 3, "options", "ngModel", "ngModelChange"], [1, "row", "my-5"], [1, "my-1", "text-white", "subtitulo"], [1, "table", "table-striped", "table-dark"], ["scope", "col"], ["scope", "col", 1, "text-center"], [4, "ngFor", "ngForOf"], [1, "mt-2", "mb-1", "text-white", "subtitulo"], [1, "text-center", "text-lg-start"], [1, "text-center", "p-3", 2, "background-color", "rgba(0, 0, 0, 0.2)"], [1, "foot", "my-0"], ["scope", "row"], [1, "text-center"]], template: function AppComponent_Template(rf, ctx) { if (rf & 1) {
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](0, "div", 0);
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](1, "h2");
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](2, "TytusX");
@@ -8778,108 +9162,107 @@ AppComponent.ɵcmp = _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵdefineCompo
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelement"](86, "br");
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](87, "div", 33);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](88, "div", 34);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](89, "p", 35);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](90, "Traducci\u00F3n");
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](86, "div", 33);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](87, "div", 34);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](88, "p", 35);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](89, "Traducci\u00F3n");
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](91, "div", 36);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](92, "button", 37);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵlistener"]("click", function AppComponent_Template_button_click_92_listener() { return ctx.optimizarC3D(); });
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelement"](93, "i", 38);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](94, " OPTIMIZAR");
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](95, "div", 39);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](96, "div", 40);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](97, "ngx-monaco-editor", 41);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵlistener"]("ngModelChange", function AppComponent_Template_ngx_monaco_editor_ngModelChange_97_listener($event) { return ctx.traduccion = $event; });
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](90, "div", 36);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](91, "button", 37);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵlistener"]("click", function AppComponent_Template_button_click_91_listener() { return ctx.optimizarC3D(); });
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelement"](92, "i", 38);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](93, " OPTIMIZAR");
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelement"](98, "br");
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelement"](99, "hr");
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](100, "div", 42);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](101, "div", 40);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](102, "p", 43);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](103, "Tabla de s\u00EDmbolos");
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](104, "table", 44);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](105, "thead");
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](106, "tr");
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](107, "th", 45);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](108, "#");
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](109, "th", 45);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](110, "Id");
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](111, "th", 45);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](112, "Tipo");
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](113, "th", 45);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](114, "Contenido");
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](115, "th", 45);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](116, "\u00C1mbito");
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](117, "th", 46);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](118, "Fila");
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](119, "th", 46);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](120, "Columna");
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](121, "tbody");
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtemplate"](122, AppComponent_tr_122_Template, 15, 7, "tr", 47);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](94, "div", 39);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](95, "div", 40);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](96, "ngx-monaco-editor", 41);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵlistener"]("ngModelChange", function AppComponent_Template_ngx_monaco_editor_ngModelChange_96_listener($event) { return ctx.traduccion = $event; });
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelement"](123, "hr");
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](124, "div", 42);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](125, "div", 40);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](126, "p", 48);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](127, "Tabla de errores");
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelement"](97, "br");
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelement"](98, "hr");
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](99, "div", 42);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](100, "div", 40);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](101, "p", 43);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](102, "Tabla de s\u00EDmbolos");
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](128, "table", 44);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](129, "thead");
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](130, "tr");
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](131, "th", 45);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](132, "#");
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](103, "table", 44);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](104, "thead");
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](105, "tr");
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](106, "th", 45);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](107, "#");
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](133, "th", 45);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](134, "Tipo");
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](108, "th", 45);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](109, "Id");
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](135, "th", 45);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](136, "Error");
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](110, "th", 45);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](111, "Tipo");
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](137, "th", 45);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](138, "Origen");
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](112, "th", 45);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](113, "Contenido");
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](139, "th", 46);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](140, "Fila");
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](114, "th", 45);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](115, "\u00C1mbito");
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](141, "th", 46);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](142, "Columna");
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](116, "th", 46);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](117, "Fila");
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](143, "tbody");
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtemplate"](144, AppComponent_tr_144_Template, 13, 6, "tr", 47);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](118, "th", 46);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](119, "Columna");
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](120, "tbody");
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtemplate"](121, AppComponent_tr_121_Template, 15, 7, "tr", 47);
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](145, "footer", 49);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](146, "div", 50);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](147, "p", 51);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](148, " \u00A9 2021 Grupo 23 - Organizaci\u00F3n de Lenguajes y Compiladores 2 - TytusX ");
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelement"](122, "hr");
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](123, "div", 42);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](124, "div", 40);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](125, "p", 48);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](126, "Tabla de errores");
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](127, "table", 44);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](128, "thead");
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](129, "tr");
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](130, "th", 45);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](131, "#");
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](132, "th", 45);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](133, "Tipo");
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](134, "th", 45);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](135, "Error");
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](136, "th", 45);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](137, "Origen");
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](138, "th", 46);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](139, "Fila");
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](140, "th", 46);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](141, "Columna");
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](142, "tbody");
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtemplate"](143, AppComponent_tr_143_Template, 13, 6, "tr", 47);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](144, "footer", 49);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](145, "div", 50);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](146, "p", 51);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](147, " \u00A9 2021 Grupo 23 - Organizaci\u00F3n de Lenguajes y Compiladores 2 - TytusX ");
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
@@ -8896,7 +9279,7 @@ AppComponent.ɵcmp = _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵdefineCompo
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵproperty"]("options", ctx.XMLOptions)("ngModel", ctx.entrada);
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵadvance"](4);
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵproperty"]("options", ctx.ConsoleOptions)("ngModel", ctx.salida);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵadvance"](12);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵadvance"](11);
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵproperty"]("options", ctx.C3DOptions)("ngModel", ctx.traduccion);
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵadvance"](25);
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵproperty"]("ngForOf", ctx.simbolos);
@@ -9376,10 +9759,9 @@ class XQObjeto {
             columna: _columna
         };
     }
-    nuevaInyeccion(_path, _onlyData, _linea, _columna) {
+    nuevaInyeccion(_path, _linea, _columna) {
         return {
-            path: _path,
-            onlyData: _onlyData,
+            valor: _path,
             tipo: Enum_1.Tipos.INYECCION,
             linea: _linea,
             columna: _columna
@@ -12190,25 +12572,14 @@ const Bloque_XPath_1 = __importDefault(__webpack_require__(/*! ../controller/xpa
 const Ambito_1 = __webpack_require__(/*! ../model/xml/Ambito/Ambito */ "QFP7");
 const Global_1 = __webpack_require__(/*! ../model/xml/Ambito/Global */ "IRxg");
 const Element_1 = __webpack_require__(/*! ../model/xml/Element */ "Kypw");
+const parser_xml = __webpack_require__(/*! ../analyzers/xml_up */ "nxic");
+const parser_xQuery = __webpack_require__(/*! ../analyzers/xquery */ "lv3P");
 function compile(req) {
     let errors = [];
     try {
         // Datos de la petición desde Angular
         let xml = req.xml;
         let xQuery = req.query;
-        let grammar_selected = req.grammar;
-        // Gramáticas a usarse según la selección: 1=ascendente, 2=descendente
-        let parser_xml, parser_xQuery;
-        switch (grammar_selected) {
-            case 1:
-                parser_xml = __webpack_require__(/*! ../analyzers/xml_up */ "nxic");
-                parser_xQuery = __webpack_require__(/*! ../analyzers/xquery */ "lv3P");
-                break;
-            case 2:
-                parser_xml = __webpack_require__(/*! ../analyzers/xml_up */ "nxic");
-                parser_xQuery = __webpack_require__(/*! ../analyzers/xquery */ "lv3P");
-                break;
-        }
         // Análisis de XML
         let xml_ast = parser_xml.parse(xml);
         let encoding = xml_ast.encoding; // Encoding del documento XML
@@ -12268,9 +12639,9 @@ function compile(req) {
     catch (error) {
         console.log(error);
         if (error.message)
-            errors.push({ tipo: "Sintáctico", error: String(error.message), origen: "Entrada", linea: "", columna: "" });
+            errors.push({ tipo: "Sintáctico", error: String(error.message), origen: "Entrada", linea: "-", columna: "-" });
         else
-            errors.push({ tipo: "Desconocido", error: "Error en tiempo de ejecución.", origen: "", linea: "", columna: "" });
+            errors.push({ tipo: "Desconocido", error: "Error en tiempo de ejecución.", origen: "", linea: "-", columna: "-" });
         let output = {
             arreglo_simbolos: [],
             arreglo_errores: errors,
@@ -14357,12 +14728,12 @@ exports.Imprimir = Imprimir;
   }
 */
 var xquery = (function(){
-var o=function(k,v,o,l){for(o=o||{},l=k.length;l--;o[k[l]]=v);return o},$V0=[29,66,77,78,100,101,102,103,104,105,106,107,108,109,112,113,114,115,116,117,118,119,120,121,122,123,124],$V1=[2,61],$V2=[1,26],$V3=[1,17],$V4=[1,18],$V5=[1,21],$V6=[1,22],$V7=[1,23],$V8=[1,24],$V9=[1,25],$Va=[1,14],$Vb=[1,15],$Vc=[1,16],$Vd=[1,13],$Ve=[5,74],$Vf=[1,44],$Vg=[1,50],$Vh=[1,32],$Vi=[1,33],$Vj=[1,46],$Vk=[1,47],$Vl=[1,48],$Vm=[1,49],$Vn=[1,64],$Vo=[1,65],$Vp=[1,40],$Vq=[1,41],$Vr=[1,42],$Vs=[1,43],$Vt=[1,51],$Vu=[1,52],$Vv=[1,53],$Vw=[1,54],$Vx=[1,55],$Vy=[1,56],$Vz=[1,57],$VA=[1,58],$VB=[1,59],$VC=[1,60],$VD=[1,61],$VE=[1,62],$VF=[1,63],$VG=[5,19,25,27,35,46,47,48,49,50,51,57,64],$VH=[2,6],$VI=[1,67],$VJ=[5,9,19,25,27,35,46,47,48,49,50,51,57,64],$VK=[1,80],$VL=[1,77],$VM=[1,79],$VN=[1,78],$VO=[1,82],$VP=[5,9,19,22,24,25,27,29,35,43,46,47,48,49,50,51,57,61,62,64,66,70,74,77,78,84,85,86,87,88,89,90,91,92,93,94,95,96,100,101,102,103,104,105,106,107,108,109,112,113,114,115,116,117,118,119,120,121,122,123,124],$VQ=[2,77],$VR=[1,98],$VS=[5,9,19,22,24,25,27,29,35,43,46,47,48,49,50,51,57,61,62,64,66,70,74,77,78,83,84,85,86,87,88,89,90,91,92,93,94,95,96,100,101,102,103,104,105,106,107,108,109,112,113,114,115,116,117,118,119,120,121,122,123,124],$VT=[1,117],$VU=[1,118],$VV=[9,57,61,62,64],$VW=[1,128],$VX=[1,122],$VY=[1,123],$VZ=[1,124],$V_=[1,125],$V$=[1,126],$V01=[1,127],$V11=[1,129],$V21=[1,130],$V31=[1,131],$V41=[1,132],$V51=[1,133],$V61=[1,134],$V71=[1,135],$V81=[5,9,19,22,24,25,27,35,43,46,47,48,49,50,51,57,61,62,64,70,84,85,86,87,88,89,90,91,92,93,94,95,96],$V91=[57,61,62,64],$Va1=[1,167],$Vb1=[78,88],$Vc1=[1,186],$Vd1=[1,191],$Ve1=[9,22],$Vf1=[5,9,19,25,27,35,46,47,48,49,50,51,57,61,62,64],$Vg1=[5,9,19,22,24,25,27,35,46,47,48,49,50,51,57,61,62,64,70,84,85,86,87,88,93,94,95,96],$Vh1=[5,9,19,22,24,25,27,35,46,47,48,49,50,51,57,61,62,64,70,84,85,86,87,88,89,90,93,94,95,96],$Vi1=[1,220],$Vj1=[1,221],$Vk1=[29,33,78,86,88],$Vl1=[5,9,19,25,27,29,33,35,46,47,48,49,50,51,57,64,78,86,88],$Vm1=[1,255],$Vn1=[9,22,33],$Vo1=[9,22,33,42,43];
+var o=function(k,v,o,l){for(o=o||{},l=k.length;l--;o[k[l]]=v);return o},$V0=[30,66,77,78,100,101,102,103,104,105,106,107,108,109,112,113,114,115,116,117,118,119,120,121,122,123,124],$V1=[2,63],$V2=[1,26],$V3=[1,17],$V4=[1,18],$V5=[1,21],$V6=[1,22],$V7=[1,23],$V8=[1,24],$V9=[1,25],$Va=[1,14],$Vb=[1,15],$Vc=[1,16],$Vd=[1,13],$Ve=[5,74],$Vf=[1,44],$Vg=[1,50],$Vh=[1,32],$Vi=[1,33],$Vj=[1,46],$Vk=[1,47],$Vl=[1,48],$Vm=[1,49],$Vn=[1,64],$Vo=[1,65],$Vp=[1,40],$Vq=[1,41],$Vr=[1,42],$Vs=[1,43],$Vt=[1,51],$Vu=[1,52],$Vv=[1,53],$Vw=[1,54],$Vx=[1,55],$Vy=[1,56],$Vz=[1,57],$VA=[1,58],$VB=[1,59],$VC=[1,60],$VD=[1,61],$VE=[1,62],$VF=[1,63],$VG=[5,19,26,28,36,47,48,49,50,51,52,58,65],$VH=[2,6],$VI=[1,67],$VJ=[5,9,19,26,28,36,47,48,49,50,51,52,58,65],$VK=[1,80],$VL=[1,77],$VM=[1,79],$VN=[1,78],$VO=[1,82],$VP=[5,9,19,22,25,26,28,30,36,44,47,48,49,50,51,52,58,62,63,65,66,70,74,77,78,84,85,86,87,88,89,90,91,92,93,94,95,96,100,101,102,103,104,105,106,107,108,109,112,113,114,115,116,117,118,119,120,121,122,123,124],$VQ=[2,79],$VR=[1,98],$VS=[5,9,19,22,25,26,28,30,36,44,47,48,49,50,51,52,58,62,63,65,66,70,74,77,78,83,84,85,86,87,88,89,90,91,92,93,94,95,96,100,101,102,103,104,105,106,107,108,109,112,113,114,115,116,117,118,119,120,121,122,123,124],$VT=[1,117],$VU=[1,118],$VV=[9,58,62,63,65],$VW=[1,128],$VX=[1,122],$VY=[1,123],$VZ=[1,124],$V_=[1,125],$V$=[1,126],$V01=[1,127],$V11=[1,129],$V21=[1,130],$V31=[1,131],$V41=[1,132],$V51=[1,133],$V61=[1,134],$V71=[1,138],$V81=[1,140],$V91=[1,136],$Va1=[1,137],$Vb1=[1,141],$Vc1=[1,139],$Vd1=[1,142],$Ve1=[5,9,19,22,25,26,28,36,44,47,48,49,50,51,52,58,62,63,65,70,84,85,86,87,88,89,90,91,92,93,94,95,96],$Vf1=[58,62,63,65],$Vg1=[1,175],$Vh1=[78,88],$Vi1=[9,22,30,34,78,86,88,94,95,101,115],$Vj1=[1,194],$Vk1=[1,199],$Vl1=[9,22],$Vm1=[5,9,19,26,28,36,47,48,49,50,51,52,58,62,63,65],$Vn1=[5,9,19,22,25,26,28,36,47,48,49,50,51,52,58,62,63,65,70,84,85,86,87,88,93,94,95,96],$Vo1=[5,9,19,22,25,26,28,36,47,48,49,50,51,52,58,62,63,65,70,84,85,86,87,88,89,90,93,94,95,96],$Vp1=[1,229],$Vq1=[5,9,19,25,26,28,36,47,48,49,50,51,52,58,65],$Vr1=[1,260],$Vs1=[9,22,34],$Vt1=[9,22,34,43,44];
 var parser = {trace: function trace () { },
 yy: {},
-symbols_: {"error":2,"ini":3,"XPATH_U":4,"EOF":5,"XQUERY":6,"INSTR_QUERY":7,"COMX":8,"tk_coma":9,"FOR_LOOP":10,"LET_CLAUSE":11,"RETURN_STATEMENT":12,"FUNCIONES":13,"LLAMADA":14,"IF_THEN_ELSE":15,"IF":16,"THEN":17,"ELSE":18,"tk_if":19,"tk_ParA":20,"E":21,"tk_ParC":22,"tk_then":23,"tk_else":24,"tk_declare":25,"tk_function":26,"tk_local":27,"tk_dospts":28,"tk_id":29,"LISTA_PARAMETROS":30,"tk_as":31,"DATATPYE":32,"tk_labre":33,"INSTR_FUNCIONES":34,"tk_lcierra":35,"tk_ptcoma":36,"PARAMETRO":37,"VARIABLE":38,"tk_xs":39,"RESERVED_TYPES":40,"TERM":41,"tk_interrogacion":42,"tk_asterisco":43,"VALORES":44,"NATIVAS":45,"tk_uppercase":46,"tk_lowercase":47,"tk_string":48,"tk_number":49,"tk_substring":50,"tk_for":51,"DECLARACION":52,"INSTRUCCIONES_FOR":53,"INSTR_FOR_P":54,"WHERE_CONDITION":55,"ORDER_BY":56,"tk_let":57,"tk_2puntos_igual":58,"DECLARACIONPP":59,"COMA_AUX":60,"tk_where":61,"tk_order":62,"tk_by":63,"tk_return":64,"HTML":65,"tk_dolar":66,"DECLARACIONP":67,"tk_in":68,"tk_at":69,"tk_to":70,"DOC":71,"tk_doc":72,"STRING":73,"tk_line":74,"XPATH":75,"QUERY":76,"tk_2bar":77,"tk_bar":78,"CORCHETP":79,"EXP_PR":80,"AXIS":81,"CORCHET":82,"tk_corA":83,"tk_corC":84,"tk_menorigual":85,"tk_menor":86,"tk_mayorigual":87,"tk_mayor":88,"tk_mas":89,"tk_menos":90,"tk_div":91,"tk_mod":92,"tk_or":93,"tk_and":94,"tk_equal":95,"tk_diferent":96,"tk_data":97,"FUNC":98,"PRIMITIVO":99,"num":100,"tk_punto":101,"tk_2puntos":102,"tk_arroba":103,"tk_string_d":104,"tk_string_s":105,"tk_text":106,"tk_last":107,"tk_position":108,"tk_node":109,"AXISNAME":110,"tk_4puntos":111,"tk_ancestor":112,"tk_ancestor2":113,"tk_attribute":114,"tk_child":115,"tk_descendant":116,"tk_descendant2":117,"tk_following":118,"tk_following2":119,"tk_namespace":120,"tk_parent":121,"tk_preceding":122,"tk_preceding2":123,"tk_self":124,"tk_integer":125,"tk_int":126,"tk_decimal":127,"tk_boolean":128,"tk_normalizedString":129,"tk_token":130,"tk_date":131,"tk_dateTime":132,"tk_duration":133,"tk_time":134,"hexBinary":135,"tk_uri":136,"ATTRIBUTE_LIST":137,"CONTENT_LL":138,"CONTENT_TAG":139,"$accept":0,"$end":1},
-terminals_: {2:"error",5:"EOF",9:"tk_coma",19:"tk_if",20:"tk_ParA",22:"tk_ParC",23:"tk_then",24:"tk_else",25:"tk_declare",26:"tk_function",27:"tk_local",28:"tk_dospts",29:"tk_id",31:"tk_as",33:"tk_labre",35:"tk_lcierra",36:"tk_ptcoma",39:"tk_xs",42:"tk_interrogacion",43:"tk_asterisco",46:"tk_uppercase",47:"tk_lowercase",48:"tk_string",49:"tk_number",50:"tk_substring",51:"tk_for",57:"tk_let",58:"tk_2puntos_igual",61:"tk_where",62:"tk_order",63:"tk_by",64:"tk_return",66:"tk_dolar",68:"tk_in",69:"tk_at",70:"tk_to",72:"tk_doc",74:"tk_line",77:"tk_2bar",78:"tk_bar",83:"tk_corA",84:"tk_corC",85:"tk_menorigual",86:"tk_menor",87:"tk_mayorigual",88:"tk_mayor",89:"tk_mas",90:"tk_menos",91:"tk_div",92:"tk_mod",93:"tk_or",94:"tk_and",95:"tk_equal",96:"tk_diferent",97:"tk_data",100:"num",101:"tk_punto",102:"tk_2puntos",103:"tk_arroba",104:"tk_string_d",105:"tk_string_s",106:"tk_text",107:"tk_last",108:"tk_position",109:"tk_node",111:"tk_4puntos",112:"tk_ancestor",113:"tk_ancestor2",114:"tk_attribute",115:"tk_child",116:"tk_descendant",117:"tk_descendant2",118:"tk_following",119:"tk_following2",120:"tk_namespace",121:"tk_parent",122:"tk_preceding",123:"tk_preceding2",124:"tk_self",125:"tk_integer",126:"tk_int",127:"tk_decimal",128:"tk_boolean",129:"tk_normalizedString",130:"tk_token",131:"tk_date",132:"tk_dateTime",133:"tk_duration",134:"tk_time",135:"hexBinary",136:"tk_uri"},
-productions_: [0,[3,2],[3,2],[6,3],[6,2],[8,1],[8,0],[7,1],[7,1],[7,1],[7,1],[7,1],[7,1],[15,3],[16,4],[17,2],[17,3],[18,2],[18,3],[18,2],[13,14],[30,3],[30,1],[37,3],[32,4],[41,1],[41,1],[41,0],[34,1],[14,6],[14,4],[45,1],[45,1],[45,1],[45,1],[45,1],[10,4],[10,3],[53,2],[53,1],[54,1],[54,1],[54,1],[11,4],[60,3],[60,1],[55,2],[56,3],[56,3],[12,2],[12,2],[12,2],[38,2],[52,3],[52,1],[67,3],[67,5],[59,5],[59,5],[59,1],[71,4],[71,0],[44,3],[44,1],[4,3],[4,1],[75,2],[75,2],[76,2],[76,2],[76,3],[76,3],[76,1],[76,1],[82,4],[82,3],[79,1],[79,0],[21,3],[21,3],[21,3],[21,3],[21,3],[21,3],[21,3],[21,3],[21,3],[21,2],[21,2],[21,3],[21,3],[21,3],[21,3],[21,3],[21,1],[21,4],[21,1],[80,2],[80,2],[80,2],[99,1],[99,1],[99,1],[99,1],[99,1],[99,2],[99,2],[73,1],[73,1],[98,3],[98,3],[98,3],[98,3],[81,3],[81,4],[110,1],[110,1],[110,1],[110,1],[110,1],[110,1],[110,1],[110,1],[110,1],[110,1],[110,1],[110,1],[110,1],[40,1],[40,1],[40,1],[40,1],[40,1],[40,1],[40,1],[40,1],[40,1],[40,1],[40,1],[40,1],[40,1],[65,9],[65,8],[65,5],[138,2],[138,1],[138,1],[139,1],[139,3],[139,6],[137,3],[137,3],[137,0]],
+symbols_: {"error":2,"ini":3,"XPATH_U":4,"EOF":5,"XQUERY":6,"INSTR_QUERY":7,"COMX":8,"tk_coma":9,"FOR_LOOP":10,"LET_CLAUSE":11,"RETURN_STATEMENT":12,"FUNCIONES":13,"LLAMADA":14,"IF_THEN_ELSE":15,"IF":16,"THEN":17,"ELSE":18,"tk_if":19,"tk_ParA":20,"E":21,"tk_ParC":22,"tk_then":23,"HTML":24,"tk_else":25,"tk_declare":26,"tk_function":27,"tk_local":28,"tk_dospts":29,"tk_id":30,"LISTA_PARAMETROS":31,"tk_as":32,"DATATPYE":33,"tk_labre":34,"INSTR_FUNCIONES":35,"tk_lcierra":36,"tk_ptcoma":37,"PARAMETRO":38,"VARIABLE":39,"tk_xs":40,"RESERVED_TYPES":41,"TERM":42,"tk_interrogacion":43,"tk_asterisco":44,"VALORES":45,"NATIVAS":46,"tk_uppercase":47,"tk_lowercase":48,"tk_string":49,"tk_number":50,"tk_substring":51,"tk_for":52,"DECLARACION":53,"INSTRUCCIONES_FOR":54,"INSTR_FOR_P":55,"WHERE_CONDITION":56,"ORDER_BY":57,"tk_let":58,"tk_2puntos_igual":59,"DECLARACIONPP":60,"COMA_AUX":61,"tk_where":62,"tk_order":63,"tk_by":64,"tk_return":65,"tk_dolar":66,"DECLARACIONP":67,"tk_in":68,"tk_at":69,"tk_to":70,"DOC":71,"tk_doc":72,"STRING":73,"tk_line":74,"XPATH":75,"QUERY":76,"tk_2bar":77,"tk_bar":78,"CORCHETP":79,"EXP_PR":80,"AXIS":81,"CORCHET":82,"tk_corA":83,"tk_corC":84,"tk_menorigual":85,"tk_menor":86,"tk_mayorigual":87,"tk_mayor":88,"tk_mas":89,"tk_menos":90,"tk_div":91,"tk_mod":92,"tk_or":93,"tk_and":94,"tk_equal":95,"tk_diferent":96,"tk_data":97,"FUNC":98,"PRIMITIVO":99,"num":100,"tk_punto":101,"tk_2puntos":102,"tk_arroba":103,"tk_string_d":104,"tk_string_s":105,"tk_text":106,"tk_last":107,"tk_position":108,"tk_node":109,"AXISNAME":110,"tk_4puntos":111,"tk_ancestor":112,"tk_ancestor2":113,"tk_attribute":114,"tk_child":115,"tk_descendant":116,"tk_descendant2":117,"tk_following":118,"tk_following2":119,"tk_namespace":120,"tk_parent":121,"tk_preceding":122,"tk_preceding2":123,"tk_self":124,"tk_integer":125,"tk_int":126,"tk_decimal":127,"tk_boolean":128,"tk_normalizedString":129,"tk_token":130,"tk_date":131,"tk_dateTime":132,"tk_duration":133,"tk_time":134,"hexBinary":135,"tk_uri":136,"CNT":137,"ATTRIBUTE_LIST":138,"CONTENT_LL":139,"CONTENT_TAG":140,"$accept":0,"$end":1},
+terminals_: {2:"error",5:"EOF",9:"tk_coma",19:"tk_if",20:"tk_ParA",22:"tk_ParC",23:"tk_then",25:"tk_else",26:"tk_declare",27:"tk_function",28:"tk_local",29:"tk_dospts",30:"tk_id",32:"tk_as",34:"tk_labre",36:"tk_lcierra",37:"tk_ptcoma",40:"tk_xs",43:"tk_interrogacion",44:"tk_asterisco",47:"tk_uppercase",48:"tk_lowercase",49:"tk_string",50:"tk_number",51:"tk_substring",52:"tk_for",58:"tk_let",59:"tk_2puntos_igual",62:"tk_where",63:"tk_order",64:"tk_by",65:"tk_return",66:"tk_dolar",68:"tk_in",69:"tk_at",70:"tk_to",72:"tk_doc",74:"tk_line",77:"tk_2bar",78:"tk_bar",83:"tk_corA",84:"tk_corC",85:"tk_menorigual",86:"tk_menor",87:"tk_mayorigual",88:"tk_mayor",89:"tk_mas",90:"tk_menos",91:"tk_div",92:"tk_mod",93:"tk_or",94:"tk_and",95:"tk_equal",96:"tk_diferent",97:"tk_data",100:"num",101:"tk_punto",102:"tk_2puntos",103:"tk_arroba",104:"tk_string_d",105:"tk_string_s",106:"tk_text",107:"tk_last",108:"tk_position",109:"tk_node",111:"tk_4puntos",112:"tk_ancestor",113:"tk_ancestor2",114:"tk_attribute",115:"tk_child",116:"tk_descendant",117:"tk_descendant2",118:"tk_following",119:"tk_following2",120:"tk_namespace",121:"tk_parent",122:"tk_preceding",123:"tk_preceding2",124:"tk_self",125:"tk_integer",126:"tk_int",127:"tk_decimal",128:"tk_boolean",129:"tk_normalizedString",130:"tk_token",131:"tk_date",132:"tk_dateTime",133:"tk_duration",134:"tk_time",135:"hexBinary",136:"tk_uri"},
+productions_: [0,[3,2],[3,2],[6,3],[6,2],[8,1],[8,0],[7,1],[7,1],[7,1],[7,1],[7,1],[7,1],[15,3],[16,4],[17,2],[17,3],[17,2],[18,2],[18,3],[18,2],[18,2],[13,14],[31,3],[31,1],[38,3],[33,4],[42,1],[42,1],[42,0],[35,1],[14,6],[14,4],[46,1],[46,1],[46,1],[46,1],[46,1],[10,4],[10,3],[54,2],[54,1],[55,1],[55,1],[55,1],[11,4],[61,3],[61,1],[56,2],[57,3],[57,3],[12,2],[12,2],[12,2],[39,2],[53,3],[53,1],[67,3],[67,5],[60,5],[60,5],[60,1],[71,4],[71,0],[45,3],[45,1],[4,3],[4,1],[75,2],[75,2],[76,2],[76,2],[76,3],[76,3],[76,1],[76,1],[82,4],[82,3],[79,1],[79,0],[21,3],[21,3],[21,3],[21,3],[21,3],[21,3],[21,3],[21,3],[21,3],[21,2],[21,2],[21,3],[21,3],[21,3],[21,3],[21,3],[21,1],[21,4],[21,1],[80,2],[80,2],[80,2],[99,1],[99,1],[99,1],[99,1],[99,1],[99,2],[99,2],[73,1],[73,1],[98,3],[98,3],[98,3],[98,3],[81,3],[81,4],[110,1],[110,1],[110,1],[110,1],[110,1],[110,1],[110,1],[110,1],[110,1],[110,1],[110,1],[110,1],[110,1],[41,1],[41,1],[41,1],[41,1],[41,1],[41,1],[41,1],[41,1],[41,1],[41,1],[41,1],[41,1],[41,1],[24,9],[24,8],[24,5],[139,2],[139,1],[140,1],[140,3],[137,1],[137,1],[137,1],[137,1],[137,1],[137,1],[137,1],[138,3],[138,3],[138,0]],
 performAction: function anonymous(yytext, yyleng, yylineno, yy, yystate /* action[1] */, $$ /* vstack */, _$ /* lstack */) {
 /* this == yyval */
 
@@ -14392,420 +14763,417 @@ break;
 case 4:
  this.$=[$$[$0-1]]; 
 break;
-case 7: case 8: case 9: case 10: case 11: case 12: case 15: case 17: case 19: case 28: case 42: case 47: case 48: case 59: case 72: case 73: case 94: case 96: case 150: case 151:
+case 7: case 8: case 9: case 10: case 11: case 12: case 15: case 17: case 18: case 20: case 21: case 30: case 44: case 49: case 50: case 61: case 74: case 75: case 96: case 98: case 150: case 151: case 152: case 153: case 154: case 155: case 156: case 157: case 158:
  this.$=$$[$0]; 
 break;
 case 13:
  this.$=queryBuilder.nuevoIf_Then_Else($$[$0-2], $$[$0-1], $$[$0], this._$.first_line, this._$.first_column+1); 
 break;
-case 14: case 24:
+case 14: case 26:
  this.$=$$[$0-1]; 
 break;
-case 16: case 18:
+case 16: case 19:
  this.$=[]; 
 break;
-case 20:
+case 22:
  this.$=queryBuilder.nuevaFuncion($$[$0-9], $$[$0-7], $$[$0-4], $$[$0-2], this._$.first_line, this._$.first_column+1); 
 break;
-case 21: case 44: case 53: case 62:
+case 23: case 46: case 55: case 64:
  $$[$0-2].push($$[$0]); this.$=$$[$0-2]; 
 break;
-case 22: case 39: case 45: case 63: case 145:
+case 24: case 41: case 47: case 65: case 147:
  this.$=[$$[$0]]; 
 break;
-case 23:
+case 25:
  this.$=queryBuilder.nuevoParametro($$[$0-2], $$[$0], this._$.first_line, this._$.first_column+1); 
 break;
-case 29:
+case 31:
  this.$=queryBuilder.nuevaLlamada($$[$0-3], $$[$0-1], this._$.first_line, this._$.first_column+1); 
 break;
-case 30:
+case 32:
  this.$=queryBuilder.llamadaNativa($$[$0-3], $$[$0-1], this._$.first_line, this._$.first_column+1); 
 break;
-case 31:
+case 33:
  this.$ = Tipos.TO_UPPERCASE; 
 break;
-case 32:
+case 34:
  this.$ = Tipos.TO_LOWERCASE; 
 break;
-case 33:
+case 35:
  this.$ = Tipos.TO_STRING; 
 break;
-case 34:
+case 36:
  this.$ = Tipos.TO_NUMBER; 
 break;
-case 35:
+case 37:
  this.$ = Tipos.SUBSTRING; 
 break;
-case 36:
+case 38:
  $$[$0-1].push($$[$0]); this.$ = queryBuilder.nuevoFor($$[$0-2], $$[$0-1], this._$.first_line, this._$.first_column+1); 
 break;
-case 37:
+case 39:
  this.$ = queryBuilder.nuevoFor($$[$0-1], [$$[$0]], this._$.first_line, this._$.first_column+1); 
 break;
-case 38: case 144:
+case 40: case 146:
  $$[$0-1].push($$[$0]); this.$=$$[$0-1]; 
 break;
-case 40: case 101:
+case 42: case 103:
  this.$ = $$[$0]; 
 break;
-case 41:
+case 43:
  this.$ = queryBuilder.nuevoOrderBy($$[$0], this._$.first_line, this._$.first_column+1); 
 break;
-case 43:
+case 45:
  this.$ = queryBuilder.nuevoLet($$[$0-2], $$[$0], this._$.first_line, this._$.first_column+1); 
 break;
-case 46:
+case 48:
  this.$ = queryBuilder.nuevoWhere($$[$0], this._$.first_line, this._$.first_column+1); 
 break;
-case 49: case 50: case 51:
+case 51: case 52: case 53:
  this.$ = queryBuilder.nuevoReturn($$[$0], this._$.first_line, this._$.first_column+1); 
 break;
-case 52:
+case 54:
  this.$=queryBuilder.nuevaVariable("$"+$$[$0], this._$.first_line, this._$.first_column+1); 
 break;
-case 54:
+case 56:
  this.$=[$$[$0]] 
 break;
-case 55:
+case 57:
  this.$ = queryBuilder.nuevaDeclaracion($$[$0-2], null, $$[$0], this._$.first_line, this._$.first_column+1); 
 break;
-case 56:
+case 58:
  this.$ = queryBuilder.nuevaDeclaracion($$[$0-4], $$[$0-2], $$[$0], this._$.first_line, this._$.first_column+1); 
 break;
-case 57:
+case 59:
  this.$ = queryBuilder.nuevoIntervalo($$[$0-3], $$[$0-1], this._$.first_line, this._$.first_column+1); 
 break;
-case 58:
+case 60:
  $$[$0-1].unshift($$[$0-3]); this.$ = queryBuilder.nuevosValores($$[$0-1], this._$.first_line, this._$.first_column+1); 
 break;
-case 64:
+case 66:
  $$[$0-2].push($$[$0]); this.$=$$[$0-2];
 								 prod_1 = grammar_stack.pop();
 								 prod_2 = grammar_stack.pop();
 			 					 grammar_stack.push({'XPATH_U -> XPATH_U tk_line XPATH {S1.push(S3); SS = S1;}': [prod_2, 'token: tk_line\t Lexema: ' + $$[$0-2], prod_1]}); 
 break;
-case 65:
+case 67:
  this.$=[$$[$0]];
 				  prod_1 = grammar_stack.pop();
 			 	  grammar_stack.push({'XPATH_U -> XPATH {SS = [S1]}': [prod_1]}); 
 break;
-case 66:
+case 68:
  $$[$0-1].push($$[$0]); this.$=$$[$0-1];
 					  prod_1 = grammar_stack.pop();
 					  prod_2 = grammar_stack.pop();
 			 		  grammar_stack.push({'XPATH -> XPATH QUERY {S1.push(S2); SS = S1;}': [prod_2, prod_1]}); 
 break;
-case 67:
+case 69:
  this.$=[$$[$0]];
 			   prod_1 = grammar_stack.pop();
 			   grammar_stack.push({'XPATH -> QUERY {SS = [S1]}': [prod_1]}); 
 break;
-case 68:
+case 70:
  this.$=builder.newDoubleAxis($$[$0], this._$.first_line, this._$.first_column+1);
 					   prod_1 = grammar_stack.pop();
 			 		   grammar_stack.push({'QUERY -> tk_2bar QUERY SS=builder.newDoubleAxis(Param);': ['token: tk_2bar\t Lexema: ' + $$[$0-1], prod_1]}); 
 break;
-case 69:
+case 71:
  this.$=builder.newAxis($$[$0], this._$.first_line, this._$.first_column+1);
 					 prod_1 = grammar_stack.pop();
 			 		 grammar_stack.push({'QUERY -> tk_bar QUERY {SS=builder.newAxis(Param);}': ['token: tk_bar\t Lexema: ' + $$[$0-1], prod_1]}); 
 break;
-case 70:
+case 72:
 
 			var linea = this._$.first_line;
 			var columna = this._$.first_column+1;
 			this.$=builder.newAxis(builder.newExpression(builder.newValue($$[$0-1], Tipos.ASTERISCO, linea, columna), $$[$0], linea, columna), linea, columna);
 		
 break;
-case 71:
+case 73:
 
 			var linea = this._$.first_line;
 			var columna = this._$.first_column+1;
 			this.$=builder.newDoubleAxis(builder.newExpression(builder.newValue($$[$0-1], Tipos.ASTERISCO, linea, columna), $$[$0], linea, columna), linea, columna);
 		
 break;
-case 74:
+case 76:
  $$[$0-3].push(builder.newPredicate($$[$0-1], this._$.first_line, this._$.first_column+1)); this.$=$$[$0-3];
 									 prod_1 = grammar_stack.pop();
 									 prod_2 = grammar_stack.pop();
 						 			 grammar_stack.push({'CORCHET -> CORCHET tk_ParA E tk_ParC {S1.push(builder.NewPredicate(Param))}': [prod_2, 'token: tk_ParA\t Lexema: ' + $$[$0-2], prod_1, 'token: tk_ParC\t Lexema: ' + $$[$0]]}); 
 break;
-case 75:
+case 77:
  this.$=[builder.newPredicate($$[$0-1], this._$.first_line, this._$.first_column+1)];
 						 prod_1 = grammar_stack.pop();
 						 grammar_stack.push({'CORCHET -> tk_corA E tk_corC {SS=builder.newPredicate(Param)}': ['token: tk_corA\t Lexema: ' + $$[$0-2], prod_1, 'token: tk_corC\t Lexema: ' + $$[$0]]}); 
 break;
-case 76:
+case 78:
  this.$=$$[$0];
 					prod_1 = grammar_stack.pop();
 					grammar_stack.push({'CORCHETP -> CORCHET {SS=S1;}': [prod_1]}); 
 break;
-case 77:
+case 79:
  this.$=null;
 			grammar_stack.push({'CORCHETP -> Empty {SS=null}': ['EMPTY'] }); 
 break;
-case 78:
+case 80:
  this.$=builder.newOperation($$[$0-2], $$[$0], Tipos.RELACIONAL_MENORIGUAL, this._$.first_line, this._$.first_column+1);
 						prod_1 = grammar_stack.pop();
 				 		prod_2 = grammar_stack.pop();
 					    grammar_stack.push({'E -> E tk_menorigual E {SS=builder.newOperation(Param)}': [prod_2, 'token: tk_menorigual\t Lexema: ' + $$[$0-1], prod_1]}); 
 break;
-case 79:
+case 81:
  this.$=builder.newOperation($$[$0-2], $$[$0], Tipos.RELACIONAL_MENOR, this._$.first_line, this._$.first_column+1);
 					 prod_1 = grammar_stack.pop();
 				 	 prod_2 = grammar_stack.pop();
 				 	 grammar_stack.push({'E -> E tk_menor E {SS=builder.newOperation(Param)}': [prod_2, 'token: tk_menor\t Lexema: ' + $$[$0-1], prod_1]}); 
 break;
-case 80:
+case 82:
  this.$=builder.newOperation($$[$0-2], $$[$0], Tipos.RELACIONAL_MAYORIGUAL, this._$.first_line, this._$.first_column+1);
 						  prod_1 = grammar_stack.pop();
 				 		  prod_2 = grammar_stack.pop();
 						  grammar_stack.push({'E -> E tk_mayorigual E {SS=builder.newOperation(Param)}': [prod_2, 'token: tk_mayorigual\t Lexema: ' + $$[$0-1], prod_1]}); 
 break;
-case 81:
+case 83:
  this.$=builder.newOperation($$[$0-2], $$[$0], Tipos.RELACIONAL_MAYOR, this._$.first_line, this._$.first_column+1);
 					 prod_1 = grammar_stack.pop();
 				 	 prod_2 = grammar_stack.pop();
 				 	 grammar_stack.push({'E -> E tk_mayor E {SS=builder.newOperation(Param)}': [prod_2, 'token: tk_mayor\t Lexema: ' + $$[$0-1], prod_1]}); 
 break;
-case 82:
+case 84:
  this.$=builder.newOperation($$[$0-2], $$[$0], Tipos.OPERACION_SUMA, this._$.first_line, this._$.first_column+1);
 				   prod_1 = grammar_stack.pop();
 				   prod_2 = grammar_stack.pop();
 				   grammar_stack.push({'E -> E tk_mas E {SS=builder.newOperation(Param)}': [prod_2, 'token: tk_mas\t Lexema: ' + $$[$0-1], prod_1]}); 
 break;
-case 83:
+case 85:
  this.$=builder.newOperation($$[$0-2], $$[$0], Tipos.OPERACION_RESTA, this._$.first_line, this._$.first_column+1);
 					 prod_1 = grammar_stack.pop();
 				 	 prod_2 = grammar_stack.pop();
 				  	 grammar_stack.push({'E -> E tk_menos E {SS=builder.newOperation(Param)}': [prod_2, 'token: tk_menos\t Lexema: ' + $$[$0-1], prod_1]}); 
 break;
-case 84:
+case 86:
  this.$=builder.newOperation($$[$0-2], $$[$0], Tipos.OPERACION_MULTIPLICACION, this._$.first_line, this._$.first_column+1);
 						 prod_1 = grammar_stack.pop();
 				 		 prod_2 = grammar_stack.pop();
 				  		 grammar_stack.push({'E -> E tk_asterisco E {SS=builder.newOperation(Param)}': [prod_2, 'token: tk_asterisco\t Lexema: ' + $$[$0-1], prod_1]}); 
 break;
-case 85:
+case 87:
  this.$=builder.newOperation($$[$0-2], $$[$0], Tipos.OPERACION_DIVISION, this._$.first_line, this._$.first_column+1);
 				   prod_1 = grammar_stack.pop();
 				   prod_2 = grammar_stack.pop();
 				   grammar_stack.push({'E -> E tk_div E {SS=builder.newOperation(Param)}': [prod_2, 'token: tk_div\t Lexema: ' + $$[$0-1], prod_1]}); 
 break;
-case 86:
+case 88:
  this.$=builder.newOperation($$[$0-2], $$[$0], Tipos.OPERACION_MODULO, this._$.first_line, this._$.first_column+1);
 				   prod_1 = grammar_stack.pop();
 				   prod_2 = grammar_stack.pop();
 				   grammar_stack.push({'E -> E tk_mod E {SS=builder.newOperation(Param)}': [prod_2, 'token: tk_mod\t Lexema: ' + $$[$0-1], prod_1]}); 
 break;
-case 87:
+case 89:
  this.$=builder.newOperation(builder.newValue(0, Tipos.NUMBER, _$[$0-1].first_line, _$[$0-1].first_column+1), $$[$0], Tipos.OPERACION_RESTA, this.$.first_line, this.$.first_column+1); 
 								prod_1 = grammar_stack.pop();
 						  		grammar_stack.push({'E -: tk_menos E': ['token: tk_menos\t Lexema: ' + $$[$0-1], prod_1]});
 break;
-case 88:
+case 90:
  this.$=builder.newOperation(builder.newValue(0, Tipos.NUMBER, _$[$0-1].first_line, _$[$0-1].first_column+1), $$[$0], Tipos.OPERACION_SUMA, this.$.first_line, this.$.first_column+1); 
 								prod_1 = grammar_stack.pop();
 						  		grammar_stack.push({'E -: tk_mas E': ['token: tk_mas\t Lexema: ' + $$[$0-1], prod_1]});
 break;
-case 89:
+case 91:
  this.$=$$[$0-1];
 						  prod_1 = grammar_stack.pop();
 						  grammar_stack.push({'E -> tk_ParA E tk_ParC {SS=S2}': ['token: tk_ParA\t Lexema: ' + $$[$0-2], prod_1, 'token: tk_ParC\t Lexema: ' + $$[$0]]}); 
 break;
-case 90:
+case 92:
  this.$=builder.newOperation($$[$0-2], $$[$0], Tipos.LOGICA_OR, this._$.first_line, this._$.first_column+1);
 				  prod_1 = grammar_stack.pop();
 				  prod_2 = grammar_stack.pop();
 				  grammar_stack.push({'E -> E tk_or E {SS=builder.newOperation(Param)}': [prod_2, 'token: tk_or\t Lexema: ' + $$[$0-1], prod_1]}); 
 break;
-case 91:
+case 93:
  this.$=builder.newOperation($$[$0-2], $$[$0], Tipos.LOGICA_AND, this._$.first_line, this._$.first_column+1);
 				   prod_1 = grammar_stack.pop();
 				   prod_2 = grammar_stack.pop();
 				   grammar_stack.push({'E -> E tk_and E {SS=builder.newOperation(Param)}': [prod_2, 'token: tk_and\t Lexema: ' + $$[$0-1], prod_1]}); 
 break;
-case 92:
+case 94:
  this.$=builder.newOperation($$[$0-2], $$[$0], Tipos.RELACIONAL_IGUAL, this._$.first_line, this._$.first_column+1); 
 					 prod_1 = grammar_stack.pop();
 					 prod_2 = grammar_stack.pop();
 					 grammar_stack.push({'E -> E tk_equal E {SS=builder.newOperation(Param)}': [prod_2, 'token: tk_equal\t Lexema: ' + $$[$0-1], prod_1]}); 
 break;
-case 93:
+case 95:
  this.$=builder.newOperation($$[$0-2], $$[$0], Tipos.RELACIONAL_DIFERENTE, this._$.first_line, this._$.first_column+1); 
 						prod_1 = grammar_stack.pop();
 						prod_2 = grammar_stack.pop();
 						grammar_stack.push({'E -> E tk_diferent E {SS=builder.newOperation(Param)}': [prod_2, 'token: tk_diferent\t Lexema: ' + $$[$0-1], prod_1]}); 
 break;
-case 95:
+case 97:
  $$[$0-1].push(insert_text(this._$.first_line, this._$.first_column+1)); this.$ = $$[$0-1]; 
 break;
-case 97:
+case 99:
  this.$=builder.newExpression($$[$0-1], $$[$0], this._$.first_line, this._$.first_column+1);
 						prod_1 = grammar_stack.pop();
 						prod_2 = grammar_stack.pop();
 						grammar_stack.push({'EXP_PR -> FUNC CORCHETP {SS=builder.newExpression(Param)}': [prod_2, prod_1]}); 
 break;
-case 98:
+case 100:
  this.$=builder.newExpression($$[$0-1], $$[$0], this._$.first_line, this._$.first_column+1); 
 								prod_1 = grammar_stack.pop();
 								prod_2 = grammar_stack.pop();
 								grammar_stack.push({'EXP_PR -> PRIMITIVO CORCHETP {SS=builder.newExpression(Param)}': [prod_2, prod_1]}); 
 break;
-case 99:
+case 101:
  this.$=insert_current($$[$0-1].variable, $$[$0], this._$.first_line, this._$.first_column+1); 
 break;
-case 100:
+case 102:
  this.$=builder.newNodename($$[$0], this._$.first_line, this._$.first_column+1);
 				   grammar_stack.push({'PRIMITIVO -> tk_id {SS=builder.newNodename(Param)}':['token: tk_text\t Lexema: ' + $$[$0]]}); 
 break;
-case 102:
+case 104:
  this.$=builder.newValue(Number($$[$0]), Tipos.NUMBER, this._$.first_line, this._$.first_column+1);
 				grammar_stack.push({'PRIMITIVO -> num {SS=builder.newValue(Param)}':['token: num\t Lexema: ' + $$[$0]]}); 
 break;
-case 103:
+case 105:
  this.$=builder.newCurrent($$[$0], this._$.first_line, this._$.first_column+1); 
 					 grammar_stack.push({'PRIMITIVO -> tk_punto {SS=builder.newCurrent(Param)}':['token: tk_punto\t Lexema: ' + $$[$0]]}); 
 break;
-case 104:
+case 106:
  this.$=builder.newParent($$[$0], this._$.first_line, this._$.first_column+1);
 					   grammar_stack.push({'PRIMITIVO -> tk_2puntos {SS=builder.newParent(Param)}':['token: tk_2puntos\t Lexema: ' + $$[$0]]}); 
 break;
-case 105:
+case 107:
  this.$=builder.newAttribute($$[$0], this._$.first_line, this._$.first_column+1);
 							grammar_stack.push({'PRIMITIVO -> tk_arroba tk_id {SS=builder.newAttribute(Param)}':['token: tk_arroba\t Lexema: ' + $$[$0-1], 'token: tk_id\t Lexema: ' + $$[$0]]}); 
 break;
-case 106:
+case 108:
  this.$=builder.newAttribute($$[$0], this._$.first_line, this._$.first_column+1); 
 							 grammar_stack.push({'PRIMITIVO -> tk_arroba tk_asterisco {SS=builder.newAttribute(Param)}':['token: tk_arroba\t Lexema: ' + $$[$0-1], 'token: tk_asterisco\t Lexema: ' + $$[$0]]});
 break;
-case 107:
+case 109:
  this.$=builder.newValue($$[$0], Tipos.STRING, this._$.first_line, this._$.first_column+1);
 						   grammar_stack.push({'PRIMITIVO -> tk_attribute_d {SS=builder.newValue(Param)}':['token: tk_attribute_d\t Lexema: ' + $$[$0]]}); 
 break;
-case 108:
+case 110:
  this.$=builder.newValue($$[$0], Tipos.STRING, this._$.first_line, this._$.first_column+1); 
 						   grammar_stack.push({'PRIMITIVO -> tk_attribute_s {SS=builder.newValue(Param)}':['token: tk_attribute_s\t Lexema: ' + $$[$0]]}); 
 break;
-case 109:
+case 111:
  this.$=builder.newValue($$[$0-2], Tipos.FUNCION_TEXT, this._$.first_line, this._$.first_column+1);
 								grammar_stack.push({'FUNC -> tk_text tk_ParA tk_ParC {SS=builder.newValue(Param)}':['token: tk_text\t Lexema: ' + $$[$0-2], 'token: tk_ParA\t Lexema: ' + $$[$0-1], 'token: tk_ParC\t Lexema: ' + $$[$0]]}); 
 break;
-case 110:
+case 112:
  this.$=builder.newValue($$[$0-2], Tipos.FUNCION_LAST, this._$.first_line, this._$.first_column+1);
 								grammar_stack.push({'FUNC -> tk_last tk_ParA tk_ParC {SS=builder.newValue(Param)}':['token: tk_last\t Lexema: ' + $$[$0-2], 'token: tk_ParA\t Lexema: ' + $$[$0-1], 'token: tk_ParC\t Lexema: ' + $$[$0]]}); 
 break;
-case 111:
+case 113:
  this.$=builder.newValue($$[$0-2], Tipos.FUNCION_POSITION, this._$.first_line, this._$.first_column+1); 
 									grammar_stack.push({'FUNC -> tk_position tk_ParA tk_ParC {SS=builder.newValue(Param)}':['token: tk_position\t Lexema: ' + $$[$0-2], 'token: tk_ParA\t Lexema: ' + $$[$0-1], 'token: tk_ParC\t Lexema: ' + $$[$0]]});
 break;
-case 112:
+case 114:
  this.$=builder.newValue($$[$0-2], Tipos.FUNCION_NODE, this._$.first_line, this._$.first_column+1); 
 								grammar_stack.push({'FUNC -> tk_node tk_ParA tk_ParC {SS=builder.newValue(Param)}':['token: tk_node\t Lexema: ' + $$[$0-2], 'token: tk_ParA\t Lexema: ' + $$[$0-1], 'token: tk_ParC\t Lexema: ' + $$[$0]]});
 break;
-case 113:
+case 115:
  this.$=builder.newAxisObject($$[$0-2], $$[$0], this._$.first_line, this._$.first_column+1);
 								prod_1 = grammar_stack.pop();
 								prod_2 = grammar_stack.pop();
 								grammar_stack.push({'AXIS -> AXISNAME tk_4puntos QUERY {SS=builder.newAxisObject(Param)}':[prod_2, 'token: tk_4puntos\t Lexema: ' + $$[$0-1], prod_1]}); 
 break;
-case 114:
+case 116:
  
 		var linea = this._$.first_line;
 		var columna = this._$.first_column+1;
 		this.$=builder.newAxisObject($$[$0-3], builder.newExpression(builder.newValue($$[$0-1], Tipos.ASTERISCO, linea, columna), $$[$0], linea, columna), linea, columna);
 	
 break;
-case 115:
+case 117:
  this.$ = Tipos.AXIS_ANCESTOR;
 						grammar_stack.push({'AXISNAME -> tk_ancestor {SS = Tipos.AxisTipo}':['token: tk_ancestor\t Lexema: ' + $$[$0]]}); 
 break;
-case 116:
+case 118:
  this.$ = Tipos.AXIS_ANCESTOR_OR_SELF;
 						grammar_stack.push({'AXISNAME -> tk_ancestor2 {SS = Tipos.AxisTipo}':['token: tk_ancestor2\t Lexema: ' + $$[$0]]}); 
 break;
-case 117:
+case 119:
  this.$ = Tipos.AXIS_ATTRIBUTE;
 						grammar_stack.push({'AXISNAME -> tk_attribute {SS = Tipos.AxisTipo}':['token: tk_attribute\t Lexema: ' + $$[$0]]}); 
 break;
-case 118:
+case 120:
  this.$ = Tipos.AXIS_CHILD;
 						grammar_stack.push({'AXISNAME -> tk_child {SS = Tipos.AxisTipo}':['token: tk_child\t Lexema: ' + $$[$0]]}); 
 break;
-case 119:
+case 121:
  this.$ = Tipos.AXIS_DESCENDANT;
 						grammar_stack.push({'AXISNAME -> tk_descendant {SS = Tipos.AxisTipo}':['token: tk_descendant\t Lexema: ' + $$[$0]]}); 
 break;
-case 120:
+case 122:
  this.$ = Tipos.AXIS_DESCENDANT_OR_SELF;
 						grammar_stack.push({'AXISNAME -> tk_descendant2 {SS = Tipos.AxisTipo}':['token: tk_descendant2\t Lexema: ' + $$[$0]]}); 
 break;
-case 121:
+case 123:
  this.$ = Tipos.AXIS_FOLLOWING;
 						grammar_stack.push({'AXISNAME -> tk_following {SS = Tipos.AxisTipo}':['token: tk_following\t Lexema: ' + $$[$0]]}); 
 break;
-case 122:
+case 124:
  this.$ = Tipos.AXIS_FOLLOWING_SIBLING;
 						grammar_stack.push({'AXISNAME -> tk_following2 {SS = Tipos.AxisTipo}':['token: tk_follownig2\t Lexema: ' + $$[$0]]}); 
 break;
-case 123:
+case 125:
  this.$ = Tipos.AXIS_NAMESPACE;
 						grammar_stack.push({'AXISNAME -> tk_namespace {SS = Tipos.AxisTipo}':['token: tk_namespace\t Lexema: ' + $$[$0]]}); 
 break;
-case 124:
+case 126:
  this.$ = Tipos.AXIS_PARENT;
 						grammar_stack.push({'AXISNAME -> tk_parent {SS = Tipos.AxisTipo}':['token: tk_parent\t Lexema: ' + $$[$0]]}); 
 break;
-case 125:
+case 127:
  this.$ = Tipos.AXIS_PRECEDING;
 						grammar_stack.push({'AXISNAME -> tk_preceding {SS = Tipos.AxisTipo}':['token: tk_preceding\t Lexema: ' + $$[$0]]}); 
 break;
-case 126:
+case 128:
  this.$ = Tipos.AXIS_PRECEDING_SIBLING;
 						grammar_stack.push({'AXISNAME -> tk_preceding2 {SS = Tipos.AxisTipo}':['token: tk_preceding2\t Lexema: ' + $$[$0]]}); 
 break;
-case 127:
+case 129:
  this.$ = Tipos.AXIS_SELF;
 						grammar_stack.push({'AXISNAME -> tk_self {SS = Tipos.AxisTipo}':['token: tk_self\t Lexema: ' + $$[$0]]}); 
 break;
-case 128: case 133: case 134: case 135: case 136: case 137: case 138: case 139: case 140:
+case 130: case 135: case 136: case 137: case 138: case 139: case 140: case 141: case 142:
  this.$ = Tipos.TIPADO_STRING; 
 break;
-case 129: case 130:
+case 131: case 132:
  this.$ = Tipos.TIPADO_INTEGER; 
 break;
-case 131:
+case 133:
  this.$ = Tipos.TIPADO_DECIMAL; 
 break;
-case 132:
+case 134:
  this.$ = Tipos.TIPADO_BOOLEANO; 
 break;
-case 141:
+case 143:
  this.$ = queryBuilder.nuevoHTML($$[$0-7], $$[$0-6], $$[$0-4], $$[$0-1], this._$.first_line, this._$.first_column+1); 
 break;
-case 142:
+case 144:
  this.$ = queryBuilder.nuevoHTML($$[$0-6], $$[$0-5], null, $$[$0-1], this._$.first_line, this._$.first_column+1); 
 break;
-case 143:
+case 145:
  this.$ = queryBuilder.nuevoHTML($$[$0-3], $$[$0-2], null, null, this._$.first_line, this._$.first_column+1); 
 break;
-case 147:
+case 148:
  this.$ = queryBuilder.nuevoContenido($$[$0], this._$.first_line, this._$.first_column+1); 
 break;
-case 148:
- this.$ = queryBuilder.nuevaInyeccion($$[$0-1], false, this._$.first_line, this._$.first_column+1); 
-break;
 case 149:
- this.$ = queryBuilder.nuevaInyeccion($$[$0-2], true, this._$.first_line, this._$.first_column+1); 
+ this.$ = queryBuilder.nuevaInyeccion($$[$0-1], this._$.first_line, this._$.first_column+1); 
 break;
-case 152:
+case 159:
  this.$=null; 
 break;
 }
 },
-table: [o($V0,$V1,{3:1,4:2,6:3,75:4,7:5,71:6,10:7,11:8,12:9,13:10,14:11,15:12,45:19,16:20,19:$V2,25:$V3,27:$V4,46:$V5,47:$V6,48:$V7,49:$V8,50:$V9,51:$Va,57:$Vb,64:$Vc,72:$Vd}),{1:[3]},{5:[1,27],74:[1,28]},{5:[1,29],7:30,10:7,11:8,12:9,13:10,14:11,15:12,16:20,19:$V2,25:$V3,27:$V4,45:19,46:$V5,47:$V6,48:$V7,49:$V8,50:$V9,51:$Va,57:$Vb,64:$Vc},o($Ve,[2,65],{76:31,80:34,81:35,98:36,99:37,38:38,110:39,73:45,29:$Vf,66:$Vg,77:$Vh,78:$Vi,100:$Vj,101:$Vk,102:$Vl,103:$Vm,104:$Vn,105:$Vo,106:$Vp,107:$Vq,108:$Vr,109:$Vs,112:$Vt,113:$Vu,114:$Vv,115:$Vw,116:$Vx,117:$Vy,118:$Vz,119:$VA,120:$VB,121:$VC,122:$VD,123:$VE,124:$VF}),o($VG,$VH,{8:66,9:$VI}),{29:$Vf,38:38,66:$Vg,73:45,76:68,77:$Vh,78:$Vi,80:34,81:35,98:36,99:37,100:$Vj,101:$Vk,102:$Vl,103:$Vm,104:$Vn,105:$Vo,106:$Vp,107:$Vq,108:$Vr,109:$Vs,110:39,112:$Vt,113:$Vu,114:$Vv,115:$Vw,116:$Vx,117:$Vy,118:$Vz,119:$VA,120:$VB,121:$VC,122:$VD,123:$VE,124:$VF},o($VJ,[2,7]),o($VJ,[2,8]),o($VJ,[2,9]),o($VJ,[2,10]),o($VJ,[2,11]),o($VJ,[2,12]),{20:[1,69]},{38:72,52:70,66:$Vg,67:71},{38:73,66:$Vg},o($V0,$V1,{71:6,45:19,16:20,65:74,21:75,15:76,75:81,14:83,19:$V2,20:$VK,27:$V4,46:$V5,47:$V6,48:$V7,49:$V8,50:$V9,72:$Vd,86:$VL,89:$VM,90:$VN,97:$VO}),{26:[1,84]},{28:[1,85]},{20:[1,86]},{17:87,23:[1,88]},{20:[2,31]},{20:[2,32]},{20:[2,33]},{20:[2,34]},{20:[2,35]},{20:[1,89]},{1:[2,1]},o($V0,$V1,{71:6,75:90,72:$Vd}),{1:[2,2]},o($VG,$VH,{8:91,9:$VI}),o($VP,[2,66]),{29:$Vf,38:38,43:[1,93],66:$Vg,73:45,76:92,77:$Vh,78:$Vi,80:34,81:35,98:36,99:37,100:$Vj,101:$Vk,102:$Vl,103:$Vm,104:$Vn,105:$Vo,106:$Vp,107:$Vq,108:$Vr,109:$Vs,110:39,112:$Vt,113:$Vu,114:$Vv,115:$Vw,116:$Vx,117:$Vy,118:$Vz,119:$VA,120:$VB,121:$VC,122:$VD,123:$VE,124:$VF},{29:$Vf,38:38,43:[1,95],66:$Vg,73:45,76:94,77:$Vh,78:$Vi,80:34,81:35,98:36,99:37,100:$Vj,101:$Vk,102:$Vl,103:$Vm,104:$Vn,105:$Vo,106:$Vp,107:$Vq,108:$Vr,109:$Vs,110:39,112:$Vt,113:$Vu,114:$Vv,115:$Vw,116:$Vx,117:$Vy,118:$Vz,119:$VA,120:$VB,121:$VC,122:$VD,123:$VE,124:$VF},o($VP,[2,72]),o($VP,[2,73]),o($VP,$VQ,{79:96,82:97,83:$VR}),o($VP,$VQ,{82:97,79:99,83:$VR}),o($VP,$VQ,{82:97,79:100,83:$VR}),{111:[1,101]},{20:[1,102]},{20:[1,103]},{20:[1,104]},{20:[1,105]},o($VS,[2,100]),o($VS,[2,101]),o($VS,[2,102]),o($VS,[2,103]),o($VS,[2,104]),{29:[1,106],43:[1,107]},{29:[1,108]},{111:[2,115]},{111:[2,116]},{111:[2,117]},{111:[2,118]},{111:[2,119]},{111:[2,120]},{111:[2,121]},{111:[2,122]},{111:[2,123]},{111:[2,124]},{111:[2,125]},{111:[2,126]},{111:[2,127]},o($VS,[2,107]),o($VS,[2,108]),o($VG,[2,4]),o($VG,[2,5]),o($VP,[2,67]),{73:109,104:$Vn,105:$Vo},{9:[1,112],11:116,12:111,53:110,54:113,55:114,56:115,57:$Vb,61:$VT,62:$VU,64:$Vc},o($VV,[2,54]),{68:[1,119],69:[1,120]},{58:[1,121]},o($VJ,[2,49]),o($VJ,[2,50],{43:$VW,85:$VX,86:$VY,87:$VZ,88:$V_,89:$V$,90:$V01,91:$V11,92:$V21,93:$V31,94:$V41,95:$V51,96:$V61}),o($VJ,[2,51]),{29:$V71},o($V0,$V1,{71:6,45:19,75:81,14:83,21:136,20:$VK,27:$V4,46:$V5,47:$V6,48:$V7,49:$V8,50:$V9,72:$Vd,89:$VM,90:$VN,97:$VO}),o($V0,$V1,{71:6,45:19,75:81,14:83,21:137,20:$VK,27:$V4,46:$V5,47:$V6,48:$V7,49:$V8,50:$V9,72:$Vd,89:$VM,90:$VN,97:$VO}),o($V0,$V1,{71:6,45:19,75:81,14:83,21:138,20:$VK,27:$V4,46:$V5,47:$V6,48:$V7,49:$V8,50:$V9,72:$Vd,89:$VM,90:$VN,97:$VO}),o($V81,[2,94],{76:31,80:34,81:35,98:36,99:37,38:38,110:39,73:45,29:$Vf,66:$Vg,77:$Vh,78:$Vi,100:$Vj,101:$Vk,102:$Vl,103:$Vm,104:$Vn,105:$Vo,106:$Vp,107:$Vq,108:$Vr,109:$Vs,112:$Vt,113:$Vu,114:$Vv,115:$Vw,116:$Vx,117:$Vy,118:$Vz,119:$VA,120:$VB,121:$VC,122:$VD,123:$VE,124:$VF}),{20:[1,139]},o($V81,[2,96]),{27:[1,140]},{29:[1,141]},o($V0,$V1,{71:6,45:19,75:81,14:83,44:142,21:143,20:$VK,27:$V4,46:$V5,47:$V6,48:$V7,49:$V8,50:$V9,72:$Vd,89:$VM,90:$VN,97:$VO}),{18:144,24:[1,145]},o($V0,$V1,{71:6,45:19,75:81,14:83,21:146,20:[1,147],27:$V4,46:$V5,47:$V6,48:$V7,49:$V8,50:$V9,72:$Vd,89:$VM,90:$VN,97:$VO}),o($V0,$V1,{71:6,45:19,75:81,14:83,21:148,20:$VK,27:$V4,46:$V5,47:$V6,48:$V7,49:$V8,50:$V9,72:$Vd,89:$VM,90:$VN,97:$VO}),o($Ve,[2,64],{76:31,80:34,81:35,98:36,99:37,38:38,110:39,73:45,29:$Vf,66:$Vg,77:$Vh,78:$Vi,100:$Vj,101:$Vk,102:$Vl,103:$Vm,104:$Vn,105:$Vo,106:$Vp,107:$Vq,108:$Vr,109:$Vs,112:$Vt,113:$Vu,114:$Vv,115:$Vw,116:$Vx,117:$Vy,118:$Vz,119:$VA,120:$VB,121:$VC,122:$VD,123:$VE,124:$VF}),o($VG,[2,3]),o($VP,[2,68]),o($VP,$VQ,{82:97,79:149,83:$VR}),o($VP,[2,69]),o($VP,$VQ,{82:97,79:150,83:$VR}),o($VP,[2,97]),o($VP,[2,76],{83:[1,151]}),o($V0,$V1,{71:6,45:19,75:81,14:83,21:152,20:$VK,27:$V4,46:$V5,47:$V6,48:$V7,49:$V8,50:$V9,72:$Vd,89:$VM,90:$VN,97:$VO}),o($VP,[2,98]),o($VP,[2,99]),{29:$Vf,38:38,43:[1,154],66:$Vg,73:45,76:153,77:$Vh,78:$Vi,80:34,81:35,98:36,99:37,100:$Vj,101:$Vk,102:$Vl,103:$Vm,104:$Vn,105:$Vo,106:$Vp,107:$Vq,108:$Vr,109:$Vs,110:39,112:$Vt,113:$Vu,114:$Vv,115:$Vw,116:$Vx,117:$Vy,118:$Vz,119:$VA,120:$VB,121:$VC,122:$VD,123:$VE,124:$VF},{22:[1,155]},{22:[1,156]},{22:[1,157]},{22:[1,158]},o($VS,[2,105]),o($VS,[2,106]),o([5,9,19,22,24,25,27,29,31,35,43,46,47,48,49,50,51,57,58,61,62,64,66,68,69,70,74,77,78,83,84,85,86,87,88,89,90,91,92,93,94,95,96,100,101,102,103,104,105,106,107,108,109,112,113,114,115,116,117,118,119,120,121,122,123,124],[2,52]),{22:[1,159]},{11:116,12:160,54:161,55:114,56:115,57:$Vb,61:$VT,62:$VU,64:$Vc},o($VJ,[2,37]),{38:72,66:$Vg,67:162},o($V91,[2,39]),o($V91,[2,40]),o($V91,[2,41],{9:[1,163]}),o($V91,[2,42]),o($V0,$V1,{71:6,45:19,75:81,14:83,21:164,20:$VK,27:$V4,46:$V5,47:$V6,48:$V7,49:$V8,50:$V9,72:$Vd,89:$VM,90:$VN,97:$VO}),{63:[1,165]},o($V0,$V1,{71:6,45:19,75:81,14:83,59:166,21:168,20:$Va1,27:$V4,46:$V5,47:$V6,48:$V7,49:$V8,50:$V9,72:$Vd,89:$VM,90:$VN,97:$VO}),{38:169,66:$Vg},o($V0,$V1,{71:6,45:19,75:81,14:83,21:168,59:170,20:$Va1,27:$V4,46:$V5,47:$V6,48:$V7,49:$V8,50:$V9,72:$Vd,89:$VM,90:$VN,97:$VO}),o($V0,$V1,{71:6,45:19,75:81,14:83,21:171,20:$VK,27:$V4,46:$V5,47:$V6,48:$V7,49:$V8,50:$V9,72:$Vd,89:$VM,90:$VN,97:$VO}),o($V0,$V1,{71:6,45:19,75:81,14:83,21:172,20:$VK,27:$V4,46:$V5,47:$V6,48:$V7,49:$V8,50:$V9,72:$Vd,89:$VM,90:$VN,97:$VO}),o($V0,$V1,{71:6,45:19,75:81,14:83,21:173,20:$VK,27:$V4,46:$V5,47:$V6,48:$V7,49:$V8,50:$V9,72:$Vd,89:$VM,90:$VN,97:$VO}),o($V0,$V1,{71:6,45:19,75:81,14:83,21:174,20:$VK,27:$V4,46:$V5,47:$V6,48:$V7,49:$V8,50:$V9,72:$Vd,89:$VM,90:$VN,97:$VO}),o($V0,$V1,{71:6,45:19,75:81,14:83,21:175,20:$VK,27:$V4,46:$V5,47:$V6,48:$V7,49:$V8,50:$V9,72:$Vd,89:$VM,90:$VN,97:$VO}),o($V0,$V1,{71:6,45:19,75:81,14:83,21:176,20:$VK,27:$V4,46:$V5,47:$V6,48:$V7,49:$V8,50:$V9,72:$Vd,89:$VM,90:$VN,97:$VO}),o($V0,$V1,{71:6,45:19,75:81,14:83,21:177,20:$VK,27:$V4,46:$V5,47:$V6,48:$V7,49:$V8,50:$V9,72:$Vd,89:$VM,90:$VN,97:$VO}),o($V0,$V1,{71:6,45:19,75:81,14:83,21:178,20:$VK,27:$V4,46:$V5,47:$V6,48:$V7,49:$V8,50:$V9,72:$Vd,89:$VM,90:$VN,97:$VO}),o($V0,$V1,{71:6,45:19,75:81,14:83,21:179,20:$VK,27:$V4,46:$V5,47:$V6,48:$V7,49:$V8,50:$V9,72:$Vd,89:$VM,90:$VN,97:$VO}),o($V0,$V1,{71:6,45:19,75:81,14:83,21:180,20:$VK,27:$V4,46:$V5,47:$V6,48:$V7,49:$V8,50:$V9,72:$Vd,89:$VM,90:$VN,97:$VO}),o($V0,$V1,{71:6,45:19,75:81,14:83,21:181,20:$VK,27:$V4,46:$V5,47:$V6,48:$V7,49:$V8,50:$V9,72:$Vd,89:$VM,90:$VN,97:$VO}),o($V0,$V1,{71:6,45:19,75:81,14:83,21:182,20:$VK,27:$V4,46:$V5,47:$V6,48:$V7,49:$V8,50:$V9,72:$Vd,89:$VM,90:$VN,97:$VO}),o($V0,$V1,{71:6,45:19,75:81,14:83,21:183,20:$VK,27:$V4,46:$V5,47:$V6,48:$V7,49:$V8,50:$V9,72:$Vd,89:$VM,90:$VN,97:$VO}),o($Vb1,[2,152],{137:184,29:[1,185]}),o($V81,[2,87]),o($V81,[2,88]),{22:$Vc1,43:$VW,85:$VX,86:$VY,87:$VZ,88:$V_,89:$V$,90:$V01,91:$V11,92:$V21,93:$V31,94:$V41,95:$V51,96:$V61},o($V0,$V1,{71:6,75:187,72:$Vd}),{28:[1,188]},{20:[1,189]},{9:$Vd1,22:[1,190]},o($Ve1,[2,63],{43:$VW,85:$VX,86:$VY,87:$VZ,88:$V_,89:$V$,90:$V01,91:$V11,92:$V21,93:$V31,94:$V41,95:$V51,96:$V61}),o($VJ,[2,13]),o($V0,$V1,{71:6,45:19,16:20,75:81,14:83,21:192,15:194,19:$V2,20:[1,193],27:$V4,46:$V5,47:$V6,48:$V7,49:$V8,50:$V9,72:$Vd,89:$VM,90:$VN,97:$VO}),{24:[2,15],43:$VW,85:$VX,86:$VY,87:$VZ,88:$V_,89:$V$,90:$V01,91:$V11,92:$V21,93:$V31,94:$V41,95:$V51,96:$V61},o($V0,$V1,{71:6,45:19,75:81,14:83,21:138,20:$VK,22:[1,195],27:$V4,46:$V5,47:$V6,48:$V7,49:$V8,50:$V9,72:$Vd,89:$VM,90:$VN,97:$VO}),{22:[1,196],43:$VW,85:$VX,86:$VY,87:$VZ,88:$V_,89:$V$,90:$V01,91:$V11,92:$V21,93:$V31,94:$V41,95:$V51,96:$V61},o($VP,[2,71]),o($VP,[2,70]),o($V0,$V1,{71:6,45:19,75:81,14:83,21:197,20:$VK,27:$V4,46:$V5,47:$V6,48:$V7,49:$V8,50:$V9,72:$Vd,89:$VM,90:$VN,97:$VO}),{43:$VW,84:[1,198],85:$VX,86:$VY,87:$VZ,88:$V_,89:$V$,90:$V01,91:$V11,92:$V21,93:$V31,94:$V41,95:$V51,96:$V61},o($VP,[2,113]),o($VP,$VQ,{82:97,79:199,83:$VR}),o($VS,[2,109]),o($VS,[2,110]),o($VS,[2,111]),o($VS,[2,112]),o($V0,[2,60]),o($VJ,[2,36]),o($V91,[2,38]),o($VV,[2,53]),o($V0,$V1,{71:6,45:19,75:81,14:83,21:200,20:$VK,27:$V4,46:$V5,47:$V6,48:$V7,49:$V8,50:$V9,72:$Vd,89:$VM,90:$VN,97:$VO}),o($V91,[2,46],{43:$VW,85:$VX,86:$VY,87:$VZ,88:$V_,89:$V$,90:$V01,91:$V11,92:$V21,93:$V31,94:$V41,95:$V51,96:$V61}),o($V0,$V1,{71:6,45:19,75:81,14:83,21:201,20:$VK,27:$V4,46:$V5,47:$V6,48:$V7,49:$V8,50:$V9,72:$Vd,89:$VM,90:$VN,97:$VO}),o($VV,[2,55]),o($V0,$V1,{71:6,45:19,75:81,14:83,21:202,20:$VK,27:$V4,46:$V5,47:$V6,48:$V7,49:$V8,50:$V9,72:$Vd,89:$VM,90:$VN,97:$VO}),o($Vf1,[2,59],{43:$VW,85:$VX,86:$VY,87:$VZ,88:$V_,89:$V$,90:$V01,91:$V11,92:$V21,93:$V31,94:$V41,95:$V51,96:$V61}),{68:[1,203]},o($Vf1,[2,43]),o($Vg1,[2,78],{43:$VW,89:$V$,90:$V01,91:$V11,92:$V21}),o($Vg1,[2,79],{43:$VW,89:$V$,90:$V01,91:$V11,92:$V21}),o($Vg1,[2,80],{43:$VW,89:$V$,90:$V01,91:$V11,92:$V21}),o($Vg1,[2,81],{43:$VW,89:$V$,90:$V01,91:$V11,92:$V21}),o($Vh1,[2,82],{43:$VW,91:$V11,92:$V21}),o($Vh1,[2,83],{43:$VW,91:$V11,92:$V21}),o($V81,[2,84]),o($V81,[2,85]),o($V81,[2,86]),o([5,9,19,22,24,25,27,35,46,47,48,49,50,51,57,61,62,64,70,84,93],[2,90],{43:$VW,85:$VX,86:$VY,87:$VZ,88:$V_,89:$V$,90:$V01,91:$V11,92:$V21,94:$V41,95:$V51,96:$V61}),o([5,9,19,22,24,25,27,35,46,47,48,49,50,51,57,61,62,64,70,84,93,94],[2,91],{43:$VW,85:$VX,86:$VY,87:$VZ,88:$V_,89:$V$,90:$V01,91:$V11,92:$V21,95:$V51,96:$V61}),o($Vg1,[2,92],{43:$VW,89:$V$,90:$V01,91:$V11,92:$V21}),o($Vg1,[2,93],{43:$VW,89:$V$,90:$V01,91:$V11,92:$V21}),{78:[1,205],88:[1,204]},{95:[1,206]},o($V81,[2,89]),{22:[1,207],29:$Vf,38:38,66:$Vg,73:45,76:31,77:$Vh,78:$Vi,80:34,81:35,98:36,99:37,100:$Vj,101:$Vk,102:$Vl,103:$Vm,104:$Vn,105:$Vo,106:$Vp,107:$Vq,108:$Vr,109:$Vs,110:39,112:$Vt,113:$Vu,114:$Vv,115:$Vw,116:$Vx,117:$Vy,118:$Vz,119:$VA,120:$VB,121:$VC,122:$VD,123:$VE,124:$VF},{29:[1,208]},o($V0,$V1,{71:6,45:19,75:81,14:83,21:143,44:209,20:$VK,27:$V4,46:$V5,47:$V6,48:$V7,49:$V8,50:$V9,72:$Vd,89:$VM,90:$VN,97:$VO}),o($V81,[2,30]),o($V0,$V1,{71:6,45:19,75:81,14:83,21:210,20:$VK,27:$V4,46:$V5,47:$V6,48:$V7,49:$V8,50:$V9,72:$Vd,89:$VM,90:$VN,97:$VO}),o($VJ,[2,17],{43:$VW,85:$VX,86:$VY,87:$VZ,88:$V_,89:$V$,90:$V01,91:$V11,92:$V21,93:$V31,94:$V41,95:$V51,96:$V61}),o($V0,$V1,{71:6,45:19,75:81,14:83,21:138,20:$VK,22:[1,211],27:$V4,46:$V5,47:$V6,48:$V7,49:$V8,50:$V9,72:$Vd,89:$VM,90:$VN,97:$VO}),o($VJ,[2,19]),{24:[2,16]},{23:[2,14]},{43:$VW,84:[1,212],85:$VX,86:$VY,87:$VZ,88:$V_,89:$V$,90:$V01,91:$V11,92:$V21,93:$V31,94:$V41,95:$V51,96:$V61},o($VS,[2,75]),o($VP,[2,114]),o($VV,[2,47],{43:$VW,85:$VX,86:$VY,87:$VZ,88:$V_,89:$V$,90:$V01,91:$V11,92:$V21,93:$V31,94:$V41,95:$V51,96:$V61}),o($VV,[2,48],{43:$VW,85:$VX,86:$VY,87:$VZ,88:$V_,89:$V$,90:$V01,91:$V11,92:$V21,93:$V31,94:$V41,95:$V51,96:$V61}),{9:[1,214],22:$Vc1,43:$VW,70:[1,213],85:$VX,86:$VY,87:$VZ,88:$V_,89:$V$,90:$V01,91:$V11,92:$V21,93:$V31,94:$V41,95:$V51,96:$V61},o($V0,$V1,{71:6,45:19,75:81,14:83,21:168,59:215,20:$Va1,27:$V4,46:$V5,47:$V6,48:$V7,49:$V8,50:$V9,72:$Vd,89:$VM,90:$VN,97:$VO}),{29:$Vi1,33:$Vj1,65:219,86:[1,217],138:216,139:218},{88:[1,222]},{29:$Vi1,33:$Vj1,65:219,73:223,86:$VL,104:$Vn,105:$Vo,138:224,139:218},o($V81,[2,95]),{20:[1,225]},{9:$Vd1,22:[1,226]},o($Ve1,[2,62],{43:$VW,85:$VX,86:$VY,87:$VZ,88:$V_,89:$V$,90:$V01,91:$V11,92:$V21,93:$V31,94:$V41,95:$V51,96:$V61}),o($VJ,[2,18]),o($VS,[2,74]),o($V0,$V1,{71:6,45:19,75:81,14:83,21:227,20:$VK,27:$V4,46:$V5,47:$V6,48:$V7,49:$V8,50:$V9,72:$Vd,89:$VM,90:$VN,97:$VO}),o($V0,$V1,{71:6,45:19,75:81,14:83,60:228,21:229,20:$VK,27:$V4,46:$V5,47:$V6,48:$V7,49:$V8,50:$V9,72:$Vd,89:$VM,90:$VN,97:$VO}),o($VV,[2,56]),{29:$Vi1,33:$Vj1,86:[1,230],139:231},{29:$V71,78:[1,232]},o($Vk1,[2,145]),o($Vk1,[2,146]),o($Vk1,[2,147]),o($V0,$V1,{71:6,75:233,72:$Vd,97:[1,234]}),o($Vl1,[2,143]),o($Vb1,[2,150]),o($Vb1,[2,151],{139:231,29:$Vi1,33:$Vj1}),{30:235,37:236,38:237,66:$Vg},o($V81,[2,29]),{22:[1,238],43:$VW,85:$VX,86:$VY,87:$VZ,88:$V_,89:$V$,90:$V01,91:$V11,92:$V21,93:$V31,94:$V41,95:$V51,96:$V61},{9:[1,240],22:[1,239]},o($Ve1,[2,45],{43:$VW,85:$VX,86:$VY,87:$VZ,88:$V_,89:$V$,90:$V01,91:$V11,92:$V21,93:$V31,94:$V41,95:$V51,96:$V61}),{78:[1,241]},o($Vk1,[2,144]),{29:[1,242]},{29:$Vf,35:[1,243],38:38,66:$Vg,73:45,76:31,77:$Vh,78:$Vi,80:34,81:35,98:36,99:37,100:$Vj,101:$Vk,102:$Vl,103:$Vm,104:$Vn,105:$Vo,106:$Vp,107:$Vq,108:$Vr,109:$Vs,110:39,112:$Vt,113:$Vu,114:$Vv,115:$Vw,116:$Vx,117:$Vy,118:$Vz,119:$VA,120:$VB,121:$VC,122:$VD,123:$VE,124:$VF},{20:[1,244]},{9:[1,246],22:[1,245]},o($Ve1,[2,22]),{31:[1,247]},o($Vf1,[2,57]),o($Vf1,[2,58]),o($V0,$V1,{71:6,45:19,75:81,14:83,21:248,20:$VK,27:$V4,46:$V5,47:$V6,48:$V7,49:$V8,50:$V9,72:$Vd,89:$VM,90:$VN,97:$VO}),{29:[1,249]},{88:[1,250]},o($Vk1,[2,148]),o($V0,$V1,{71:6,75:251,72:$Vd}),{31:[1,252]},{37:253,38:237,66:$Vg},{32:254,39:$Vm1},o($Ve1,[2,44],{43:$VW,85:$VX,86:$VY,87:$VZ,88:$V_,89:$V$,90:$V01,91:$V11,92:$V21,93:$V31,94:$V41,95:$V51,96:$V61}),{88:[1,256]},o($Vl1,[2,142]),{22:[1,257],29:$Vf,38:38,66:$Vg,73:45,76:31,77:$Vh,78:$Vi,80:34,81:35,98:36,99:37,100:$Vj,101:$Vk,102:$Vl,103:$Vm,104:$Vn,105:$Vo,106:$Vp,107:$Vq,108:$Vr,109:$Vs,110:39,112:$Vt,113:$Vu,114:$Vv,115:$Vw,116:$Vx,117:$Vy,118:$Vz,119:$VA,120:$VB,121:$VC,122:$VD,123:$VE,124:$VF},{32:258,39:$Vm1},o($Ve1,[2,21]),o($Ve1,[2,23]),{28:[1,259]},o($Vl1,[2,141]),{35:[1,260]},{33:[1,261]},{40:262,48:[1,263],125:[1,264],126:[1,265],127:[1,266],128:[1,267],129:[1,268],130:[1,269],131:[1,270],132:[1,271],133:[1,272],134:[1,273],135:[1,274],136:[1,275]},o($Vk1,[2,149]),{6:277,7:5,10:7,11:8,12:9,13:10,14:11,15:12,16:20,19:$V2,25:$V3,27:$V4,34:276,45:19,46:$V5,47:$V6,48:$V7,49:$V8,50:$V9,51:$Va,57:$Vb,64:$Vc},o($Vn1,[2,27],{41:278,42:[1,279],43:[1,280]}),o($Vo1,[2,128]),o($Vo1,[2,129]),o($Vo1,[2,130]),o($Vo1,[2,131]),o($Vo1,[2,132]),o($Vo1,[2,133]),o($Vo1,[2,134]),o($Vo1,[2,135]),o($Vo1,[2,136]),o($Vo1,[2,137]),o($Vo1,[2,138]),o($Vo1,[2,139]),o($Vo1,[2,140]),{35:[1,281]},{7:30,10:7,11:8,12:9,13:10,14:11,15:12,16:20,19:$V2,25:$V3,27:$V4,35:[2,28],45:19,46:$V5,47:$V6,48:$V7,49:$V8,50:$V9,51:$Va,57:$Vb,64:$Vc},o($Vn1,[2,24]),o($Vn1,[2,25]),o($Vn1,[2,26]),{36:[1,282]},o($VJ,[2,20])],
-defaultActions: {21:[2,31],22:[2,32],23:[2,33],24:[2,34],25:[2,35],27:[2,1],29:[2,2],51:[2,115],52:[2,116],53:[2,117],54:[2,118],55:[2,119],56:[2,120],57:[2,121],58:[2,122],59:[2,123],60:[2,124],61:[2,125],62:[2,126],63:[2,127],195:[2,16],196:[2,14]},
+table: [o($V0,$V1,{3:1,4:2,6:3,75:4,7:5,71:6,10:7,11:8,12:9,13:10,14:11,15:12,46:19,16:20,19:$V2,26:$V3,28:$V4,47:$V5,48:$V6,49:$V7,50:$V8,51:$V9,52:$Va,58:$Vb,65:$Vc,72:$Vd}),{1:[3]},{5:[1,27],74:[1,28]},{5:[1,29],7:30,10:7,11:8,12:9,13:10,14:11,15:12,16:20,19:$V2,26:$V3,28:$V4,46:19,47:$V5,48:$V6,49:$V7,50:$V8,51:$V9,52:$Va,58:$Vb,65:$Vc},o($Ve,[2,67],{76:31,80:34,81:35,98:36,99:37,39:38,110:39,73:45,30:$Vf,66:$Vg,77:$Vh,78:$Vi,100:$Vj,101:$Vk,102:$Vl,103:$Vm,104:$Vn,105:$Vo,106:$Vp,107:$Vq,108:$Vr,109:$Vs,112:$Vt,113:$Vu,114:$Vv,115:$Vw,116:$Vx,117:$Vy,118:$Vz,119:$VA,120:$VB,121:$VC,122:$VD,123:$VE,124:$VF}),o($VG,$VH,{8:66,9:$VI}),{30:$Vf,39:38,66:$Vg,73:45,76:68,77:$Vh,78:$Vi,80:34,81:35,98:36,99:37,100:$Vj,101:$Vk,102:$Vl,103:$Vm,104:$Vn,105:$Vo,106:$Vp,107:$Vq,108:$Vr,109:$Vs,110:39,112:$Vt,113:$Vu,114:$Vv,115:$Vw,116:$Vx,117:$Vy,118:$Vz,119:$VA,120:$VB,121:$VC,122:$VD,123:$VE,124:$VF},o($VJ,[2,7]),o($VJ,[2,8]),o($VJ,[2,9]),o($VJ,[2,10]),o($VJ,[2,11]),o($VJ,[2,12]),{20:[1,69]},{39:72,53:70,66:$Vg,67:71},{39:73,66:$Vg},o($V0,$V1,{71:6,46:19,16:20,24:74,21:75,15:76,75:81,14:83,19:$V2,20:$VK,28:$V4,47:$V5,48:$V6,49:$V7,50:$V8,51:$V9,72:$Vd,86:$VL,89:$VM,90:$VN,97:$VO}),{27:[1,84]},{29:[1,85]},{20:[1,86]},{17:87,23:[1,88]},{20:[2,33]},{20:[2,34]},{20:[2,35]},{20:[2,36]},{20:[2,37]},{20:[1,89]},{1:[2,1]},o($V0,$V1,{71:6,75:90,72:$Vd}),{1:[2,2]},o($VG,$VH,{8:91,9:$VI}),o($VP,[2,68]),{30:$Vf,39:38,44:[1,93],66:$Vg,73:45,76:92,77:$Vh,78:$Vi,80:34,81:35,98:36,99:37,100:$Vj,101:$Vk,102:$Vl,103:$Vm,104:$Vn,105:$Vo,106:$Vp,107:$Vq,108:$Vr,109:$Vs,110:39,112:$Vt,113:$Vu,114:$Vv,115:$Vw,116:$Vx,117:$Vy,118:$Vz,119:$VA,120:$VB,121:$VC,122:$VD,123:$VE,124:$VF},{30:$Vf,39:38,44:[1,95],66:$Vg,73:45,76:94,77:$Vh,78:$Vi,80:34,81:35,98:36,99:37,100:$Vj,101:$Vk,102:$Vl,103:$Vm,104:$Vn,105:$Vo,106:$Vp,107:$Vq,108:$Vr,109:$Vs,110:39,112:$Vt,113:$Vu,114:$Vv,115:$Vw,116:$Vx,117:$Vy,118:$Vz,119:$VA,120:$VB,121:$VC,122:$VD,123:$VE,124:$VF},o($VP,[2,74]),o($VP,[2,75]),o($VP,$VQ,{79:96,82:97,83:$VR}),o($VP,$VQ,{82:97,79:99,83:$VR}),o($VP,$VQ,{82:97,79:100,83:$VR}),{111:[1,101]},{20:[1,102]},{20:[1,103]},{20:[1,104]},{20:[1,105]},o($VS,[2,102]),o($VS,[2,103]),o($VS,[2,104]),o($VS,[2,105]),o($VS,[2,106]),{30:[1,106],44:[1,107]},{30:[1,108]},{111:[2,117]},{111:[2,118]},{111:[2,119]},{111:[2,120]},{111:[2,121]},{111:[2,122]},{111:[2,123]},{111:[2,124]},{111:[2,125]},{111:[2,126]},{111:[2,127]},{111:[2,128]},{111:[2,129]},o($VS,[2,109]),o($VS,[2,110]),o($VG,[2,4]),o($VG,[2,5]),o($VP,[2,69]),{73:109,104:$Vn,105:$Vo},{9:[1,112],11:116,12:111,54:110,55:113,56:114,57:115,58:$Vb,62:$VT,63:$VU,65:$Vc},o($VV,[2,56]),{68:[1,119],69:[1,120]},{59:[1,121]},o($VJ,[2,51]),o($VJ,[2,52],{44:$VW,85:$VX,86:$VY,87:$VZ,88:$V_,89:$V$,90:$V01,91:$V11,92:$V21,93:$V31,94:$V41,95:$V51,96:$V61}),o($VJ,[2,53]),{9:$V71,22:$V81,30:$V91,94:$Va1,95:$Vb1,101:$Vc1,115:$Vd1,137:135},o($V0,$V1,{71:6,46:19,75:81,14:83,21:143,20:$VK,28:$V4,47:$V5,48:$V6,49:$V7,50:$V8,51:$V9,72:$Vd,89:$VM,90:$VN,97:$VO}),o($V0,$V1,{71:6,46:19,75:81,14:83,21:144,20:$VK,28:$V4,47:$V5,48:$V6,49:$V7,50:$V8,51:$V9,72:$Vd,89:$VM,90:$VN,97:$VO}),o($V0,$V1,{71:6,46:19,75:81,14:83,21:145,20:$VK,28:$V4,47:$V5,48:$V6,49:$V7,50:$V8,51:$V9,72:$Vd,89:$VM,90:$VN,97:$VO}),o($Ve1,[2,96],{76:31,80:34,81:35,98:36,99:37,39:38,110:39,73:45,30:$Vf,66:$Vg,77:$Vh,78:$Vi,100:$Vj,101:$Vk,102:$Vl,103:$Vm,104:$Vn,105:$Vo,106:$Vp,107:$Vq,108:$Vr,109:$Vs,112:$Vt,113:$Vu,114:$Vv,115:$Vw,116:$Vx,117:$Vy,118:$Vz,119:$VA,120:$VB,121:$VC,122:$VD,123:$VE,124:$VF}),{20:[1,146]},o($Ve1,[2,98]),{28:[1,147]},{30:[1,148]},o($V0,$V1,{71:6,46:19,75:81,14:83,45:149,21:150,20:$VK,28:$V4,47:$V5,48:$V6,49:$V7,50:$V8,51:$V9,72:$Vd,89:$VM,90:$VN,97:$VO}),{18:151,25:[1,152]},o($V0,$V1,{71:6,46:19,75:81,14:83,21:153,24:155,20:[1,154],28:$V4,47:$V5,48:$V6,49:$V7,50:$V8,51:$V9,72:$Vd,86:$VL,89:$VM,90:$VN,97:$VO}),o($V0,$V1,{71:6,46:19,75:81,14:83,21:156,20:$VK,28:$V4,47:$V5,48:$V6,49:$V7,50:$V8,51:$V9,72:$Vd,89:$VM,90:$VN,97:$VO}),o($Ve,[2,66],{76:31,80:34,81:35,98:36,99:37,39:38,110:39,73:45,30:$Vf,66:$Vg,77:$Vh,78:$Vi,100:$Vj,101:$Vk,102:$Vl,103:$Vm,104:$Vn,105:$Vo,106:$Vp,107:$Vq,108:$Vr,109:$Vs,112:$Vt,113:$Vu,114:$Vv,115:$Vw,116:$Vx,117:$Vy,118:$Vz,119:$VA,120:$VB,121:$VC,122:$VD,123:$VE,124:$VF}),o($VG,[2,3]),o($VP,[2,70]),o($VP,$VQ,{82:97,79:157,83:$VR}),o($VP,[2,71]),o($VP,$VQ,{82:97,79:158,83:$VR}),o($VP,[2,99]),o($VP,[2,78],{83:[1,159]}),o($V0,$V1,{71:6,46:19,75:81,14:83,21:160,20:$VK,28:$V4,47:$V5,48:$V6,49:$V7,50:$V8,51:$V9,72:$Vd,89:$VM,90:$VN,97:$VO}),o($VP,[2,100]),o($VP,[2,101]),{30:$Vf,39:38,44:[1,162],66:$Vg,73:45,76:161,77:$Vh,78:$Vi,80:34,81:35,98:36,99:37,100:$Vj,101:$Vk,102:$Vl,103:$Vm,104:$Vn,105:$Vo,106:$Vp,107:$Vq,108:$Vr,109:$Vs,110:39,112:$Vt,113:$Vu,114:$Vv,115:$Vw,116:$Vx,117:$Vy,118:$Vz,119:$VA,120:$VB,121:$VC,122:$VD,123:$VE,124:$VF},{22:[1,163]},{22:[1,164]},{22:[1,165]},{22:[1,166]},o($VS,[2,107]),o($VS,[2,108]),o([5,9,19,22,25,26,28,30,32,36,44,47,48,49,50,51,52,58,59,62,63,65,66,68,69,70,74,77,78,83,84,85,86,87,88,89,90,91,92,93,94,95,96,100,101,102,103,104,105,106,107,108,109,112,113,114,115,116,117,118,119,120,121,122,123,124],[2,54]),{22:[1,167]},{11:116,12:168,55:169,56:114,57:115,58:$Vb,62:$VT,63:$VU,65:$Vc},o($VJ,[2,39]),{39:72,66:$Vg,67:170},o($Vf1,[2,41]),o($Vf1,[2,42]),o($Vf1,[2,43],{9:[1,171]}),o($Vf1,[2,44]),o($V0,$V1,{71:6,46:19,75:81,14:83,21:172,20:$VK,28:$V4,47:$V5,48:$V6,49:$V7,50:$V8,51:$V9,72:$Vd,89:$VM,90:$VN,97:$VO}),{64:[1,173]},o($V0,$V1,{71:6,46:19,75:81,14:83,60:174,21:176,20:$Vg1,28:$V4,47:$V5,48:$V6,49:$V7,50:$V8,51:$V9,72:$Vd,89:$VM,90:$VN,97:$VO}),{39:177,66:$Vg},o($V0,$V1,{71:6,46:19,75:81,14:83,21:176,60:178,20:$Vg1,28:$V4,47:$V5,48:$V6,49:$V7,50:$V8,51:$V9,72:$Vd,89:$VM,90:$VN,97:$VO}),o($V0,$V1,{71:6,46:19,75:81,14:83,21:179,20:$VK,28:$V4,47:$V5,48:$V6,49:$V7,50:$V8,51:$V9,72:$Vd,89:$VM,90:$VN,97:$VO}),o($V0,$V1,{71:6,46:19,75:81,14:83,21:180,20:$VK,28:$V4,47:$V5,48:$V6,49:$V7,50:$V8,51:$V9,72:$Vd,89:$VM,90:$VN,97:$VO}),o($V0,$V1,{71:6,46:19,75:81,14:83,21:181,20:$VK,28:$V4,47:$V5,48:$V6,49:$V7,50:$V8,51:$V9,72:$Vd,89:$VM,90:$VN,97:$VO}),o($V0,$V1,{71:6,46:19,75:81,14:83,21:182,20:$VK,28:$V4,47:$V5,48:$V6,49:$V7,50:$V8,51:$V9,72:$Vd,89:$VM,90:$VN,97:$VO}),o($V0,$V1,{71:6,46:19,75:81,14:83,21:183,20:$VK,28:$V4,47:$V5,48:$V6,49:$V7,50:$V8,51:$V9,72:$Vd,89:$VM,90:$VN,97:$VO}),o($V0,$V1,{71:6,46:19,75:81,14:83,21:184,20:$VK,28:$V4,47:$V5,48:$V6,49:$V7,50:$V8,51:$V9,72:$Vd,89:$VM,90:$VN,97:$VO}),o($V0,$V1,{71:6,46:19,75:81,14:83,21:185,20:$VK,28:$V4,47:$V5,48:$V6,49:$V7,50:$V8,51:$V9,72:$Vd,89:$VM,90:$VN,97:$VO}),o($V0,$V1,{71:6,46:19,75:81,14:83,21:186,20:$VK,28:$V4,47:$V5,48:$V6,49:$V7,50:$V8,51:$V9,72:$Vd,89:$VM,90:$VN,97:$VO}),o($V0,$V1,{71:6,46:19,75:81,14:83,21:187,20:$VK,28:$V4,47:$V5,48:$V6,49:$V7,50:$V8,51:$V9,72:$Vd,89:$VM,90:$VN,97:$VO}),o($V0,$V1,{71:6,46:19,75:81,14:83,21:188,20:$VK,28:$V4,47:$V5,48:$V6,49:$V7,50:$V8,51:$V9,72:$Vd,89:$VM,90:$VN,97:$VO}),o($V0,$V1,{71:6,46:19,75:81,14:83,21:189,20:$VK,28:$V4,47:$V5,48:$V6,49:$V7,50:$V8,51:$V9,72:$Vd,89:$VM,90:$VN,97:$VO}),o($V0,$V1,{71:6,46:19,75:81,14:83,21:190,20:$VK,28:$V4,47:$V5,48:$V6,49:$V7,50:$V8,51:$V9,72:$Vd,89:$VM,90:$VN,97:$VO}),o($V0,$V1,{71:6,46:19,75:81,14:83,21:191,20:$VK,28:$V4,47:$V5,48:$V6,49:$V7,50:$V8,51:$V9,72:$Vd,89:$VM,90:$VN,97:$VO}),o($Vh1,[2,159],{138:192,30:[1,193]}),o($Vi1,[2,150]),o($Vi1,[2,151]),o($Vi1,[2,152]),o($Vi1,[2,153]),o($Vi1,[2,154]),o($Vi1,[2,155]),o($Vi1,[2,156]),o($Ve1,[2,89]),o($Ve1,[2,90]),{22:$Vj1,44:$VW,85:$VX,86:$VY,87:$VZ,88:$V_,89:$V$,90:$V01,91:$V11,92:$V21,93:$V31,94:$V41,95:$V51,96:$V61},o($V0,$V1,{71:6,75:195,72:$Vd}),{29:[1,196]},{20:[1,197]},{9:$Vk1,22:[1,198]},o($Vl1,[2,65],{44:$VW,85:$VX,86:$VY,87:$VZ,88:$V_,89:$V$,90:$V01,91:$V11,92:$V21,93:$V31,94:$V41,95:$V51,96:$V61}),o($VJ,[2,13]),o($V0,$V1,{71:6,46:19,16:20,75:81,14:83,21:200,15:202,24:203,19:$V2,20:[1,201],28:$V4,47:$V5,48:$V6,49:$V7,50:$V8,51:$V9,72:$Vd,86:$VL,89:$VM,90:$VN,97:$VO}),{25:[2,15],44:$VW,85:$VX,86:$VY,87:$VZ,88:$V_,89:$V$,90:$V01,91:$V11,92:$V21,93:$V31,94:$V41,95:$V51,96:$V61},o($V0,$V1,{71:6,46:19,75:81,14:83,21:145,20:$VK,22:[1,204],28:$V4,47:$V5,48:$V6,49:$V7,50:$V8,51:$V9,72:$Vd,89:$VM,90:$VN,97:$VO}),{25:[2,17]},{22:[1,205],44:$VW,85:$VX,86:$VY,87:$VZ,88:$V_,89:$V$,90:$V01,91:$V11,92:$V21,93:$V31,94:$V41,95:$V51,96:$V61},o($VP,[2,73]),o($VP,[2,72]),o($V0,$V1,{71:6,46:19,75:81,14:83,21:206,20:$VK,28:$V4,47:$V5,48:$V6,49:$V7,50:$V8,51:$V9,72:$Vd,89:$VM,90:$VN,97:$VO}),{44:$VW,84:[1,207],85:$VX,86:$VY,87:$VZ,88:$V_,89:$V$,90:$V01,91:$V11,92:$V21,93:$V31,94:$V41,95:$V51,96:$V61},o($VP,[2,115]),o($VP,$VQ,{82:97,79:208,83:$VR}),o($VS,[2,111]),o($VS,[2,112]),o($VS,[2,113]),o($VS,[2,114]),o($V0,[2,62]),o($VJ,[2,38]),o($Vf1,[2,40]),o($VV,[2,55]),o($V0,$V1,{71:6,46:19,75:81,14:83,21:209,20:$VK,28:$V4,47:$V5,48:$V6,49:$V7,50:$V8,51:$V9,72:$Vd,89:$VM,90:$VN,97:$VO}),o($Vf1,[2,48],{44:$VW,85:$VX,86:$VY,87:$VZ,88:$V_,89:$V$,90:$V01,91:$V11,92:$V21,93:$V31,94:$V41,95:$V51,96:$V61}),o($V0,$V1,{71:6,46:19,75:81,14:83,21:210,20:$VK,28:$V4,47:$V5,48:$V6,49:$V7,50:$V8,51:$V9,72:$Vd,89:$VM,90:$VN,97:$VO}),o($VV,[2,57]),o($V0,$V1,{71:6,46:19,75:81,14:83,21:211,20:$VK,28:$V4,47:$V5,48:$V6,49:$V7,50:$V8,51:$V9,72:$Vd,89:$VM,90:$VN,97:$VO}),o($Vm1,[2,61],{44:$VW,85:$VX,86:$VY,87:$VZ,88:$V_,89:$V$,90:$V01,91:$V11,92:$V21,93:$V31,94:$V41,95:$V51,96:$V61}),{68:[1,212]},o($Vm1,[2,45]),o($Vn1,[2,80],{44:$VW,89:$V$,90:$V01,91:$V11,92:$V21}),o($Vn1,[2,81],{44:$VW,89:$V$,90:$V01,91:$V11,92:$V21}),o($Vn1,[2,82],{44:$VW,89:$V$,90:$V01,91:$V11,92:$V21}),o($Vn1,[2,83],{44:$VW,89:$V$,90:$V01,91:$V11,92:$V21}),o($Vo1,[2,84],{44:$VW,91:$V11,92:$V21}),o($Vo1,[2,85],{44:$VW,91:$V11,92:$V21}),o($Ve1,[2,86]),o($Ve1,[2,87]),o($Ve1,[2,88]),o([5,9,19,22,25,26,28,36,47,48,49,50,51,52,58,62,63,65,70,84,93],[2,92],{44:$VW,85:$VX,86:$VY,87:$VZ,88:$V_,89:$V$,90:$V01,91:$V11,92:$V21,94:$V41,95:$V51,96:$V61}),o([5,9,19,22,25,26,28,36,47,48,49,50,51,52,58,62,63,65,70,84,93,94],[2,93],{44:$VW,85:$VX,86:$VY,87:$VZ,88:$V_,89:$V$,90:$V01,91:$V11,92:$V21,95:$V51,96:$V61}),o($Vn1,[2,94],{44:$VW,89:$V$,90:$V01,91:$V11,92:$V21}),o($Vn1,[2,95],{44:$VW,89:$V$,90:$V01,91:$V11,92:$V21}),{78:[1,214],88:[1,213]},{95:[1,215]},o($Ve1,[2,91]),{22:[1,216],30:$Vf,39:38,66:$Vg,73:45,76:31,77:$Vh,78:$Vi,80:34,81:35,98:36,99:37,100:$Vj,101:$Vk,102:$Vl,103:$Vm,104:$Vn,105:$Vo,106:$Vp,107:$Vq,108:$Vr,109:$Vs,110:39,112:$Vt,113:$Vu,114:$Vv,115:$Vw,116:$Vx,117:$Vy,118:$Vz,119:$VA,120:$VB,121:$VC,122:$VD,123:$VE,124:$VF},{30:[1,217]},o($V0,$V1,{71:6,46:19,75:81,14:83,21:150,45:218,20:$VK,28:$V4,47:$V5,48:$V6,49:$V7,50:$V8,51:$V9,72:$Vd,89:$VM,90:$VN,97:$VO}),o($Ve1,[2,32]),o($V0,$V1,{71:6,46:19,75:81,14:83,21:219,20:$VK,28:$V4,47:$V5,48:$V6,49:$V7,50:$V8,51:$V9,72:$Vd,89:$VM,90:$VN,97:$VO}),o($VJ,[2,18],{44:$VW,85:$VX,86:$VY,87:$VZ,88:$V_,89:$V$,90:$V01,91:$V11,92:$V21,93:$V31,94:$V41,95:$V51,96:$V61}),o($V0,$V1,{71:6,46:19,75:81,14:83,21:145,20:$VK,22:[1,220],28:$V4,47:$V5,48:$V6,49:$V7,50:$V8,51:$V9,72:$Vd,89:$VM,90:$VN,97:$VO}),o($VJ,[2,20]),o($VJ,[2,21]),{25:[2,16]},{23:[2,14]},{44:$VW,84:[1,221],85:$VX,86:$VY,87:$VZ,88:$V_,89:$V$,90:$V01,91:$V11,92:$V21,93:$V31,94:$V41,95:$V51,96:$V61},o($VS,[2,77]),o($VP,[2,116]),o($VV,[2,49],{44:$VW,85:$VX,86:$VY,87:$VZ,88:$V_,89:$V$,90:$V01,91:$V11,92:$V21,93:$V31,94:$V41,95:$V51,96:$V61}),o($VV,[2,50],{44:$VW,85:$VX,86:$VY,87:$VZ,88:$V_,89:$V$,90:$V01,91:$V11,92:$V21,93:$V31,94:$V41,95:$V51,96:$V61}),{9:[1,223],22:$Vj1,44:$VW,70:[1,222],85:$VX,86:$VY,87:$VZ,88:$V_,89:$V$,90:$V01,91:$V11,92:$V21,93:$V31,94:$V41,95:$V51,96:$V61},o($V0,$V1,{71:6,46:19,75:81,14:83,21:176,60:224,20:$Vg1,28:$V4,47:$V5,48:$V6,49:$V7,50:$V8,51:$V9,72:$Vd,89:$VM,90:$VN,97:$VO}),{9:$V71,22:$V81,30:$V91,34:$Vp1,86:[1,226],94:$Va1,95:$Vb1,101:$Vc1,115:$Vd1,137:228,139:225,140:227},{88:[1,230]},{9:$V71,22:$V81,30:$V91,34:$Vp1,73:231,94:$Va1,95:$Vb1,101:$Vc1,104:$Vn,105:$Vo,115:$Vd1,137:228,139:232,140:227},o($Ve1,[2,97]),{20:[1,233]},{9:$Vk1,22:[1,234]},o($Vl1,[2,64],{44:$VW,85:$VX,86:$VY,87:$VZ,88:$V_,89:$V$,90:$V01,91:$V11,92:$V21,93:$V31,94:$V41,95:$V51,96:$V61}),o($VJ,[2,19]),o($VS,[2,76]),o($V0,$V1,{71:6,46:19,75:81,14:83,21:235,20:$VK,28:$V4,47:$V5,48:$V6,49:$V7,50:$V8,51:$V9,72:$Vd,89:$VM,90:$VN,97:$VO}),o($V0,$V1,{71:6,46:19,75:81,14:83,61:236,21:237,20:$VK,28:$V4,47:$V5,48:$V6,49:$V7,50:$V8,51:$V9,72:$Vd,89:$VM,90:$VN,97:$VO}),o($VV,[2,58]),{9:$V71,22:$V81,30:$V91,34:$Vp1,86:[1,238],94:$Va1,95:$Vb1,101:$Vc1,115:$Vd1,137:228,140:239},{78:[1,240]},o($Vi1,[2,147]),o($Vi1,[2,148]),o($V0,$V1,{71:6,46:19,75:81,14:83,21:241,20:$VK,28:$V4,47:$V5,48:$V6,49:$V7,50:$V8,51:$V9,72:$Vd,89:$VM,90:$VN,97:$VO}),o($Vq1,[2,145]),o($Vh1,[2,157]),o($Vh1,[2,158],{137:228,140:239,9:$V71,22:$V81,30:$V91,34:$Vp1,94:$Va1,95:$Vb1,101:$Vc1,115:$Vd1}),{31:242,38:243,39:244,66:$Vg},o($Ve1,[2,31]),{22:[1,245],44:$VW,85:$VX,86:$VY,87:$VZ,88:$V_,89:$V$,90:$V01,91:$V11,92:$V21,93:$V31,94:$V41,95:$V51,96:$V61},{9:[1,247],22:[1,246]},o($Vl1,[2,47],{44:$VW,85:$VX,86:$VY,87:$VZ,88:$V_,89:$V$,90:$V01,91:$V11,92:$V21,93:$V31,94:$V41,95:$V51,96:$V61}),{78:[1,248]},o($Vi1,[2,146]),{9:$V71,22:$V81,30:$V91,94:$Va1,95:$Vb1,101:$Vc1,115:$Vd1,137:249},{36:[1,250],44:$VW,85:$VX,86:$VY,87:$VZ,88:$V_,89:$V$,90:$V01,91:$V11,92:$V21,93:$V31,94:$V41,95:$V51,96:$V61},{9:[1,252],22:[1,251]},o($Vl1,[2,24]),{32:[1,253]},o($Vm1,[2,59]),o($Vm1,[2,60]),o($V0,$V1,{71:6,46:19,75:81,14:83,21:254,20:$VK,28:$V4,47:$V5,48:$V6,49:$V7,50:$V8,51:$V9,72:$Vd,89:$VM,90:$VN,97:$VO}),{9:$V71,22:$V81,30:$V91,94:$Va1,95:$Vb1,101:$Vc1,115:$Vd1,137:255},{88:[1,256]},o($Vi1,[2,149]),{32:[1,257]},{38:258,39:244,66:$Vg},{33:259,40:$Vr1},o($Vl1,[2,46],{44:$VW,85:$VX,86:$VY,87:$VZ,88:$V_,89:$V$,90:$V01,91:$V11,92:$V21,93:$V31,94:$V41,95:$V51,96:$V61}),{88:[1,261]},o($Vq1,[2,144]),{33:262,40:$Vr1},o($Vl1,[2,23]),o($Vl1,[2,25]),{29:[1,263]},o($Vq1,[2,143]),{34:[1,264]},{41:265,49:[1,266],125:[1,267],126:[1,268],127:[1,269],128:[1,270],129:[1,271],130:[1,272],131:[1,273],132:[1,274],133:[1,275],134:[1,276],135:[1,277],136:[1,278]},{6:280,7:5,10:7,11:8,12:9,13:10,14:11,15:12,16:20,19:$V2,26:$V3,28:$V4,35:279,46:19,47:$V5,48:$V6,49:$V7,50:$V8,51:$V9,52:$Va,58:$Vb,65:$Vc},o($Vs1,[2,29],{42:281,43:[1,282],44:[1,283]}),o($Vt1,[2,130]),o($Vt1,[2,131]),o($Vt1,[2,132]),o($Vt1,[2,133]),o($Vt1,[2,134]),o($Vt1,[2,135]),o($Vt1,[2,136]),o($Vt1,[2,137]),o($Vt1,[2,138]),o($Vt1,[2,139]),o($Vt1,[2,140]),o($Vt1,[2,141]),o($Vt1,[2,142]),{36:[1,284]},{7:30,10:7,11:8,12:9,13:10,14:11,15:12,16:20,19:$V2,26:$V3,28:$V4,36:[2,30],46:19,47:$V5,48:$V6,49:$V7,50:$V8,51:$V9,52:$Va,58:$Vb,65:$Vc},o($Vs1,[2,26]),o($Vs1,[2,27]),o($Vs1,[2,28]),{37:[1,285]},o($VJ,[2,22])],
+defaultActions: {21:[2,33],22:[2,34],23:[2,35],24:[2,36],25:[2,37],27:[2,1],29:[2,2],51:[2,117],52:[2,118],53:[2,119],54:[2,120],55:[2,121],56:[2,122],57:[2,123],58:[2,124],59:[2,125],60:[2,126],61:[2,127],62:[2,128],63:[2,129],155:[2,17],204:[2,16],205:[2,14]},
 parseError: function parseError (str, hash) {
     if (hash.recoverable) {
         this.trace(str);
@@ -15789,15 +16157,15 @@ case 2:// MultiLineComment
 break;
 case 3:return 100
 break;
-case 4:return 46
+case 4:return 47
 break;
-case 5:return 47
+case 5:return 48
 break;
-case 6:return 49
+case 6:return 50
 break;
-case 7:return 50
+case 7:return 51
 break;
-case 8:return 57
+case 8:return 58
 break;
 case 9:return 85
 break;
@@ -15811,7 +16179,7 @@ case 13:return 77
 break;
 case 14:return 78
 break;
-case 15:return 58
+case 15:return 59
 break;
 case 16:return 95
 break;
@@ -15833,11 +16201,11 @@ case 24:return 20
 break;
 case 25:return 22
 break;
-case 26:return 33
+case 26:return 34
 break;
-case 27:return 35
+case 27:return 36
 break;
-case 28:return 43
+case 28:return 44
 break;
 case 29:return 91
 break;
@@ -15891,19 +16259,19 @@ case 53:return 92
 break;
 case 54:return 72
 break;
-case 55:return 51
+case 55:return 52
 break;
 case 56:return 69
 break;
 case 57:return 68
 break;
-case 58:return 61
+case 58:return 62
 break;
-case 59:return 62
+case 59:return 63
 break;
-case 60:return 63
+case 60:return 64
 break;
-case 61:return 64
+case 61:return 65
 break;
 case 62:return 70
 break;
@@ -15915,25 +16283,25 @@ case 65:return 19
 break;
 case 66:return 23
 break;
-case 67:return 24
+case 67:return 25
 break;
-case 68:return 25
+case 68:return 26
 break;
-case 69:return 26
+case 69:return 27
 break;
-case 70:return 27
+case 70:return 28
 break;
-case 71:return 31
+case 71:return 32
 break;
-case 72:return 39
+case 72:return 40
 break;
-case 73:return 28
+case 73:return 29
 break;
-case 74:return 36
+case 74:return 37
 break;
-case 75:return 42
+case 75:return 43
 break;
-case 76:return 48
+case 76:return 49
 break;
 case 77:return 129
 break;
@@ -16003,7 +16371,7 @@ case 109: attribute += "\r";
 break;
 case 110: yy_.yytext = attribute; this.popState(); return 105; 
 break;
-case 111:return 29
+case 111:return 30
 break;
 case 112:return 5
 break;
@@ -16180,49 +16548,37 @@ module.exports = OrderBy;
   }
 */
 var xml_up = (function(){
-var o=function(k,v,o,l){for(o=o||{},l=k.length;l--;o[k[l]]=v);return o},$V0=[1,9],$V1=[1,12],$V2=[1,18],$V3=[1,16],$V4=[1,17],$V5=[2,13],$V6=[2,6,23],$V7=[2,21,22,23],$V8=[2,6,21,23],$V9=[1,34],$Va=[1,35],$Vb=[1,36],$Vc=[1,37],$Vd=[2,21,23],$Ve=[2,11,12,14,16,17,18,21,22,23,24];
+var o=function(k,v,o,l){for(o=o||{},l=k.length;l--;o[k[l]]=v);return o},$V0=[1,8],$V1=[1,10],$V2=[1,16],$V3=[1,14],$V4=[1,15],$V5=[2,11],$V6=[2,6,23],$V7=[2,21,22,23],$V8=[2,6,21,23],$V9=[1,32],$Va=[1,33],$Vb=[1,34],$Vc=[1,35],$Vd=[2,21,23],$Ve=[2,23],$Vf=[2,11,12,14,16,17,18,21,22,23,24];
 var parser = {trace: function trace () { },
 yy: {},
 symbols_: {"error":2,"INI":3,"XML_DECLARATION":4,"ROOT":5,"EOF":6,"XML":7,"tk_open_declaration":8,"ATTRIBUTE_LIST":9,"XML_CLOSE_DECLARATION":10,"tk_close_delcaraton":11,"tk_close":12,"ATTRIBUTE":13,"tk_attribute_name":14,"tk_string":15,"tk_equal":16,"tk_tag_name":17,"cadena_err":18,"XML_OPEN":19,"CHILDREN":20,"tk_open_end_tag":21,"tk_content":22,"tk_open":23,"tk_bar":24,"$accept":0,"$end":1},
 terminals_: {2:"error",6:"EOF",8:"tk_open_declaration",11:"tk_close_delcaraton",12:"tk_close",14:"tk_attribute_name",15:"tk_string",16:"tk_equal",17:"tk_tag_name",18:"cadena_err",21:"tk_open_end_tag",22:"tk_content",23:"tk_open",24:"tk_bar"},
-productions_: [0,[3,3],[3,2],[3,2],[3,1],[3,2],[5,2],[5,1],[4,3],[10,1],[10,1],[10,2],[9,2],[9,0],[13,2],[13,1],[13,2],[13,1],[13,2],[13,1],[7,5],[7,5],[7,5],[7,4],[7,3],[7,3],[7,4],[7,4],[7,6],[7,4],[7,4],[7,4],[7,3],[7,3],[7,2],[19,4],[19,3],[19,1],[19,2],[20,2],[20,1]],
+productions_: [0,[3,3],[3,2],[3,2],[5,2],[5,1],[4,3],[10,1],[10,1],[10,2],[9,2],[9,0],[13,2],[13,1],[13,2],[13,1],[13,2],[13,1],[7,5],[7,5],[7,5],[7,4],[7,3],[7,3],[7,4],[7,4],[7,6],[7,4],[7,4],[7,4],[7,3],[7,3],[7,2],[19,4],[19,3],[19,1],[19,2],[20,2],[20,1]],
 performAction: function anonymous(yytext, yyleng, yylineno, yy, yystate /* action[1] */, $$ /* vstack */, _$ /* lstack */) {
 /* this == yyval */
 
 var $0 = $$.length - 1;
 switch (yystate) {
 case 1:
-/*$$[$0-2][0].printTest(0);console.log($$[$0-2][0].getTree());*/
-                                            prod_1 = grammar_stack.pop();
-                                            prod_2 = grammar_stack.pop();
-                                            grammar_stack.push({'INI-> XML_DECLARATION ROOT EOF {﹩ = [﹩1, ﹩2]}': [prod_2, prod_1, 'EOF' ]});
-                                            //printstrack(grammar_stack, 0); //TODO: Delete is just for testing purposes
-                                            grammar_report =  getGrammarReport(grammar_stack);
-                                            cst = getCST(grammar_stack);
 
-                                            if($$[$0-2]!= null){
-                                                encoding = new Encoding($$[$0-2]);
-                                                ast = { ast: $$[$0-1], encoding: encoding, errors: errors, cst: cst, grammar_report: grammar_report};
-                                            } else{
-                                                errors.push({ tipo: "Sintáctico", error: "La codificación del XML no es válida.", origen: "XML", linea: this._$.first_line, columna: this._$.first_column+1 });
-                                                ast = { ast: $$[$0-1], encoding: null,  errors: errors, cst: cst, grammar_report: grammar_report};
-                                            }
-                                            errors = [];
-                                            return ast;
-                                            
+                                    prod_1 = grammar_stack.pop();
+                                    prod_2 = grammar_stack.pop();
+                                    grammar_stack.push({'INI-> XML_DECLARATION ROOT EOF {﹩ = [﹩1, ﹩2]}': [prod_2, prod_1, 'EOF' ]});
+                                    //printstrack(grammar_stack, 0); //TODO: Delete is just for testing purposes
+                                    grammar_report =  getGrammarReport(grammar_stack);
+                                    cst = getCST(grammar_stack);
+                                    if($$[$0-2]!= null){
+                                        encoding = new Encoding($$[$0-2]);
+                                        ast = { ast: $$[$0-1], encoding: encoding, errors: errors, cst: cst, grammar_report: grammar_report};
+                                    } else{
+                                        errors.push({ tipo: "Sintáctico", error: "La codificación del XML no es válida.", origen: "XML", linea: this._$.first_line, columna: this._$.first_column+1 });
+                                        ast = { ast: $$[$0-1], encoding: null,  errors: errors, cst: cst, grammar_report: grammar_report};
+                                    }
+                                    errors = [];
+                                    return ast;
+                                
 break;
 case 2:
-
-                                            prod_1 = grammar_stack.pop();
-                                            grammar_stack.push({'INI -> XML_DECLARATION  EOF {	errors.add(new Error()); ﹩﹩ = null;}': [prod_1, 'EOF' ]});
-                                            grammar_report =  getGrammarReport(grammar_stack);
-                                            encoding = new Encoding($$[$0-1]);
-                                            ast = { ast: null, encoding: encoding,  errors: errors, cst: null, grammar_report: grammar_report };
-                                            errors = [];
-                                            return ast;
-                                            
-break;
-case 3:
 
                                             prod_1 = grammar_stack.pop();
                                             grammar_stack.push({'INI -> ROOT EOF {	errors.add(new Error()); ﹩﹩ = null;}': [prod_1, 'EOF' ]});
@@ -16234,18 +16590,7 @@ case 3:
                                             return ast;
                                             
 break;
-case 4:
-
-                                            grammar_stack.push({'INI -> EOF {	errors.add(new Error()); ﹩﹩ = null;}': [ 'EOF']});
-                                            grammar_report =  getGrammarReport(grammar_stack);
-                                            errors.push({ tipo: "Sintáctico", error: "El archivo viene vacío.", origen: "XML", linea: _$[$0].first_line, columna: _$[$0].first_column+1 });
-
-	                                        ast = { ast: null, encoding: null,  errors: errors, cst: null, grammar_report: grammar_report }
-	                                        errors = [];
-	                                        return ast;
-	                                        
-break;
-case 5:
+case 3:
 
 	                                        grammar_stack.push({'INI -> error EOF {	errors.add(new Error()); ﹩﹩ = null;}': ['Token: error\t Lexema: ', 'EOF' ]});
                                             grammar_report =  getGrammarReport(grammar_stack);
@@ -16256,20 +16601,20 @@ case 5:
                                             return ast;
                                             
 break;
-case 6:
+case 4:
 $$[$0-1].push($$[$0]); this.$ = $$[$0-1];
                                                 prod_1 = grammar_stack.pop();
                                                 prod_2 = grammar_stack.pop();
                                                 grammar_stack.push({'ROOT -> ROOT XML {﹩﹩ = ﹩1.push(₤2);}': [prod_2, prod_1 ]});
                                                 
 break;
-case 7:
+case 5:
 this.$ = [$$[$0]];
 	                                            prod_1 = grammar_stack.pop();
 	                                            grammar_stack.push({'ROOT -> XML{﹩﹩ = []; ﹩﹩.push($$[$0]);}': [prod_1 ]});
 	                                            
 break;
-case 8:
+case 6:
 if($$[$0-1] == null || $$[$0] == null){
                                                                             this.$ = null}else{
                                                                             let str = "";
@@ -16284,34 +16629,34 @@ if($$[$0-1] == null || $$[$0] == null){
                                                                            grammar_stack.push({'XML_DECLARATION -> tk_open_declaration ATTRIBUTE_LIST XML_CLOSE_DECLARATION {﹩﹩ = ﹩2}': ['Token: tk_open_declaration\t Lexema: ' + '&lt;?', prod_2, prod_3]} );
                                                                            
 break;
-case 9:
+case 7:
   this.$ = "?>"
                                                 grammar_stack.push({'XML_CLOSE_DECLARATION -> tk_close_delcaraton { ﹩﹩= ﹩1}': ['Token: tk_close_delcaraton\t Lexema: ' + '?&gt;']});
                                                 
 break;
-case 10:
+case 8:
 this.$ = null;
                                                  errors.push({ tipo: "Sintáctico", error: "Se esperaba token /", origen: "XML", linea: _$[$0].first_line, columna: _$[$0].first_column+1 });
                                                 grammar_stack.push({'XML_CLOSE_DECLARATION -> tk_close {errors.add(new Error()); ﹩﹩ = null;}': ['Token: tk_close\t Lexema: ' + '&gt;']});
                                                 
 break;
-case 11:
+case 9:
  this.$ = null;
                                                  errors.push({ tipo: "Sintáctico", error: "Token no esperado. " + $$[$0-1], origen: "XML", linea: _$[$0-1].first_line, columna: _$[$0-1].first_column+1 });
                                                  grammar_stack.push({'XML_CLOSE_DECLARATION -> error tk_close {	errors.add(new Error()); ﹩﹩ = null;}': ['Token: error\t Lexema: ' + $$[$0-1], 'Token: tk_close\t Lexema: ' + '&gt;']});
                                                  
 break;
-case 12:
+case 10:
 if($$[$0] == null){this.$ = null}else if($$[$0-1] == null){this.$ = [$$[$0]]}else{$$[$0-1].push($$[$0]); this.$ = $$[$0-1]}
                                             prod_1 = grammar_stack.pop();
                                             prod_2 = grammar_stack.pop();
                                             grammar_stack.push({'ATTRIBUTE_LIST -> ATTRIBUTE_LIST ATTRIBUTE {if(﹩1 == null){﹩﹩=[]; ﹩﹩.push(﹩2)}else{﹩1.push(﹩2)}}': [ prod_2, prod_1 ] });
                                           
 break;
-case 13:
+case 11:
 this.$ = null;             grammar_stack.push({'ATTRIBUTE_LIST -> Empty {﹩﹩ = null}': ['EMPTY'] });      
 break;
-case 14:
+case 12:
 attr = new Atributo($$[$0-1].slice(0, -1), $$[$0].slice(1,-1), this._$.first_line, this._$.first_column+1);
                                             attr.Cst= `<li><a href=''>ATTRIBUTE</a>
                                             <ul>
@@ -16323,37 +16668,37 @@ attr = new Atributo($$[$0-1].slice(0, -1), $$[$0].slice(1,-1), this._$.first_lin
                                             grammar_stack.push({'ATTRIBUTE -> tk_attribute_name tk_string {	﹩﹩ = new Attribute(﹩1, ﹩2)}': ['Token: tk_attribute_name\t Lexema: ' + $$[$0-1], 'Token: tk_string\t Lexema: ' + $$[$0] ]});
                                             
 break;
-case 15:
+case 13:
  this.$ = null;
                                             errors.push({ tipo: "Sintáctico", error: "Se esperaba un atributo despues de =.", origen: "XML", linea: _$[$0].first_line, columna: _$[$0].first_column+1 });
                                             grammar_stack.push({'ATTRIBUTE -> tk_attribute_name {errors.add(new Error()); ﹩﹩ = null;}':['Token: tk_attribute_name\t Lexema: ' + $$[$0]]});
                                             
 break;
-case 16:
+case 14:
  this.$ = null;
                                             errors.push({ tipo: "Sintáctico", error: "Se esperaba un nombre para atributo antes de =.", origen: "XML", linea: _$[$0-1].first_line, columna: _$[$0-1].first_column+1 });
                                             grammar_stack.push({'ATTRIBUTE -> tk_equal tk_string {errors.add(new Error()); ﹩﹩ = null;}':['Token: tk_equal\t Lexema: ' + $$[$0-1], 'Token: tk_string\t Lexema: ' + $$[$0]]});
                                             
 break;
-case 17:
+case 15:
  this.$ = null;
                                             errors.push({ tipo: "Sintáctico", error: "Se esperaba signo =", origen: "XML", linea: _$[$0].first_line, columna: _$[$0].first_column+1 });
                                             grammar_stack.push({'ATTRIBUTE -> tk_tag_name {	errors.add(new Error()); ﹩﹩ = null;}':['Token: tk_tag_name\t Lexema: ' + $$[$0]]});
                                             
 break;
-case 18:
+case 16:
  this.$ = null;
                                             errors.push({ tipo: "Lexico", error: "Nombre del atributo no puede empezar con dígitos.", origen: "XML", linea: _$[$0-1].first_line, columna: _$[$0-1].first_column+1 });
                                             grammar_stack.push({'ATTRIBUTE -> cadena_err tk_string {errors.add(new Error()); ﹩﹩ = null;}':['Token: cadena_err\t Lexema: ' + $$[$0-1], 'Token: tk_string\t Lexema: ' + $$[$0]]});
                                             
 break;
-case 19:
+case 17:
  this.$ = null;
                                             errors.push({ tipo: "Lexico", error: "Nombre del atributo no puede empezar con dígitos, y debe tener signo = y atributo a continuación.", origen: "XML", linea: _$[$0].first_line, columna: _$[$0].first_column+1 });
                                             grammar_stack.push({'ATTRIBUTE -> cadena_err {	errors.add(new Error()); ﹩﹩ = null;}':['Token: cadena_err\t Lexema: ' + $$[$0]]});
                                             
 break;
-case 20:
+case 18:
 if($$[$0-4] != null){  $$[$0-4].Children = $$[$0-3]; $$[$0-4].Close = $$[$0-1]; this.$ = $$[$0-4];
                                                                                 let hasConflict = $$[$0-4].verificateNames();
                                                                                 if(hasConflict === "") {
@@ -16374,7 +16719,7 @@ if($$[$0-4] != null){  $$[$0-4].Children = $$[$0-3]; $$[$0-4].Close = $$[$0-1]; 
                                                                                  grammar_stack.push({'XML-> XML_OPEN CHILDREN tk_open_end_tag tk_tag_name tk_close {﹩﹩ = ﹩1; ﹩1.children = ﹩2}':[prod_2, prod_1, 'Token: tk_open_end_tag\t Lexema: ' + '&lt;/', 'Token: tk_tag_name\t Lexema: ' + $$[$0-1], 'Token: tk_close\t Lexema: ' + '&gt;']});
                                                                                  
 break;
-case 21:
+case 19:
 if($$[$0-4] != null){$$[$0-4].Value = $$[$0-3]; $$[$0-4].Close = $$[$0-1];  this.$ = $$[$0-4];
                                                                                 let hasConflict = $$[$0-4].verificateNames();
                                                                                 if(hasConflict !== ""){
@@ -16386,14 +16731,14 @@ if($$[$0-4] != null){$$[$0-4].Value = $$[$0-3]; $$[$0-4].Close = $$[$0-1];  this
 	                                                                             grammar_stack.push({'XML -> XML_OPEN tk_content tk_open_end_tag tk_tag_name tk_close {﹩﹩ = ﹩1; ﹩﹩.content = ﹩2}':[prod_1, 'Token: tk_content\t Lexema: ' + $$[$0-3], 'Token: tk_open_end_tag\t Lexema: ' + '&lt;/', 'Token: tk_tag_name\t Lexema: ' + $$[$0-1], 'Token: tk_close\t Lexema: ' + '&gt;']});
 	                                                                             
 break;
-case 22:
+case 20:
 this.$ = new Element($$[$0-3], $$[$0-2], null, null, _$[$0-4].first_line, _$[$0-4].first_column+1, null);
 
                                                                                 prod_1 = grammar_stack.pop();
                                                                                 grammar_stack.push({'XML -> tk_open tk_tag_name ATTRIBUTE_LIST tk_bar tk_close {﹩﹩ = new Element(); ﹩﹩.attributes = ﹩3}':['Token: tk_open\t Lexema: ' + '&lt;', 'Token: tk_tag_name\t Lexema: ' + $$[$0-3], prod_1, 'Token: tk_bar\t Lexema: ' + $$[$0-1], 'Token: tk_close\t Lexema: ' + '&gt;']});
 	                                                                            
 break;
-case 23:
+case 21:
 if($$[$0-3] != null){$$[$0-3].Close = $$[$0-1]; this.$ = $$[$0-3];
 	                                                                            let hasConflict = $$[$0-3].verificateNames();
 	                                                                             if(hasConflict !== ""){
@@ -16406,7 +16751,7 @@ if($$[$0-3] != null){$$[$0-3].Close = $$[$0-1]; this.$ = $$[$0-3];
 	                                                                            grammar_stack.push({'XML -> XML_OPEN tk_open_end_tag tk_tag_name tk_close {	﹩﹩ = ﹩1;}':[prod_1, 'Token: tk_open_end_tag\t Lexema: ' + '&lt;/', 'Token: tk_tag_name\t Lexema: ' + $$[$0-1], 'Token: tk_close\t Lexema: '  + '&gt;']});
 	                                                                            
 break;
-case 24:
+case 22:
 this.$ =null;
                                                                                 errors.push({ tipo: "Sintáctico", error: "Falta etiqueta de cierre \">\". ", origen: "XML", linea: _$[$0].first_line, columna: _$[$0].first_column+1 });
 
@@ -16414,7 +16759,7 @@ this.$ =null;
 	                                                                            grammar_stack.push({'XML -> XML_OPEN tk_open_end_tag tk_tag_name {errors.add(new Error()); ﹩﹩ = null;}':[prod_1, 'Token: tk_open_end_tag\t Lexema: ' + '&lt;/', 'Token: tk_tag_name\t Lexema: '  + $$[$0]]});
 	                                                                            
 break;
-case 25:
+case 23:
 this.$ =null;
                                                                                 errors.push({ tipo: "Sintáctico", error: "Se esperaba un identificador. ", origen: "XML", linea: _$[$0-1].first_line, columna: _$[$0-1].first_column+1 });
 
@@ -16422,7 +16767,7 @@ this.$ =null;
 	                                                                            grammar_stack.push({'XML -> XML_OPEN tk_open_end_tag  tk_close {errors.add(new Error()); ﹩﹩ = null;}':[prod_1, 'Token: tk_open_end_tag\t Lexema: ' + '&lt;/',  'Token: tk_close\t Lexema: ' + '&gt;']});
 	                                                                            
 break;
-case 26:
+case 24:
 this.$ =null;
                                                                                 errors.push({ tipo: "Sintáctico", error: "Falta etiqueta de cierre \">\". ", origen: "XML", linea: _$[$0].first_line, columna: _$[$0].first_column+1 });
 
@@ -16430,7 +16775,7 @@ this.$ =null;
 	                                                                            grammar_stack.push({'XML -> XML_OPEN tk_content tk_open_end_tag tk_tag_name {errors.add(new Error()); ﹩﹩ = null;}':[prod_1, 'Token: tk_content\t Lexema: ' + $$[$0-2], 'Token: tk_open_end_tag\t Lexema: ' + '&lt;/', 'Token: tk_tag_name\t Lexema: ' + $$[$0]]});
 	                                                                            
 break;
-case 27:
+case 25:
 this.$ =null;
                                                                                 errors.push({ tipo: "Sintáctico", error: "Se esperaba un identificador. ", origen: "XML", linea: _$[$0-1].first_line, columna: _$[$0-1].first_column+1 });
 
@@ -16438,7 +16783,7 @@ this.$ =null;
                                                                                 grammar_stack.push({'XML -> XML_OPEN tk_content tk_open_end_tag  tk_close {errors.add(new Error()); ﹩﹩ = null;}':[prod_1, 'Token: tk_content\t Lexema: ' + $$[$0-2], 'Token: tk_open_end_tag\t Lexema: ' + '&lt;/',  'Token: tk_close\t Lexema: ' + $$[$0]  ]});
                                                                             	
 break;
-case 28:
+case 26:
 this.$ =null;
                                                                                 errors.push({ tipo: "Sintáctico", error: "Se esperaba etiqueta de cierre. ", origen: "XML", linea: _$[$0-4].first_line, columna: _$[$0-4].first_column+1 });
 
@@ -16447,7 +16792,7 @@ this.$ =null;
 	                                                                            grammar_stack.push({'XML -> XML_OPEN tk_content  tk_open tk_tag_name ATTRIBUTE_LIST tk_close {errors.add(new Error()); ﹩﹩ = null;}':[prod_2, 'Token: tk_content\t Lexema: ' + $$[$0-4],  'Token: tk_open\t Lexema: ' + '&lt;', 'Token: tk_tag_name\t Lexema: ' + $$[$0-2], prod_1, 'Token: tk_close\t Lexema: ' + '&gt;']});
 	                                                                            
 break;
-case 29:
+case 27:
 this.$ =null;
 	                                                                            errors.push({ tipo: "Sintáctico", error: "Falta etiqueta de cierre \">\". ", origen: "XML", linea: _$[$0].first_line, columna: _$[$0].first_column+1 });
 
@@ -16456,7 +16801,7 @@ this.$ =null;
 	                                                                            grammar_stack.push({'XML -> XML_OPEN CHILDREN tk_open_end_tag tk_tag_name {errors.add(new Error()); ﹩﹩ = null;}':[prod_2, prod_1, 'Token: tk_open_end_tag\t Lexema: ' + '&lt;/', 'Token: tk_tag_name\t Lexema: ' + $$[$0]]});
 	                                                                            
 break;
-case 30:
+case 28:
 this.$ =null;
 	                                                                            errors.push({ tipo: "Sintáctico", error: "Se esperaba un identificador.", origen: "XML", linea: _$[$0-1].first_line, columna: _$[$0-1].first_column+1 });
 
@@ -16465,42 +16810,42 @@ this.$ =null;
 	                                                                            grammar_stack.push({'XML -> XML_OPEN CHILDREN tk_open_end_tag  tk_close {errors.add(new Error()); ﹩﹩ = null;}':[prod_2, prod_1, 'Token: tk_open_end_tag\t Lexema: ' + '&lt;/',  'Token: tk_close\t Lexema: '  + '&gt;']});
 	                                                                            
 break;
-case 31:
+case 29:
 this.$ =null;
 	                                                                        errors.push({ tipo: "Sintáctico", error: "Token no esperado " + $$[$0-3], origen: "XML", linea: _$[$0-3].first_line, columna: _$[$0-3].first_column+1 });
 
                                                                              grammar_stack.push({'XML -> error tk_open_end_tag tk_tag_name tk_close {errors.add(new Error()); ﹩﹩ = null;}':['Token: error\t Lexema: ' + $$[$0-3], 'Token: tk_open_end_tag\t Lexema: ' + '&lt;/', 'Token: tk_tag_name\t Lexema: ' + $$[$0-1], 'Token: tk_close\t Lexema: '  + '&gt;']});
                                                                              
 break;
-case 32:
+case 30:
 this.$ =null;
     	                                                                    errors.push({ tipo: "Sintáctico", error: "Token no esperado " + $$[$0-2], origen: "XML", linea: _$[$0-2].first_line, columna: _$[$0-2].first_column+1 });
 
                                                                             grammar_stack.push({'XML -> error tk_open_end_tag tk_tag_name {errors.add(new Error()); ﹩﹩ = null;}':['Token: error\t Lexema: ' + $$[$0-2], 'Token: tk_open_end_tag\t Lexema: ' + '&lt;/', 'Token: tk_tag_name\t Lexema: ' + $$[$0]]});
                                                                             
 break;
-case 33:
+case 31:
 this.$ =null;
 	                                                                        errors.push({ tipo: "Sintáctico", error: "Token no esperado " + $$[$0-2], origen: "XML", linea: _$[$0-2].first_line, columna: _$[$0-2].first_column+1 });
 
 	                                                                        grammar_stack.push({'XML -> error tk_bar tk_close {errors.add(new Error()); ﹩﹩ = null;}':['Token: error\t Lexema: ' + $$[$0-2], 'Token: tk_bar\t Lexema: ' + $$[$0-1], 'Token: tk_close\t Lexema: ' + '&gt;']});
 	                                                                        
 break;
-case 34:
+case 32:
 this.$ =null;
 	                                                                        errors.push({ tipo: "Sintáctico", error: "Token no esperado " + $$[$0-1], origen: "XML", linea: _$[$0-1].first_line, columna: _$[$0-1].first_column+1 });
 
 	                                                                        grammar_stack.push({'XML -> error  tk_close {errors.add(new Error()); ﹩﹩ = null;}':['Token: error\t Lexema: ' + $$[$0-1],  'Token: tk_close\t Lexema: ' + '&gt;']});
 	                                                                        
 break;
-case 35:
+case 33:
  this.$ = new Element($$[$0-2], $$[$0-1], null, null,  _$[$0-3].first_line,  _$[$0-3].first_column+1);
 
                                                         prod_1 = grammar_stack.pop();
                                                         grammar_stack.push({'XML_OPEN -> tk_open tk_tag_name ATTRIBUTE_LIST tk_close {﹩﹩ = new Element(); ﹩﹩.attributes = ﹩3}':['Token: tk_open\t Lexema: ' + '&lt;', 'Token: tk_tag_name\t Lexema: ' + $$[$0-2], prod_1, 'Token: tk_close\t Lexema: ' + '&gt;']});
                                                          
 break;
-case 36:
+case 34:
 
                                                         this.$ = null;
                                                         errors.push({ tipo: "Sintáctico", error: "Se esperaba \">\" despues de la cadena de atributos.", origen: "XML", linea: _$[$0].first_line, columna: _$[$0].first_column+1 });
@@ -16509,26 +16854,26 @@ case 36:
                                                         grammar_stack.push({'XML_OPEN -> tk_open tk_tag_name ATTRIBUTE_LIST {errors.add(new Error()); ﹩﹩ = null;}':['Token: tk_open\t Lexema: ' + '&lt;', 'Token: tk_tag_name\t Lexema: ' + $$[$0-1], prod_1]});
                                                         
 break;
-case 37:
+case 35:
  this.$ = null;
                                                         errors.push({ tipo: "Sintáctico", error: "", origen: "XML", linea: _$[$0].first_line, columna: _$[$0].first_column+1 });
                                                         grammar_stack.push({'XML_OPEN -> tk_open {errors.add(new Error()); ﹩﹩ = null;}':['Token: tk_open\t Lexema: ' + '&lt;']});
                                                         
 break;
-case 38:
+case 36:
  this.$ = null;
                                                          errors.push({ tipo: "Sintáctico", error: "Se esperaba un identificador para la etiqueta", origen: "XML", linea: _$[$0-1].first_line, columna: _$[$0-1].first_column+1 });
                                                          grammar_stack.push({'XML_OPEN -> tk_open tk_close {errors.add(new Error()); ﹩﹩ = null;}':['Token: tk_open\t Lexema: ' + '&lt;', 'Token: tk_close\t Lexema: ' + '&gt;']});
                                                          
 break;
-case 39:
+case 37:
 if($$[$0-1] != null && $$[$0] != null){ $$[$0-1].push($$[$0]); this.$ = $$[$0-1]; } else{this.$ = null;}
                                                             prod_1 = grammar_stack.pop();
                                                             prod_2 = grammar_stack.pop();
                                                              grammar_stack.push({'CHILDREN -> CHILDREN XML {﹩1.push(﹩2); ﹩﹩ = $$[$0-1];}':[prod_2,  prod_1]});
                                                             
 break;
-case 40:
+case 38:
  if($$[$0]!=null ){this.$ = [$$[$0]];}else{this.$ = null;}
 	                                                        prod_1 = grammar_stack.pop();
                                                             grammar_stack.push({'CHILDREN -> XML {﹩﹩ = [﹩1]}':[prod_1]});
@@ -16536,8 +16881,8 @@ case 40:
 break;
 }
 },
-table: [{2:[1,5],3:1,4:2,5:3,6:[1,4],7:7,8:[1,6],19:8,23:$V0},{1:[3]},{2:$V1,5:10,6:[1,11],7:7,19:8,23:$V0},{2:$V1,6:[1,13],7:14,19:8,23:$V0},{1:[2,4]},{6:[1,15],12:$V2,21:$V3,24:$V4},o([2,11,12,14,16,17,18],$V5,{9:19}),o($V6,[2,7]),{2:$V1,7:23,19:8,20:20,21:[1,22],22:[1,21],23:$V0},o($V7,[2,37],{12:[1,25],17:[1,24]}),{2:$V1,6:[1,26],7:14,19:8,23:$V0},{1:[2,2]},{12:$V2,21:$V3,24:$V4},{1:[2,3]},o($V6,[2,6]),{1:[2,5]},{17:[1,27]},{12:[1,28]},o($V8,[2,34]),{2:[1,33],10:29,11:[1,31],12:[1,32],13:30,14:$V9,16:$Va,17:$Vb,18:$Vc},{2:$V1,7:39,19:8,21:[1,38],23:$V0},{21:[1,40],23:[1,41]},{12:[1,43],17:[1,42]},o($Vd,[2,40]),o([2,12,14,16,17,18,21,22,23,24],$V5,{9:44}),o($V7,[2,38]),{1:[2,1]},o($V8,[2,32],{12:[1,45]}),o($V8,[2,33]),o($V6,[2,8]),o($Ve,[2,12]),o($V6,[2,9]),o($V6,[2,10]),{12:[1,46]},o($Ve,[2,15],{15:[1,47]}),{15:[1,48]},o($Ve,[2,17]),o($Ve,[2,19],{15:[1,49]}),{12:[1,51],17:[1,50]},o($Vd,[2,39]),{12:[1,53],17:[1,52]},{17:[1,54]},o($V8,[2,24],{12:[1,55]}),o($V8,[2,25]),o($V7,[2,36],{13:30,12:[1,57],14:$V9,16:$Va,17:$Vb,18:$Vc,24:[1,56]}),o($V8,[2,31]),o($V6,[2,11]),o($Ve,[2,14]),o($Ve,[2,16]),o($Ve,[2,18]),o($V8,[2,29],{12:[1,58]}),o($V8,[2,30]),o($V8,[2,26],{12:[1,59]}),o($V8,[2,27]),o([12,14,16,17,18],$V5,{9:60}),o($V8,[2,23]),{12:[1,61]},o($V7,[2,35]),o($V8,[2,20]),o($V8,[2,21]),{12:[1,62],13:30,14:$V9,16:$Va,17:$Vb,18:$Vc},o($V8,[2,22]),o($V8,[2,28])],
-defaultActions: {4:[2,4],11:[2,2],13:[2,3],15:[2,5],26:[2,1]},
+table: [{2:[1,4],3:1,4:2,5:3,7:6,8:[1,5],19:7,23:$V0},{1:[3]},{2:$V1,5:9,7:6,19:7,23:$V0},{2:$V1,6:[1,11],7:12,19:7,23:$V0},{6:[1,13],12:$V2,21:$V3,24:$V4},o([2,11,12,14,16,17,18],$V5,{9:17}),o($V6,[2,5]),{2:$V1,7:21,19:7,20:18,21:[1,20],22:[1,19],23:$V0},o($V7,[2,35],{12:[1,23],17:[1,22]}),{2:$V1,6:[1,24],7:12,19:7,23:$V0},{12:$V2,21:$V3,24:$V4},{1:[2,2]},o($V6,[2,4]),{1:[2,3]},{17:[1,25]},{12:[1,26]},o($V8,[2,32]),{2:[1,31],10:27,11:[1,29],12:[1,30],13:28,14:$V9,16:$Va,17:$Vb,18:$Vc},{2:$V1,7:37,19:7,21:[1,36],23:$V0},{21:[1,38],23:[1,39]},{12:[1,41],17:[1,40]},o($Vd,[2,38]),o([2,12,14,16,17,18,21,22,23,24],$V5,{9:42}),o($V7,[2,36]),{1:[2,1]},o($V8,[2,30],{12:[1,43]}),o($V8,[2,31]),o($Ve,[2,6]),o($Vf,[2,10]),o($Ve,[2,7]),o($Ve,[2,8]),{12:[1,44]},o($Vf,[2,13],{15:[1,45]}),{15:[1,46]},o($Vf,[2,15]),o($Vf,[2,17],{15:[1,47]}),{12:[1,49],17:[1,48]},o($Vd,[2,37]),{12:[1,51],17:[1,50]},{17:[1,52]},o($V8,[2,22],{12:[1,53]}),o($V8,$Ve),o($V7,[2,34],{13:28,12:[1,55],14:$V9,16:$Va,17:$Vb,18:$Vc,24:[1,54]}),o($V8,[2,29]),o($Ve,[2,9]),o($Vf,[2,12]),o($Vf,[2,14]),o($Vf,[2,16]),o($V8,[2,27],{12:[1,56]}),o($V8,[2,28]),o($V8,[2,24],{12:[1,57]}),o($V8,[2,25]),o([12,14,16,17,18],$V5,{9:58}),o($V8,[2,21]),{12:[1,59]},o($V7,[2,33]),o($V8,[2,18]),o($V8,[2,19]),{12:[1,60],13:28,14:$V9,16:$Va,17:$Vb,18:$Vc},o($V8,[2,20]),o($V8,[2,26])],
+defaultActions: {11:[2,2],13:[2,3],24:[2,1]},
 parseError: function parseError (str, hash) {
     if (hash.recoverable) {
         this.trace(str);
@@ -17987,10 +18332,11 @@ class OptiSintactico {
     //converti el metodo en funcion para que devolviera algo
     static optimizarC3D(texto, arbol) {
         let optimizador = new Optimizador_1.Optimizador();
-        optimizador.inicializar();
+        optimizador.inicializar(); //salida = codigo optimizado // reportar
         let salida = optimizador.optimizar(texto, arbol);
-        optimizador.reportar();
-        return salida;
+        let reporteHTML = optimizador.reportar();
+        let arreglo = [salida, reporteHTML];
+        return arreglo;
     }
 }
 exports.OptiSintactico = OptiSintactico;
@@ -18248,15 +18594,19 @@ class ReporteOptimizacion {
     esVacio() {
         return this.reporte.length == 0;
     }
+    retornarstrig() {
+        return;
+    }
     //CREAR METODO PARA GENERAR EL REPORTE DE OPTIMIZACION
     generarReporteOptimizacion() {
-        let css = this.estiloTabla();
-        this.generarArchivoEstiloTabla(css);
+        this.css = this.estiloTabla();
         let html = this.escribirTablaOptimizacion();
         this.generarArchivoOptimizacion(html);
+        return this.htmlg;
     }
     estiloTabla() {
-        let css = "body {background-color: #d0efb141;font-family: calibri, Helvetica, Arial;}\n";
+        let css;
+        css = "body {background-color: #d0efb141;font-family: calibri, Helvetica, Arial;}\n";
         css += "h1 {text-align: center;font-size: 100px;}\n";
         css += "table {width: 100%;border-collapse: collapse;font-size: 25px;font-weight: bold;}\n";
         css += "table td, table th, table caption {border: 0px dashed #77A6B6;padding: 10px;}\n";
@@ -18269,7 +18619,7 @@ class ReporteOptimizacion {
     }
     escribirTablaOptimizacion() {
         let html = "<!Doctype html>\n<html lang=\"es-Es\">\n<head>\n";
-        html += "<link rel=\"stylesheet\" href=\"estiloTabla.css\">\n";
+        html += "<style>\n" + this.css + "\n</style>\n";
         html += "<title>Reporte Optimizacion</title>\n</head>\n<body>\n<h1><center>Reporte de Optimización</center></h1>\n<table style=\"margin: 0 auto;\">\n";
         html += "<thead>\n<tr>\n<th>Tipo</th>\n<th>Regla</th>\n<th>Código eliminado</th>\n<th>Código agregado</th>\n<th>Fila</th>\n</tr>\n</thead>\n<tbody>\n";
         //RECORRERMOS EL REPORTE
@@ -18283,13 +18633,8 @@ class ReporteOptimizacion {
             html += "</tr>\n";
         });
         html += "</tbody>\n</table>\n</body>\n</html>";
+        this.htmlg = html;
         return html;
-    }
-    generarArchivoEstiloTabla(css) {
-        // TextWriter archivo;
-        // archivo = new StreamWriter("C:\\compiladores2\\estiloTabla.css");
-        // archivo.WriteLine(css);
-        // archivo.Close();
     }
     generarArchivoOptimizacion(html) {
         // TextWriter archivo;
@@ -18663,8 +19008,11 @@ function menorigual(_opIzq, _opDer, _exp) {
     };
 }
 function igual(_opIzq, _opDer, _exp) {
-    if (_exp === Enum_1.Tipos.BOOLEANO)
-        return [{ valor: (_opIzq.valor == _opDer.valor), tipo: _exp }];
+    if (_exp === Enum_1.Tipos.BOOLEANO) {
+        let e1 = Array.isArray(_opIzq) ? _opIzq[0].valor : _opIzq.valor;
+        let e2 = Array.isArray(_opDer) ? _opDer[0].valor : _opDer.valor;
+        return [{ valor: (e1 === e2), tipo: _exp }];
+    }
     if (_opIzq.tipo === Enum_1.Tipos.ELEMENTOS)
         return { e1: _opIzq, e2: _opDer, tipo: Enum_1.Tipos.ELEMENTOS, desigualdad: Enum_1.Tipos.RELACIONAL_IGUAL };
     if (_opIzq.tipo === Enum_1.Tipos.FUNCION_POSITION || _opDer.tipo === Enum_1.Tipos.FUNCION_POSITION)
@@ -18678,8 +19026,11 @@ function igual(_opIzq, _opDer, _exp) {
     return { e1: _opIzq, e2: _opDer, tipo: Enum_1.Tipos.ELEMENTOS, desigualdad: Enum_1.Tipos.RELACIONAL_IGUAL };
 }
 function diferente(_opIzq, _opDer, _exp) {
-    if (_exp === Enum_1.Tipos.BOOLEANO)
-        return [{ valor: (_opIzq.valor != _opDer.valor), tipo: _exp }];
+    if (_exp === Enum_1.Tipos.BOOLEANO) {
+        let e1 = Array.isArray(_opIzq) ? _opIzq[0].valor : _opIzq.valor;
+        let e2 = Array.isArray(_opDer) ? _opDer[0].valor : _opDer.valor;
+        return [{ valor: (e1 !== e2), tipo: _exp }];
+    }
     if (_opIzq.tipo === Enum_1.Tipos.ELEMENTOS)
         return { e1: _opIzq, e2: _opDer, tipo: Enum_1.Tipos.ELEMENTOS, desigualdad: Enum_1.Tipos.RELACIONAL_DIFERENTE };
     if (_opIzq.tipo === Enum_1.Tipos.FUNCION_POSITION || _opDer.tipo === Enum_1.Tipos.FUNCION_POSITION)
