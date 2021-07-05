@@ -85,7 +85,7 @@ const main = ()=>{
 
     let xQueryTranslator = new XQueryTranslator(ast_xquery, ast_xml.ast[0]);
     xQueryTranslator.translate();
-    let code = xQueryTranslator.getCode();
+    let code = xQueryTranslator.getCode ();
 
     fs.writeFile('test/files/main.c', code, (err) => {
         // throws an error, you could also catch it here
