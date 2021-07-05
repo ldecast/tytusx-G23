@@ -3,7 +3,7 @@ import {Element} from "../model/xml/Element";
 
 
 enum FOR_TYPE{
-    SELECT_FROM_CURRENT, SELECT_FROM_ROOT,EXPRESION
+    SELECT_FROM_CURRENT, SELECT_FROM_ROOT,EXPRESION, SELECT_AXIS
 }
 
 export class XQueryTranslator {
@@ -74,6 +74,7 @@ export class XQueryTranslator {
 
 
     private  FOR_LOOP(obj: object, env: Environment): void{
+        console.log(obj)
         if(this.debug){console.log("FOR_LOOP" + (this.show_obj? "\n"+obj:""));}
         for (let i:number = 0; i < obj['cuerpo'].length; i++){
             switch (obj['cuerpo'][i]['tipo']) {
@@ -106,7 +107,7 @@ export class XQueryTranslator {
     }
 
     private DECLARACION(obj, env: Environment){
-        console.log(obj);
+        //console.log(obj);
         if(this.debug){console.log('DECLARATION' + (this.show_obj? "\n"+obj:""));}
         if(obj['variable'] !=null){
             env.addVariable(obj['variable']['variable']);
@@ -131,6 +132,10 @@ export class XQueryTranslator {
                     console.log('EXPRESION');
                     function_name = this.EXPRESION(obj['iterators'][i], (i ==0), function_name, FOR_TYPE.EXPRESION);
                     break;
+                case 'SELECT_AXIS':
+                    console.log('SELECT_AXIS');
+                    function_name = this.EXPRESION(obj['iterators'][i], (i ==0), function_name, FOR_TYPE.SELECT_AXIS);
+                    break;
                 case 'VALORES':
                     console.log('VALORES');
                     break;
@@ -145,33 +150,64 @@ export class XQueryTranslator {
     }
     //fromStack if its the first iteration will look on stack
     private EXPRESION(obj: object, fromStack: boolean, next_fun: string, type: FOR_TYPE): string{
-        console.log(obj)
+        //console.log(obj)
+        let func_return: string = null;
+        let predicate: Object = obj['predicate'];
+        if (predicate == null){}
         switch (obj['tipo']){
             case 'EXPRESION':
-                let func_return: string = null;
-                let predicate: Object = obj['predicate'];
-                if (predicate == null){}
-                func_return = this.expresion_(obj['expresion'], fromStack, (predicate == null?null: this.predicate(obj['predicate']) ), next_fun, type);
+                func_return = this.expresion_(obj['expresion'], fromStack, (predicate == null?null: this.predicate(obj['predicate']) ), next_fun, type, null);
                 console.log("***************************")
                 return func_return;
             case 'SELECT_AXIS':
-                //this.func_return();
-                console.log("SELECT_AXIS")
+                console.log("**************** " )
+                console.log( this.getAxisFunc(obj['axisname']))
+                func_return = this.axis_(obj['nodetest'], fromStack, (predicate == null?null: this.predicate(obj['predicate']) ), next_fun, type, this.getAxisFunc(obj['axisname']));
                 break;
 
         }
-        return "";
+        return func_return;
 
     }
 
-    private  axis_(obj: object, fromStack: boolean, predicate_f: string, next_fun: string, type: FOR_TYPE): string{
+    private  axis_ (obj: object, fromStack: boolean, predicate_f: string, next_fun: string, type: FOR_TYPE, axis: string): string{
 
-
-        return "";
+        return this.expresion_(obj['expresion'], fromStack, predicate_f, next_fun, type, axis);
+    }
+    private  getAxisFunc(Axis_type: string): string{
+        console.log(Axis_type);
+        switch (Axis_type) {
+            case 'ANCESTOR':
+                return 'AxisAncestor';
+            case 'ANCESTOR_OR_SELF':
+                return 'AxisAncestorSelf';
+            case 'AXIS_ATTRIBUTE':
+                return 'AxisAttributes';
+            case 'AXIS_CHILD':
+                return 'AxisChild';
+            case 'AXIS_DESCENDANT':
+                return 'AxisDescendant';
+            case 'AXIS_DESCENDANT_OR_SELF':
+                return 'AxisDescendantSelf';
+            case 'AXIS_FOLLOWING':
+                return 'AxisFollowing';
+            case 'AXIS_FOLLOWING_SIBLING':
+                return 'AxisFollowingSibling';
+            case 'AXIS_NAMESPACE':
+                return null;
+            case 'AXIS_PARENT':
+                return 'AxisParent';
+            case 'AXIS_PRECEDING':
+                return 'AxisPreceding';
+            case 'AXIS_PRECEDING_SIBLING':
+                return 'AxisPrecedingSibling';
+            case 'AXIS_SELF':
+                return null;
+        }
+            return null;
     }
 
-    private expresion_(obj: object, fromStack: boolean, predicate_f: string, next_fun: string, type: FOR_TYPE): string{
-        console.log(obj);
+    private expresion_(obj: object, fromStack: boolean, predicate_f: string, next_fun: string, type: FOR_TYPE, axis: string): string{
         let func_return: string = null;
         switch (obj['tipo']) {
             case 'NODENAME':
@@ -179,18 +215,18 @@ export class XQueryTranslator {
                 //console.log(obj['nodename']);
                 if (fromStack){
                     if (type == FOR_TYPE.SELECT_FROM_CURRENT || type == FOR_TYPE.EXPRESION){
-                        func_return = this.setSearchMethodFromStack(obj['nodename'], predicate_f, next_fun);
+                        func_return = this.setSearchMethodFromStack(obj['nodename'], predicate_f, next_fun, axis);
                     }else if(type == FOR_TYPE.SELECT_FROM_ROOT){
-                        func_return = this.setSearchMethodFromFirstStack(obj['nodename'], predicate_f, next_fun);
+                        func_return = this.setSearchMethodFromFirstStack(obj['nodename'], predicate_f, next_fun, axis);
                     }else{
                         console.log("Error 9");
                     }
 
                 }else{
                     if (type == FOR_TYPE.SELECT_FROM_CURRENT){
-                        func_return = this.setSearchDoubleBar(obj['nodename'], predicate_f, next_fun);
+                        func_return = this.setSearchDoubleBar(obj['nodename'], predicate_f, next_fun, axis);
                     }else if(type == FOR_TYPE.SELECT_FROM_ROOT){
-                        func_return = this.setSearchOneBar(obj['nodename'], predicate_f, next_fun);
+                        func_return = this.setSearchOneBar(obj['nodename'], predicate_f, next_fun, axis);
                     }else{
 
                     }
@@ -203,8 +239,8 @@ export class XQueryTranslator {
                 // to keep it like index*/
                 break;
             case 'SELECT_PARENT':
-                func_return = this.setSelectParent(null, predicate_f, next_fun);
-                break
+                func_return = this.setSelectParent(null, predicate_f, next_fun, axis);
+                break;
             case 'SELECT_CURRENT':
                 if(obj['expresion']=='.'){
                     //DO NOTHING
@@ -214,8 +250,15 @@ export class XQueryTranslator {
                 //console.log(obj);
                 //console.log(obj['expresion']);
                 break;
+            case 'ASTERISCO':
+                if (fromStack){
+                    func_return = this.setAsteriskRoot(null, predicate_f, next_fun, axis);
+                }else{
+                    func_return = this.setAsteriskAnyWhere(null, predicate_f, next_fun, axis);
+                }
+                break;
             default:
-                console.log("Error 6");
+                console.log("Error 6" + obj['tipo']);
                 break;
         }
         return func_return;
@@ -227,11 +270,147 @@ export class XQueryTranslator {
         //console.log(obj);
 
         let function_name: string = this.getNextFun();
+        if(obj != null ){ console.log("Predicado" + function_name);}
         return function_name;
     }
 
 
-    private setSelectParent(node_name?: string, predicate_f?: string, next_fun?: string):string{
+
+    /*ASTERISCO*/
+    private setAsteriskRoot(node_name: string, predicate_f: string, next_fun: string, axis: string):string{
+        let function_name: string = this.getNextFun();
+        this.header = this.header + `
+void ${function_name}();
+`;
+        this.code = this.code + `
+void ${function_name}(){
+    int result = HP; // sets the start of the result list
+    HEAP[(int) HP] = 0; // If no Nodes found then the list will start with 0
+    int node_index = 1; // This is pulling the root which is in the 1st pos of stack
+
+
+    label_x1:
+    if(STACK[node_index]== 0){goto label_x0;}
+    HEAP[(int) HP] = node_index;
+    HP = HP + 1;
+    node_index = node_index + 5;
+    
+    goto label_x1;
+    label_x0:
+    HEAP[(int) HP] = 0;
+    HP = HP + 1;
+    STACK_FUNC[SF] = result;
+    SF = SF + 1;
+    
+`;
+
+        if(predicate_f != null){
+            this.code = this.code + `${predicate_f}();
+            result = STACK_FUNC[SF]; 
+            `;
+        }
+
+        this.code = this.code + `SF = SF - 1;
+    STACK_FUNC[SF] = result;
+    `;
+
+        if(axis != null){
+            this.code = this.code + ` 
+            SF = SF + 1;
+            ${axis}();
+    result = STACK_FUNC[SF];
+    SF = SF - 1;
+    STACK_FUNC[SF] = 0;
+    STACK_FUNC[SF] = result;
+    
+`
+        }
+
+
+        for(let i = this.functions_Arr.length - 1; i>=0; i--){
+            //functions_Arr
+            this.code = this.code + `STACK_FUNC[SF] = result;
+`;
+            this.code = this.code +`    SF = SF + 1;
+    ${this.functions_Arr[i]}();
+    result = STACK_FUNC[SF];
+    SF = SF - 1;
+    STACK_FUNC[SF] = 0;
+    
+`;
+        }
+
+
+
+        this.code = this.code + `
+        
+        int counter = 0;
+    while(HEAP[result] != 0){
+        print_child_by_index(HEAP[result]);
+        result++;
+        counter ++;
+    }
+
+    printf("Total: %d", SF);
+        
+        
+        
+        
+        
+        
+        }`;
+        return function_name;
+    }
+
+
+    private setAsteriskAnyWhere(node_name: string, predicate_f: string, next_fun: string, axis: string):string{
+        let function_name: string = this.getNextFun();
+        this.functions_Arr.push(function_name);
+        this.header = this.header + `
+void ${function_name}();
+`;
+        this.code = this.code + `
+void ${function_name}(){
+    SF = SF + 1;
+    AxisChild();
+    int result = STACK_FUNC[SF];
+    SF = SF - 1;
+    STACK_FUNC[SF] = result;
+    SF = SF + 1;
+`;
+        if(predicate_f != null){
+            this.code = this.code + `${predicate_f}();
+            result = STACK_FUNC[SF]; 
+            `;
+        }
+
+        this.code = this.code + `SF = SF - 1;
+    STACK_FUNC[SF] = result;
+    `;
+
+        if(axis != null){
+            this.code = this.code + ` 
+            SF = SF + 1;
+            ${axis}();
+    result = STACK_FUNC[SF];
+    SF = SF - 1;
+    STACK_FUNC[SF] = 0;
+    STACK_FUNC[SF] = result;
+    
+`
+        }
+
+
+
+
+
+
+        this.code = this.code + `}`
+        return function_name;
+    }
+
+    /* .. */
+    private setSelectParent(node_name: string, predicate_f: string, next_fun: string, axis: string):string{
         let function_name: string = this.getNextFun();
         this.functions_Arr.push(function_name);
         this.header = this.header + `
@@ -265,15 +444,43 @@ void ${function_name}(){
     HP = HP + 1;
     SF = SF - 1;
     STACK_FUNC[SF] = 0;
-    STACK_FUNC[SF] = return_list;
-}
+    int result = return_list;
+    STACK_FUNC[SF] = result;
+    SF = SF + 1;
 `;
 
+        if(predicate_f != null){
+            this.code = this.code + `${predicate_f}();
+            result = STACK_FUNC[SF]; 
+            `;
+        }
+
+        this.code = this.code + `SF = SF - 1;
+    STACK_FUNC[SF] = result;
+    `;
+
+
+        if(axis != null){
+            this.code = this.code + ` 
+            SF = SF + 1;
+            ${axis}();
+    result = STACK_FUNC[SF];
+    SF = SF - 1;
+    STACK_FUNC[SF] = 0;
+    STACK_FUNC[SF] = result;
+    `
+        }
+
+        this.code = this.code + `
+    
+    
+}
+    `;
 
         return function_name;
     }
 
-    private setSearchOneBar(node_name: string, predicate_f: string, next_fun: string):string{
+    private setSearchOneBar(node_name: string, predicate_f: string, next_fun: string, axis: string):string{
         let function_name: string = this.getNextFun();
         this.functions_Arr.push(function_name);
         let var1 = this.getNextVar();
@@ -366,22 +573,42 @@ void ${function_name}(){
     SF = SF - 1;
     STACK_FUNC[SF] = 0;
     
+    int result = ${var4};
+    STACK_FUNC[SF] = result;// merged_list
     
-    STACK_FUNC[SF] = ${var4};// merged_list
-    
-}
-    
-    
-    
+    SF = SF + 1;
+`;
+        if(predicate_f != null){
+            this.code = this.code + `${predicate_f}();
+            result = STACK_FUNC[SF]; 
+            `;
+        }
+
+        this.code = this.code + `SF = SF - 1;
+    STACK_FUNC[SF] = result;
+    SF = SF + 1;
     `;
 
 
+        //axis
+        if(axis != null){
+            this.code = this.code + ` ${axis}();
+    result = STACK_FUNC[SF];
+    STACK_FUNC[SF] = 0;
+    `
+        }
 
+        this.code = this.code + `SF = SF - 1;
+    STACK_FUNC[SF] = result;
+    
+}
+    `;
 
         return function_name;
     }
 
-    private setSearchDoubleBar(node_name: string, predicate_f: string, next_fun: string):string{
+    private setSearchDoubleBar(node_name: string, predicate_f: string, next_fun: string, axis: string):string{
+        console.log("Double bar " + axis)
         let function_name: string = this.getNextFun();
         this.functions_Arr.push(function_name);
         let var1 = this.getNextVar();
@@ -545,23 +772,46 @@ this.code = this.code + `    HEAP[(int)HP] = 0;
     STACK_FUNC[SF] = ${var4};
     SF = SF + 1;
     mergeLists();
-    int merged_list = STACK_FUNC[SF];
+    int result = STACK_FUNC[SF];
     //pop result
     STACK_FUNC[SF] = 0;
     SF = SF - 1;
     STACK_FUNC[SF] = 0;
     SF = SF - 1;
     STACK_FUNC[SF] = 0;
-    STACK_FUNC[SF] = merged_list;// merged_list
-    
+    STACK_FUNC[SF] = result;// merged_list
+    SF = SF + 1;
+`;
+        if(predicate_f != null){
+            this.code = this.code + `${predicate_f}();
+            result = STACK_FUNC[SF]; 
+            `;
+        }
+
+        this.code = this.code + `SF = SF - 1;
+    STACK_FUNC[SF] = result;
+    SF = SF + 1;
+    `;
+
+
+    if(axis != null){
+        this.code = this.code + ` ${axis}();
+    result = STACK_FUNC[SF];
+    STACK_FUNC[SF] = 0;
+    `
     }
+
+    this.code = this.code + `SF = SF - 1;
+    STACK_FUNC[SF] = result;
+    
+}
     `;
 
         return function_name;
     }
 
     //Look only index 1
-    private setSearchMethodFromFirstStack(node_name: string, predicate_f: string, next_fun: string): string{
+    private setSearchMethodFromFirstStack(node_name: string, predicate_f: string, next_fun: string, axis: string): string{
         console.log("setSearchMethodFromFirstStack");
         let main_var = this.getNextVar();
         let function_name: string = this.getNextFun();
@@ -606,33 +856,46 @@ void ${function_name}(){
     HEAP[(int)HP] = 0;
     HP = HP + 1;
     //TODO Manage Predicate
-    STACK_FUNC[SF] = ${main_var};
+    int result = ${main_var};
+    STACK_FUNC[SF] = result;
     SF = SF + 1;
 `;
-
-        this.code = this.code + `   ${(predicate_f==null?"":predicate_f + '();')}
+        if(predicate_f != null){
+            this.code = this.code + `${predicate_f}();
+            result = STACK_FUNC[SF]; 
+            `;
+        }
+        this.code = this.code + `   
     SF = SF - 1;
+    STACK_FUNC[SF] = result;`
+
+
+        if(axis != null){
+
+
+        this.code = this.code +  `
+   
+    STACK_FUNC[SF] = result;
+    SF = SF + 1;
+    ${axis}();
+    result = STACK_FUNC[SF];
     STACK_FUNC[SF] = 0;
-    //TODO resolver si existe predicado obtener su valor
-    //Manage next function to call
-    int result = ${main_var};
-    //Manejar atributos
-    //Manejar Axis
+    SF = SF - 1;
+    STACK_FUNC[SF] = result;
 `;
-
-
+        }
 
 
         for(let i = this.functions_Arr.length -1; i>=0; i--){
             //functions_Arr
-            this.code = this.code + `STACK_FUNC[SF] = ${(i == this.functions_Arr.length -1 ? main_var:"result")};
+            this.code = this.code + `STACK_FUNC[SF] = result;
 `;
             this.code = this.code +`    SF = SF + 1;
     ${this.functions_Arr[i]}();
     result = STACK_FUNC[SF];
     SF = SF - 1;
     STACK_FUNC[SF] = 0;
-    
+
 `;
         }
 
@@ -665,7 +928,7 @@ void ${function_name}(){
     }
 
     //Look for all nodes
-    private setSearchMethodFromStack(node_name: string, predicate_f: string, next_fun: string): string{
+    private setSearchMethodFromStack(node_name: string, predicate_f: string, next_fun: string, axis: string): string{
         console.log("setSearchMethodFromStack")
         let main_var = this.getNextVar();
         let function_name: string = this.getNextFun();
@@ -682,7 +945,7 @@ void ${function_name}(){
 `;
         this.code = this.code + `
         /*This is the code to pull data from the stack, searches for tag ${node_name} // setSearchMethodFromStack*/
-void ${function_name}(){
+void ${function_name}(){//setSearchMethodFromStack
     STACK_FUNC[SF] = HP;
     SF = SF + 1;
 `;
@@ -732,26 +995,46 @@ void ${function_name}(){
     HEAP[(int)HP] = 0;
     HP = HP + 1;
     //Manage Predicate
-    STACK_FUNC[SF] = ${main_var};
+    int result = ${main_var};
+    STACK_FUNC[SF] = result;
     SF = SF + 1;    
 `;
 
-        this.code = this.code + `   ${(predicate_f==null?"":predicate_f + '();')}
+
+
+        if(predicate_f != null){
+            this.code = this.code + `${predicate_f}();
+            result = STACK_FUNC[SF]; 
+            `;
+        }
+        this.code = this.code + `
     SF = SF - 1;
-    STACK_FUNC[SF] = 0;
-    //TODO resolver si existe predicado obtener su valor
-    //Manage next function to call
-    int result = ${main_var};
-    //Manejar atributos
+    STACK_FUNC[SF] = result;
+    
+
     //Manejar Axis
 `;
 
+        if(axis != null){
+
+
+            this.code = this.code +  `
+   
+    STACK_FUNC[SF] = result;
+    SF = SF + 1;
+    ${axis}();
+    result = STACK_FUNC[SF];
+    STACK_FUNC[SF] = 0;
+    SF = SF - 1;
+    STACK_FUNC[SF] = result;
+`;
+        }
 
 
 
         for(let i = this.functions_Arr.length -1; i>=0; i--){
             //functions_Arr
-            this.code = this.code + `STACK_FUNC[SF] = ${(i == this.functions_Arr.length -1 ? main_var:"result")};
+            this.code = this.code + `STACK_FUNC[SF] = result;
 `;
             this.code = this.code +`    SF = SF + 1;
     ${this.functions_Arr[i]}();
@@ -761,14 +1044,6 @@ void ${function_name}(){
     
 `;
         }
-
-    this.code = this.code + ` /*STACK_FUNC[SF] = ${main_var};
-    SF = SF + 1;    
-    ${next_fun}();
-    int result = STACK_FUNC[SF];
-    SF = SF - 1;
-    STACK_FUNC[SF] = 0;*/
-`;
 
 
 
@@ -1334,6 +1609,291 @@ void addItemToList(){
     label_x1:
     ;
 }
+
+
+
+
+
+
+
+
+
+
+
+void AxisParent(){
+    int t0 = SF - 1;
+    int pointers_list = STACK_FUNC[t0];//List in HEAP to pointers on STACK
+    int return_list = HP;
+    STACK_FUNC[SF] = return_list;
+    SF = SF + 1;
+    int node = HEAP[pointers_list];
+    label_x2:
+    if(node == 0){goto label_x1;}
+    if(node == -1){goto label_x0;}
+    int t1 = node + 4;
+    int father = STACK[t1];
+    STACK_FUNC[SF] = father;
+    SF = SF + 1;
+    addItemToList();
+    SF = SF - 1;
+    STACK_FUNC[SF] = 0;
+    label_x0:
+    pointers_list++;
+    node = HEAP[pointers_list];
+    goto label_x2;
+    label_x1:
+    HEAP[(int) HP] = 0;
+    HP = HP + 1;
+    SF = SF - 1;
+    STACK_FUNC[SF] = 0;
+    STACK_FUNC[SF] = return_list;
+}
+
+void AxisAncestor(){
+
+    int t0 = SF - 1;
+    int pointers_list = STACK_FUNC[t0];//List in HEAP to pointers on STACK
+    int return_list = HP;
+    HEAP[(int)HP] = 0;
+    STACK_FUNC[SF] = return_list;
+    SF = SF + 1;
+    int node = HEAP[pointers_list];
+    label_x2:
+    if(node == 0){goto label_x1;}
+    if(node == -1){goto label_x0;}
+    int t1 = node + 4;
+    int father = STACK[t1];
+    STACK_FUNC[SF] = father;
+    SF = SF + 1;
+    addItemToList();
+    SF = SF - 1;
+    STACK_FUNC[SF] = 0;
+    label_x0:
+    pointers_list++;
+    node = HEAP[pointers_list];
+    goto label_x2;
+    label_x1:
+    HEAP[(int) HP] = 0;
+    HP = HP + 1;
+    SF = SF - 1;
+    STACK_FUNC[SF] = 0;
+
+
+    if(HEAP[return_list] == 0){goto label_x3;}
+    STACK_FUNC[SF] = return_list;
+    SF = SF + 1;
+    AxisAncestor();
+    int extra_list = STACK_FUNC[SF];
+    STACK_FUNC[SF] = 0;
+    SF = SF - 1;
+    STACK_FUNC[SF] = 0;
+    if(HEAP[extra_list] == 0){goto label_x3;} // si la lista esta vacia
+    //merge return_list and extra_list and assign the value to return_list
+    STACK_FUNC[SF] = return_list;
+    SF = SF + 1;
+    STACK_FUNC[SF] = extra_list;
+    SF = SF + 1;
+    mergeTwoLists();
+    return_list = STACK_FUNC[SF];
+    STACK_FUNC[SF] = 0;
+    SF = SF - 1;
+    STACK_FUNC[SF] = 0;
+    SF = SF - 1;
+    STACK_FUNC[SF] = 0;
+
+    label_x3:
+    STACK_FUNC[SF] = return_list;
+    ;
+
+
+}
+
+void AxisAncestorSelf(){
+    int t65 = SF - 1;
+    int list = STACK_FUNC[t65];
+    //Just sends through the list received
+    AxisAncestor();
+    int result = STACK_FUNC[SF];
+    STACK_FUNC[SF] = result;
+    SF = SF + 1;
+    STACK_FUNC[SF] = list;
+    SF = SF + 1;
+    mergeTwoLists();
+    list = STACK_FUNC[SF];
+    STACK_FUNC[SF] = 0;
+    SF = SF - 1;
+    STACK_FUNC[SF] = 0;
+    SF = SF - 1;
+    STACK_FUNC[SF] = 0;
+    STACK_FUNC[SF] = list;
+
+    //Add items to list which is in result.
+}
+
+void AxisChild(){
+    int t65 = SF - 1;
+    int list = STACK_FUNC[t65];
+    int result = HP;
+    HEAP[(int) HP] = 0;
+
+    int node_index = HEAP[list];
+
+    label_x1:
+    if(node_index == 0){goto label_x0;}
+    int children_index = node_index + 3;
+    int child_index = STACK[children_index];
+    if(child_index == -1) {goto label_x2;}
+
+    label_x4:
+    if(HEAP[child_index] == 0){goto label_x2;}
+    STACK_FUNC[SF] = result;
+    SF = SF + 1;
+    STACK_FUNC[SF] = HEAP[child_index];
+    SF = SF + 1;
+    addItemToList();
+    SF = SF - 1;
+    STACK_FUNC[SF] = 0;
+    SF = SF - 1;
+    STACK_FUNC[SF] = 0;
+    //print_child_by_index(HEAP[child_index]);
+    child_index++;
+    goto label_x4;
+
+
+    label_x2:
+    list++;
+    node_index = HEAP[list];
+
+    goto label_x1;
+    label_x0:
+    HEAP[(int) HP] = 0;
+    HP = HP + 1;
+    STACK_FUNC[SF] = result;
+
+
+  
+}
+
+void AxisDescendant(){
+    AxisChild();//Sends the parameter being carrrited
+    int result = STACK_FUNC[SF];
+    int second_list = result;
+    STACK_FUNC[SF] = 0;
+
+    //goto label_x0;
+
+    //while(HEAP[second_list] != 0){
+    label_x1:
+    if(HEAP[second_list] == 0){goto label_x0;}
+        STACK_FUNC[SF] = second_list;
+        SF = SF + 1;
+        AxisChild();
+        second_list = STACK_FUNC[SF];
+        STACK_FUNC[SF] = 0;
+        SF = SF - 1;
+        STACK_FUNC[SF] = 0;
+
+
+        STACK_FUNC[SF] = result;
+        SF = SF + 1;
+        STACK_FUNC[SF] = second_list;
+        SF = SF + 1;
+        mergeTwoLists();
+        result = STACK_FUNC[SF];
+        STACK_FUNC[SF] = 0;
+        SF = SF - 1;
+        STACK_FUNC[SF] = 0;
+        SF = SF - 1;
+        STACK_FUNC[SF] = 0;
+
+    //}
+    goto label_x1;
+    label_x0:
+
+    HEAP[(int) HP] = 0;
+    HP = HP + 1;
+    STACK_FUNC[SF] = result;
+}
+
+void AxisDescendantSelf(){
+    int t65 = SF - 1;
+    int list = STACK_FUNC[t65];
+    AxisDescendant();
+    int result = STACK_FUNC[SF];
+    STACK_FUNC[SF] = result;
+    SF = SF + 1;
+    STACK_FUNC[SF] = list;
+    SF = SF + 1;
+    mergeTwoLists();
+    list = STACK_FUNC[SF];
+    STACK_FUNC[SF] = 0;
+    SF = SF - 1;
+    STACK_FUNC[SF] = 0;
+    SF = SF - 1;
+    STACK_FUNC[SF] = 0;
+    STACK_FUNC[SF] = list;
+}
+
+void AxisAttributes(){}
+
+void AxisFollowing(){}
+void AxisFollowingSibling(){}
+
+void AxisPreceding(){}
+void AxisPrecedingSibling(){}
+
+void AxisSelf(){
+    //Empty
+}
+
+void mergeTwoLists(){
+    int t65 = SF - 1;
+    int list1 = STACK_FUNC[t65];
+    int t0 = SF - 2;
+    int list2 = STACK_FUNC[t0];
+    int list_result = HP;
+
+    label_x1:
+    if(HEAP[list1] == 0){ goto  label_x0;}
+        STACK_FUNC[SF] = list_result;
+        SF = SF + 1;
+        STACK_FUNC[SF] = HEAP[list1];
+        SF = SF + 1;
+        addItemToList();
+        SF = SF - 1;
+        STACK_FUNC[SF] = 0 ;
+        SF = SF - 1;
+        STACK_FUNC[SF] = 0 ;
+        list1++;
+    
+    goto label_x1;
+    label_x0:
+
+
+
+    label_x3:
+    if(HEAP[list2] == 0){goto label_x2;}
+        STACK_FUNC[SF] = list_result;
+        SF = SF + 1;
+        STACK_FUNC[SF] = HEAP[list2];
+        SF = SF + 1;
+        addItemToList();
+        SF = SF - 1;
+        STACK_FUNC[SF] = 0 ;
+        SF = SF - 1;
+        STACK_FUNC[SF] = 0 ;
+        list2++;
+    
+    goto label_x3;
+    label_x2:
+    
+    
+    HEAP[(int) HP] = 0;
+    HP = HP + 1;
+    STACK_FUNC[SF] = list_result;
+
+}
+
 
 /*************************TODELETE***************************************/
 
