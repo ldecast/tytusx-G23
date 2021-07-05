@@ -14,7 +14,7 @@ function returnQuery(_expresion: any, _ambito: Ambito, _iterators: Array<Context
     }
 
     let _str: Array<any> = pushIterators(expresion);
-    if (_expresion.tipo === Tipos.HTML) {
+    if (_expresion.tipo === Tipos.HTML && !String(_str[0]).startsWith('<')) {
         _str.unshift({ valor: '<' + _expresion.id_open + '>' })
         _str.push({ valor: '</' + _expresion.id_close + '>' })
     }

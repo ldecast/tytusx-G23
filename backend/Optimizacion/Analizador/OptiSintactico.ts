@@ -5,12 +5,15 @@ export class OptiSintactico {
 
 //converti el metodo en funcion para que devolviera algo
 
-    public static optimizarC3D(texto: string, arbol: Nodo):string {
+    public static optimizarC3D(texto: string, arbol: Nodo): Array<string> {
         let optimizador = new Optimizador();
-        optimizador.inicializar();
+        optimizador.inicializar();//salida = codigo optimizado // reportar
         let salida = optimizador.optimizar(texto, arbol);
-        optimizador.reportar();
-        return salida;
+        let reporteHTML = optimizador.reportar();
+
+        let arreglo = [salida, reporteHTML]
+
+        return arreglo;
     }
 
 }

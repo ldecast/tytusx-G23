@@ -47,12 +47,12 @@ function Bloque(_instruccion: Array<any>, _ambito: Ambito, _retorno: Contexto, i
         }
         else if (instr.tipo === Tipos.LLAMADA_FUNCION) {
             let _exec = Exec(instr, _ambito, _retorno, id);
-            if (_exec.valor) _str.push(_exec.valor);
+            if (_exec.valor !== undefined || _exec.valor !== null) _str.push(_exec.valor);
             continue;
         }
         else if (instr.tipo === Tipos.LLAMADA_NATIVA) {
             let _nativ = Nativa(instr, _ambito, _retorno, id);
-            if (_nativ.valor) _str.push(_nativ.valor);
+            if (_nativ.valor !== undefined || _nativ.valor !== null) _str.push(_nativ.valor);
             continue;
         }
         else if (instr.tipo === Tipos.IF_THEN_ELSE) {

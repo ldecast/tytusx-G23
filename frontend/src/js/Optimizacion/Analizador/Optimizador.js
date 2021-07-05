@@ -50,7 +50,7 @@ class Optimizador {
         return this.codigoOptimizado;
     }
     reportar() {
-        this.reporte.generarReporteOptimizacion();
+        return this.reporte.generarReporteOptimizacion();
     }
 }
 exports.Optimizador = Optimizador;

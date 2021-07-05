@@ -49,7 +49,16 @@ where $x/price>30
 order by $x/title
 return $x/title`;
 
-    this.traduccion = this.salida = '';
+    this.salida = `<title lang="en">Learning XML</title>
+<title lang="en">XQuery Kick Start</title>`
+
+    this.traduccion = `#include <stdio.h>
+
+int main()
+{
+  return 0;
+}
+`;
     this.simbolos = this.errores = [];
     this.fname = ['input.xml', 'query.txt', 'translation.c'];
 
@@ -156,8 +165,10 @@ return $x/title`;
         traduccion: this.traduccion, // documento XML
       }
       let data = require('../js/routes/optimizar').optimizar(x);
-      this.traduccion = data.output;
+      if (data.optimizado) this.traduccion = data.optimizado;
       this.errores = data.arreglo_errores;
+      if (data.html)
+        this.exportFile(data.html, "C3D.html");
       console.log('Data received!');
     } else
       alert("Alguna entrada se encuentra vacía. Intente de nuevo.");

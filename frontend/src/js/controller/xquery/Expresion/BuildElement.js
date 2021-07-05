@@ -11,7 +11,7 @@ function pushIterators(input) {
         if (path.notFound) {
             return [{ notFound: 'No se encontraron elementos.' }];
         }
-        if (path.valor || path.valor === 0) {
+        if (path.valor !== undefined && path.valor !== null) {
             iterators.unshift(path.valor);
         }
         if (path.cadena === Enum_1.Tipos.TEXTOS) {

@@ -14,10 +14,12 @@ function optimizar(req: any) {
         let tree = ast[1];
 
         let salida = OptiSintactico.OptiSintactico.optimizarC3D(entrada, tree);
+        console.log(salida);
 
         let output = {
             arreglo_errores: errors,
-            output: salida,
+            optimizado: salida[0],
+            html: salida[1],
             dot: graph
         }
         errors = [];
@@ -29,7 +31,7 @@ function optimizar(req: any) {
         else errors.push({ tipo: "Desconocido", error: "Error en tiempo de ejecución.", origen: "", linea: "", columna: "" });
         let output = {
             arreglo_errores: errors,
-            output: (error.message) ? String(error.message) : String(error),
+            output: req.traduccion,
             encoding: "utf-8"
         }
         errors = [];

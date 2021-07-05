@@ -45,13 +45,13 @@ function Bloque(_instruccion, _ambito, _retorno, id) {
         }
         else if (instr.tipo === Enum_1.Tipos.LLAMADA_FUNCION) {
             let _exec = Exec_1.default(instr, _ambito, _retorno, id);
-            if (_exec.valor)
+            if (_exec.valor !== undefined || _exec.valor !== null)
                 _str.push(_exec.valor);
             continue;
         }
         else if (instr.tipo === Enum_1.Tipos.LLAMADA_NATIVA) {
             let _nativ = Nativas_1.default(instr, _ambito, _retorno, id);
-            if (_nativ.valor)
+            if (_nativ.valor !== undefined || _nativ.valor !== null)
                 _str.push(_nativ.valor);
             continue;
         }

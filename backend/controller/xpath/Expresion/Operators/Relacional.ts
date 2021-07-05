@@ -226,8 +226,11 @@ function menorigual(_opIzq: any, _opDer: any, _exp?: any) {
 }
 
 function igual(_opIzq: any, _opDer: any, _exp?: any) {
-    if (_exp === Tipos.BOOLEANO)
-        return [{ valor: (_opIzq.valor == _opDer.valor), tipo: _exp }]
+    if (_exp === Tipos.BOOLEANO) {
+        let e1 = Array.isArray(_opIzq) ? _opIzq[0].valor : _opIzq.valor;
+        let e2 = Array.isArray(_opDer) ? _opDer[0].valor : _opDer.valor;
+        return [{ valor: (e1 === e2), tipo: _exp }]
+    }
     if (_opIzq.tipo === Tipos.ELEMENTOS)
         return { e1: _opIzq, e2: _opDer, tipo: Tipos.ELEMENTOS, desigualdad: Tipos.RELACIONAL_IGUAL }
     if (_opIzq.tipo === Tipos.FUNCION_POSITION || _opDer.tipo === Tipos.FUNCION_POSITION)
@@ -242,8 +245,11 @@ function igual(_opIzq: any, _opDer: any, _exp?: any) {
 }
 
 function diferente(_opIzq: any, _opDer: any, _exp?: any) {
-    if (_exp === Tipos.BOOLEANO)
-        return [{ valor: (_opIzq.valor != _opDer.valor), tipo: _exp }]
+    if (_exp === Tipos.BOOLEANO) {
+        let e1 = Array.isArray(_opIzq) ? _opIzq[0].valor : _opIzq.valor;
+        let e2 = Array.isArray(_opDer) ? _opDer[0].valor : _opDer.valor;
+        return [{ valor: (e1 !== e2), tipo: _exp }]
+    }
     if (_opIzq.tipo === Tipos.ELEMENTOS)
         return { e1: _opIzq, e2: _opDer, tipo: Tipos.ELEMENTOS, desigualdad: Tipos.RELACIONAL_DIFERENTE }
     if (_opIzq.tipo === Tipos.FUNCION_POSITION || _opDer.tipo === Tipos.FUNCION_POSITION)

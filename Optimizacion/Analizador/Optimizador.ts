@@ -57,7 +57,8 @@ export class Optimizador{
         return this.codigoOptimizado;
     }
 
-    public reportar() {
-        this.reporte.generarReporteOptimizacion();
+    public reportar(): string {
+        return this.reporte.generarReporteOptimizacion();
+
     }
 }

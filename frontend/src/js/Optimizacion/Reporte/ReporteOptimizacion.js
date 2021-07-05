@@ -14,15 +14,19 @@ class ReporteOptimizacion {
     esVacio() {
         return this.reporte.length == 0;
     }
+    retornarstrig() {
+        return;
+    }
     //CREAR METODO PARA GENERAR EL REPORTE DE OPTIMIZACION
     generarReporteOptimizacion() {
-        let css = this.estiloTabla();
-        this.generarArchivoEstiloTabla(css);
+        this.css = this.estiloTabla();
         let html = this.escribirTablaOptimizacion();
         this.generarArchivoOptimizacion(html);
+        return this.htmlg;
     }
     estiloTabla() {
-        let css = "body {background-color: #d0efb141;font-family: calibri, Helvetica, Arial;}\n";
+        let css;
+        css = "body {background-color: #d0efb141;font-family: calibri, Helvetica, Arial;}\n";
         css += "h1 {text-align: center;font-size: 100px;}\n";
         css += "table {width: 100%;border-collapse: collapse;font-size: 25px;font-weight: bold;}\n";
         css += "table td, table th, table caption {border: 0px dashed #77A6B6;padding: 10px;}\n";
@@ -35,7 +39,7 @@ class ReporteOptimizacion {
     }
     escribirTablaOptimizacion() {
         let html = "<!Doctype html>\n<html lang=\"es-Es\">\n<head>\n";
-        html += "<link rel=\"stylesheet\" href=\"estiloTabla.css\">\n";
+        html += "<style>\n" + this.css + "\n</style>\n";
         html += "<title>Reporte Optimizacion</title>\n</head>\n<body>\n<h1><center>Reporte de Optimización</center></h1>\n<table style=\"margin: 0 auto;\">\n";
         html += "<thead>\n<tr>\n<th>Tipo</th>\n<th>Regla</th>\n<th>Código eliminado</th>\n<th>Código agregado</th>\n<th>Fila</th>\n</tr>\n</thead>\n<tbody>\n";
         //RECORRERMOS EL REPORTE
@@ -49,13 +53,8 @@ class ReporteOptimizacion {
             html += "</tr>\n";
         });
         html += "</tbody>\n</table>\n</body>\n</html>";
+        this.htmlg = html;
         return html;
-    }
-    generarArchivoEstiloTabla(css) {
-        // TextWriter archivo;
-        // archivo = new StreamWriter("C:\\compiladores2\\estiloTabla.css");
-        // archivo.WriteLine(css);
-        // archivo.Close();
     }
     generarArchivoOptimizacion(html) {
         // TextWriter archivo;

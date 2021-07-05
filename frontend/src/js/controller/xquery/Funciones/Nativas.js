@@ -43,9 +43,9 @@ function Nativa(_instr, _ambito, _contexto, _id) {
                 break;
             case Enum_1.Tipos.SUBSTRING:
                 if (valores.length === 3)
-                    output = String(valores[0].valor).substring(parseInt(valores[1].valor), parseInt(valores[2].valor));
+                    output = String(valores[0].valor).substring(parseInt(valores[1].valor) - 1, parseInt(valores[2].valor) + 2);
                 else if (valores.length === 2)
-                    output = String(valores[0].valor).substring(parseInt(valores[1].valor));
+                    output = String(valores[0].valor).substring(parseInt(valores[1].valor) - 1);
                 else
                     return { error: `La cantidad de ${valores.length} parámetros no coinciden con los esperados en la función substring.`, tipo: "Semántico", origen: "XQuery", linea: _instr.linea, columna: _instr.columna };
                 tipo = Enum_1.Tipos.STRING;
@@ -61,7 +61,10 @@ function Nativa(_instr, _ambito, _contexto, _id) {
         };
     }
     catch (error) {
-        return err;
+        return {
+            valor: valores[0].valor,
+            tipo: (name === Enum_1.Tipos.TO_NUMBER) ? Enum_1.Tipos.NUMBER : Enum_1.Tipos.STRING
+        };
     }
 }
 module.exports = Nativa;

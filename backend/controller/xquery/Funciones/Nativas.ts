@@ -40,9 +40,9 @@ function Nativa(_instr: any, _ambito: Ambito, _contexto: Contexto, _id?: any) {
                 break;
             case Tipos.SUBSTRING:
                 if (valores.length === 3)
-                    output = String(valores[0].valor).substring(parseInt(valores[1].valor), parseInt(valores[2].valor));
+                    output = String(valores[0].valor).substring(parseInt(valores[1].valor) - 1, parseInt(valores[2].valor) + 2);
                 else if (valores.length === 2)
-                    output = String(valores[0].valor).substring(parseInt(valores[1].valor));
+                    output = String(valores[0].valor).substring(parseInt(valores[1].valor) - 1);
                 else return { error: `La cantidad de ${valores.length} parámetros no coinciden con los esperados en la función substring.`, tipo: "Semántico", origen: "XQuery", linea: _instr.linea, columna: _instr.columna }
                 tipo = Tipos.STRING;
                 break;
@@ -55,7 +55,10 @@ function Nativa(_instr: any, _ambito: Ambito, _contexto: Contexto, _id?: any) {
             tipo: tipo
         }
     } catch (error) {
-        return err;
+        return {
+            valor: valores[0].valor,
+            tipo: (name === Tipos.TO_NUMBER) ? Tipos.NUMBER : Tipos.STRING
+        }
     }
 
 }
