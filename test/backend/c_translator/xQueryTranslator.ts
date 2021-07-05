@@ -19,6 +19,7 @@ export class XQueryTranslator {
     public  HP:number;
     public SP:number;
     private functions_Arr: string[] = [];
+    private global_vars: string[] = [];
 
 
     constructor( public ast:object[], public root: Element) {
@@ -76,6 +77,8 @@ export class XQueryTranslator {
     private  FOR_LOOP(obj: object, env: Environment): void{
         console.log(obj)
         let dec_Arr: object[] = [];
+        let ret_Arr: object[] = [];
+
         if(this.debug){console.log("FOR_LOOP" + (this.show_obj? "\n"+obj:""));}
         for (let i:number = 0; i < obj['cuerpo'].length; i++){
             switch (obj['cuerpo'][i]['tipo']) {
@@ -93,24 +96,187 @@ export class XQueryTranslator {
                 case 'WHERE_CONDITION':
                     break;
                 case 'RETURN_STATEMENT':
+                    let ret_obj: object =  this.RETURN_STATEMENT(obj['instrucciones'][i]);
+                    if(ret_obj != null){ret_Arr.push(ret_obj);}
                     break;
             }
         }
-        console.log(dec_Arr);
-        /*
-        switch () {
-        }*/
+        this.setForFunction(dec_Arr, ret_Arr);
 
     }
+
+    private setForFunction(variables: object[], rets: object[]):string{
+        let function_name: string = this.getNextFun();
+        this.header = this.header + `
+void ${function_name}();
+`;
+
+        this.code = this.code + `
+void ${function_name}(){
+`
+
+
+
+        for(let i = 0; i < variables.length; i++){
+            let temp: string  = this.getNextVar();
+            variables[i]['temp'] = temp;
+            this.code = this.code + `SF = SF + 1;
+    ${variables[i]['function']}();
+    int ${temp} = STACK_FUNC[SF];
+    STACK_FUNC[SF] = 0;
+    SF = SF - 1;
+    `;
+
+                //console.log(variables[i]['name'])
+        }
+
+
+        //{'function': function_name, 'variable': var_name}
+        for(let i = 0; i < rets.length; i++){
+            for(let j = 0; j < variables.length; j++){
+                if(variables[j]['name'] == rets[i]['variable']){
+                    this.code = this.code + `
+                    STACK_FUNC[SF] = ${variables[j]['temp']};
+                    SF = SF + 1;
+                    ${rets[i]['function']}();
+                    SF = SF - 1;
+            `;
+                }
+            }
+
+        }
+        this.code = this.code + `}`
+
+        this.global_vars.push(function_name);
+        return function_name;
+    }
+
+
+
 
     private ORDER_BY_CLAUSE(obj: object): void{
         if(this.debug){console.log("ORDER_BY_CLAUSE" + (this.show_obj? "\n"+obj:""));}
 
     }
-    private RETURN_STATEMENT(obj: object): void{
-        if(this.debug){console.log("RETURN_STATEMENT" + (this.show_obj? "\n"+obj:""));}
+    private RETURN_STATEMENT(obj: object): object{
+        let function_name = null;
+        for(let i:number = obj['expresion'].length - 1; i >= 0 ; i --){
+            console.log(obj['expresion'][i]);
+            if (i == 0){break;}
+
+            switch (obj['expresion'][i]['tipo']){
+                case 'SELECT_FROM_CURRENT':
+                    //console.log('SELECT_FROM_CURRENT');
+                    //console.log(obj['iterators'][i]);
+                    function_name = this.EXPRESION(obj['expresion'][i]['expresion'], (i ==0), function_name, FOR_TYPE.SELECT_FROM_CURRENT);
+                    break;
+                case 'SELECT_FROM_ROOT':
+                    //console.log('SELECT_FROM_ROOT');
+                    //console.log(obj['iterators'][i]);
+                    function_name = this.EXPRESION(obj['expresion'][i]['expresion'], (i ==0),  function_name, FOR_TYPE.SELECT_FROM_ROOT);
+                    break;
+                case 'EXPRESION':
+                    console.log('EXPRESION');
+                    function_name = this.EXPRESION(obj['expresion'][i], (i ==0), function_name, FOR_TYPE.EXPRESION);
+                    break;
+                case 'SELECT_AXIS':
+                    console.log('SELECT_AXIS');
+                    function_name = this.EXPRESION(obj['expresion'][i], (i ==0), function_name, FOR_TYPE.SELECT_AXIS);
+                    break;
+                case 'VALORES':
+                    console.log('VALORES');
+                    break;
+                default:
+                    console.log(obj)
+                    console.log("ERROR 3\n" + obj['iterators'][i]);
+                    break;
+            }
+        }
+
+        let name: string = obj['expresion'][0]['expresion']['expresion']['expresion'];
+        if(name.charAt(0) == '$'){
+            let ret_obj: object = this.return_main_var(name, null, null, null);
+            return ret_obj;
+        }
+        //if(obj['expresion'][0]['expresion']['expresion']){}
+
+
+
 
     }
+
+    private return_main_var(var_name: string, predicate_f: string, next_fun: string, axis: string): object{
+        let function_name: string = this.getNextFun();
+        this.header = this.header + `
+void ${function_name}();
+`;
+
+        this.code = this.code + `void ${function_name}(){    
+    int t0 = SF - 1;
+    int result = STACK_FUNC[t0];
+`
+        this.code = this.code + `
+        `;
+
+
+        if(axis != null){
+
+
+            this.code = this.code +  `
+   
+    STACK_FUNC[SF] = result;
+    SF = SF + 1;
+    ${axis}();
+    result = STACK_FUNC[SF];
+    STACK_FUNC[SF] = 0;
+    SF = SF - 1;
+    STACK_FUNC[SF] = result;
+`;
+        }
+
+
+        for(let i = this.functions_Arr.length -1; i>=0; i--){
+            //functions_Arr
+            this.code = this.code + `STACK_FUNC[SF] = result;
+`;
+            this.code = this.code +`    SF = SF + 1;
+    ${this.functions_Arr[i]}();
+    result = STACK_FUNC[SF];
+    SF = SF - 1;
+    STACK_FUNC[SF] = 0;
+
+`;
+        }
+
+
+    //Aqui pueden ir ejes y llamados a otras func
+        this.code = this.code + `
+    label_x1:
+    if(HEAP[result] == 0){goto label_x0;}
+
+        STACK_FUNC[SF] = HEAP[result];
+        SF = SF + 1;
+        print_tag();
+        SF = SF - 1;
+        //print_child_by_index(HEAP[result]);
+        result++;
+        goto label_x1;
+        label_x0:;
+}
+    ;`
+
+
+
+        this.functions_Arr = [];
+
+        return {'function': function_name, 'variable': var_name}
+    }
+
+
+
+
+
+
 
     private DECLARACION(obj: object):object{
         //console.log(obj);
@@ -147,7 +313,7 @@ export class XQueryTranslator {
                     break;
             }
         }
-        return  {'function': function_name, name: obj['variable']['variable']};
+        return  {'function': function_name, 'name': obj['variable']['variable'], 'temp': ''};
 
         //TODO: al final el ultimo function name es el correcto
     }
@@ -160,11 +326,8 @@ export class XQueryTranslator {
         switch (obj['tipo']){
             case 'EXPRESION':
                 func_return = this.expresion_(obj['expresion'], fromStack, (predicate == null?null: this.predicate(obj['predicate']) ), next_fun, type, null);
-                console.log("***************************")
                 return func_return;
             case 'SELECT_AXIS':
-                console.log("**************** " )
-                console.log( this.getAxisFunc(obj['axisname']))
                 func_return = this.axis_(obj['nodetest'], fromStack, (predicate == null?null: this.predicate(obj['predicate']) ), next_fun, type, this.getAxisFunc(obj['axisname']));
                 break;
 
@@ -178,7 +341,7 @@ export class XQueryTranslator {
         return this.expresion_(obj['expresion'], fromStack, predicate_f, next_fun, type, axis);
     }
     private  getAxisFunc(Axis_type: string): string{
-        console.log(Axis_type);
+
         switch (Axis_type) {
             case 'ANCESTOR':
                 return 'AxisAncestor';
@@ -339,29 +502,15 @@ void ${function_name}(){
     result = STACK_FUNC[SF];
     SF = SF - 1;
     STACK_FUNC[SF] = 0;
-    
+    STACK_FUNC[SF] = result;
 `;
         }
 
 
-
         this.code = this.code + `
-        
-        int counter = 0;
-    while(HEAP[result] != 0){
-        print_child_by_index(HEAP[result]);
-        result++;
-        counter ++;
-    }
-
-    printf("Total: %d", SF);
-        
-        
-        
-        
-        
-        
         }`;
+
+        this.functions_Arr= [];
         return function_name;
     }
 
@@ -927,6 +1076,7 @@ void ${function_name}(){
     printf("Total: %d", SF);
 }    
 `;
+        this.functions_Arr= [];
         return function_name;
     }
 
@@ -1066,7 +1216,7 @@ void ${function_name}(){//setSearchMethodFromStack
 
 
 
-
+        this.functions_Arr= [];
     return function_name;
     }
 
@@ -1316,12 +1466,13 @@ void print_tag(){
     SF = SF - 1;
     STACK_FUNC[SF] = 0;
     
+    /*
     STACK_FUNC[SF] = tag_parent;
     SF = SF + 1;
     print_father();
     SF = SF - 1;
     STACK_FUNC[SF] = 0;
-
+    */
 
 }
 
@@ -2000,7 +2151,9 @@ void addItemToList();
 
     public getCode():string{
         this.root.set3DCode(null);
-        this.code = `float HEAP[100000];
+
+
+        let temp: string = `float HEAP[100000];
 float STACK[10000];
 float STACK_FUNC[10000];
 float SP = 1;
@@ -2011,10 +2164,19 @@ int main(){
 ` + Element.code_definition + `
     HP = ${Element.heap_index};
     SP = ${Element.stack_index};
-    f1(); //TODELETE
+    `;
+        for (let i = 0; i < this.global_vars.length; i++){
+            temp = temp + `${this.global_vars[i]}();
+`;
+        }
+
+
+        temp = temp + `
     return 0;
 }
- `+ this.code;
+ `
+
+        this.code = temp +  this.code;
         this.setHelpFunctions();
         return "#include <stdio.h>\n" + this.header + this.code;
     }
