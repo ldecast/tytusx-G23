@@ -1,3 +1,1 @@
-
-
-/mundo/continente/pais[idioma="Español"]/poblacion/./..//idioma/text()
+//child::PRICE[@calificacion="hola"]/text()

@@ -73,11 +73,17 @@ export class XQueryTranslator {
     private xPathTranslate(){
         let lastElement:  object = this.ast[this.ast.length - 1];
         let text_print = false;
+        try {
         if (lastElement['tipo'] == 'SELECT_FROM_ROOT' || lastElement['tipo'] == 'SELECT_FROM_CURRENT'){
             if(lastElement['expresion']['expresion']['tipo'] == 'FUNCION_TEXT'){
                 text_print = true;
                 this.ast.pop();
             }
+        }
+        } catch (error) {
+            console.error(error);
+            // expected output: ReferenceError: nonExistentFunction is not defined
+            // Note - error messages will vary depending on browser
         }
 
         let main_func: object = this.XPAT_DECLARACION(this.ast);
@@ -1459,24 +1465,18 @@ void ${function_name}(){
     SF = SF - 1;
     STACK_FUNC[SF] = 0;
     STACK_FUNC[SF] = result;
+    
 `;
         }
 
 
 
-        this.code = this.code + ` /*STACK_FUNC[SF] = ${main_var};
-    SF = SF + 1;    
-    ${next_fun}();
-    int result = STACK_FUNC[SF];
-    SF = SF - 1;
-    STACK_FUNC[SF] = 0;*/
-`;
 
 
 
 
         this.code = this.code + `
-
+        STACK_FUNC[SF] = result;
 }    
 `;
         this.functions_Arr= [];
@@ -1597,6 +1597,7 @@ void ${function_name}(){//setSearchMethodFromStack
     result = STACK_FUNC[SF];
     SF = SF - 1;
     STACK_FUNC[SF] = 0;
+    STACK_FUNC[SF] = result;
     
 `;
         }
