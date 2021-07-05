@@ -31,6 +31,11 @@ function init(_opIzq: any, _opDer: any, _ambito: Ambito, _tipo: Tipos, _contexto
     if (op2 === null || op2.error) return op2;
     let tipo: Tipos = _tipo;
 
+    if (op1.constructor.name === "Contexto")
+        op1 = _ambito.extractValue(op1);
+    if (op2.constructor.name === "Contexto")
+        op2 = _ambito.extractValue(op2);
+
     if (op1.tipo === Tipos.FUNCION_LAST && op2.tipo === Tipos.NUMBER) {
         op1 = _contexto.getLength();
         op2 = Number(op2.valor);
