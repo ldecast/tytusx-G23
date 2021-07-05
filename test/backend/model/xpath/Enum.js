@@ -73,6 +73,9 @@ var Tipos;
     Tipos["ORDER_BY_CLAUSE"] = "ORDER_BY_CLAUSE";
     Tipos["RETURN_STATEMENT"] = "RETURN_STATEMENT";
     Tipos["ASIGNACION"] = "ASIGNACION";
+    Tipos["DECLARACION_FUNCION"] = "DECLARACION_FUNCION";
+    Tipos["LLAMADA_FUNCION"] = "LLAMADA_FUNCION";
+    Tipos["IF_THEN_ELSE"] = "IF_THEN_ELSE";
     Tipos["VARIABLE"] = "VARIABLE";
     Tipos["DECLARACION"] = "DECLARACION";
     Tipos["INTERVALO"] = "INTERVALO";
@@ -80,5 +83,16 @@ var Tipos;
     Tipos["CONTENIDO"] = "CONTENIDO";
     Tipos["INYECCION"] = "INYECCION";
     Tipos["HTML"] = "HTML";
+    Tipos["TIPADO_STRING"] = "TIPADO_STRING";
+    Tipos["TIPADO_INTEGER"] = "TIPADO_INTEGER";
+    Tipos["TIPADO_DECIMAL"] = "TIPADO_DECIMAL";
+    Tipos["TIPADO_BOOLEANO"] = "TIPADO_BOOLEANO";
+    // Funciones nativas
+    Tipos["LLAMADA_NATIVA"] = "LLAMADA_NATIVA";
+    Tipos["TO_UPPERCASE"] = "TO_UPPERCASE";
+    Tipos["TO_LOWERCASE"] = "TO_LOWERCASE";
+    Tipos["TO_STRING"] = "TO_STRING";
+    Tipos["TO_NUMBER"] = "TO_NUMBER";
+    Tipos["SUBSTRING"] = "SUBSTRING";
 })(Tipos = exports.Tipos || (exports.Tipos = {}));
 //# sourceMappingURL=Enum.js.map

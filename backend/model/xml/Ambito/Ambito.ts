@@ -30,10 +30,10 @@ export class Ambito {
         this.tablaFunciones.unshift(_function);
     }
 
-    getFunction(_name: string): Funcion | null {
+    getFunction(_name: string, _numParams: number): Funcion | null {
         for (let i = 0; i < this.tablaFunciones.length; i++) {
             const funcion = this.tablaFunciones[i];
-            if (_name == funcion.name) {
+            if (_name == funcion.name && _numParams == funcion.parametros.length) {
                 return funcion;
             }
         }
@@ -232,13 +232,34 @@ export class Ambito {
         return _array;
     }
 
-    getGlobal() {
-        let e: Ambito;
-        for (e = this; e != null; e = e.anterior) {
-            if (e.anterior === null)
-                return e;
-        }
-        return null
+    extractValue(_contexto: Contexto) {
+        let element = _contexto.getArray()[0];
+        if (element.value)
+            return {
+                valor: element.value,
+                tipo: (!isNaN(element.value) && !isNaN(parseFloat(element.value))) ? Tipos.NUMBER : Tipos.STRING
+            }
+        if (element.id_open)
+            return {
+                valor: element.id_open,
+                tipo: (!isNaN(element.id_open) && !isNaN(parseFloat(element.id_open))) ? Tipos.NUMBER : Tipos.STRING
+            }
+        if (element.id)
+            return {
+                valor: element.id,
+                tipo: (!isNaN(element.id) && !isNaN(parseFloat(element.id))) ? Tipos.NUMBER : Tipos.STRING
+            }
+        if ((!isNaN(element) && !isNaN(parseFloat(element))))
+            return {
+                valor: element,
+                tipo: Tipos.NUMBER
+            }
+        if (typeof (element) === "string")
+            return {
+                valor: element,
+                tipo: Tipos.STRING
+            }
+        return null;
     }
 
 
@@ -341,7 +362,7 @@ export class Ambito {
             id: _funcion.name,
             value: "Función creada por el usuario",
             tipo: "Function",
-            entorno: "global",
+            entorno: "local",
             linea: _funcion.linea,
             columna: _funcion.columna
         }

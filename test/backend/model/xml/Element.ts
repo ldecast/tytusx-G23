@@ -1,5 +1,3 @@
-// noinspection DuplicatedCode
-
 import { Atributo } from "./Atributo";
 
 export class Element {
@@ -25,6 +23,137 @@ export class Element {
         this.father = null;
     }
 
+    verificateNames(): string {
+        if ((this.id_close !== null) && (this.id_open !== this.id_close))
+            return "La etiqueta de apertura no coincide con la de cierre.";
+        if (this.id_open.replace(/\s/g, '').toLowerCase() === "xml")
+            return "No se puede nombrar una etiqueta con las letras XML";
+        return "";
+    }
+
+    /*
+    * Devuelve el HTML para el AST del XML
+    * */
+    public getASTXMLTree(): string {
+        let str: string = "";
+        str = "<li><a href=''>" + this.id_open + "</a>";
+        if (this.attributes == null && this.childs == null && this.value == null) {
+            str = str + "</li>";
+            return str;
+        }
+        str = str + "<ul>";
+
+        if (this.attributes != null) {
+            str = str + "<li><a href=''>Atributos</a><ul>";
+            this.attributes.forEach((value) => {
+                str = str + "<li><a href=''>Atributo</a><ul>";
+                str = str + "<li><a href=''>" + value.id.slice(0, -1) + "</a></li>"
+                str = str + "<li><a href=''>" + value.value + "</a></li>"
+                str = str + "</ul></li>\n";
+            })
+            str = str + "</ul></li>";
+        }
+
+
+        if (this.value != null) {
+            str = str + "<li><a href=''>Value</a><ul><li><a href=''>" + this.value + "</a></li></ul></li></ul></li>\n"
+            return str;
+        }
+        if (this.id_close == null) {
+            str = str + "</ul></li>\n";
+            return str;
+        }
+
+        if (this.childs != null) {
+            str = str + "<li><a href=''>Children</a><ul>"
+            this.childs.forEach((value) => {
+                str = str + value.getASTXMLTree();
+            });
+            str = str + "</ul></li>\n";
+        }
+
+        str = str + "</ul></li>\n";
+        return str;
+    }
+
+
+    /*PROPERTIES*/
+    set Att_Arr(value: Array<Atributo>) {
+        this.attributes = value;
+    }
+    set Children(value) {
+        if (value == null) { return; }
+        this.childs = value;
+        this.childs.forEach((value) => {
+            if (value == null) { return; }
+            value.Father = this;
+        });
+    }
+    set Close(value: string) {
+        this.id_close = value;
+    }
+    set Value(value: string) {
+        this.value = value;
+    }
+    set Father(value: any) {
+        this.father = value;
+    }
+
+
+    get Children() {
+        return this.childs;
+    }
+
+
+
+    /*DO NOT INCLUDE*/
+    printTest(tab_num: any) {
+        let str: string = "";
+        str = this.getDashes(tab_num) + "Nodo: " + this.id_open + "\t";
+
+
+        if (this.attributes != null) {
+            str = str + "\tAtributos:\t";
+            this.attributes.forEach((value) => {
+                str = str + value.id + ": " + value.value + "   ";
+            })
+        }
+        if (this.value != null) {
+            str = str + "*** Valor *** " + this.value;
+            console.log(str);
+            return;
+        }
+        if (this.id_close == null) {
+            console.log(str);
+            return;
+        }
+        if (this.childs != null) {
+            str = str + "*** Children **** ";
+            console.log(str);
+            this.childs.forEach((value) => {
+                value.printTest(tab_num + 1);
+            });
+        }
+    }
+    getDashes(num: any): string {
+        let a = "";
+        for (let i = 0; i < num * 2; i++) {
+            a += "-";
+        }
+        return a;
+    }
+    public printChildren() {
+        if (this.childs == null) { return; }
+        this.childs.forEach((value) => {
+            console.log(this);
+            value.printChildren();
+        });
+    }
+
+
+
+
+
 
 
     /*********************3D Code*****************************/
@@ -37,20 +166,22 @@ export class Element {
 
 
 
-    public set3DCode(){
+    public set3DCode(parent: string){
 
         let stack_temp: string = Element.getNextTemp();
         Element.code_definition = Element.code_definition + `float ${stack_temp} = SP;
         `;
         this.stack_index_ = Element.stack_index;
-        Element.stack_index = Element.stack_index + 4;
+        Element.stack_index = Element.stack_index + 5;
         Element.code_definition = Element.code_definition + `SP = ${Element.stack_index};
         STACK[(int)${stack_temp}] = (float) ${Element.heap_index};         
         `;
+
         Element.pushStringToHeap(this.id_open);
         this.setContent(stack_temp);
         this.setAttributes(stack_temp);
         this.setChildren(stack_temp);
+        this.setParent(stack_temp, parent);
     }
 
     /*
@@ -187,11 +318,11 @@ export class Element {
         return temp;
     }
 
-    private setChildren(current_heap_index: string){
+    private setChildren(current_stack_index: string){
         let temp: string = Element.getNextTemp();
-        if (this.childs == null){
+        if (this.childs == null){ // It doesnt have children;
             Element.code_definition = Element.code_definition + `
-            float ${temp} = ${current_heap_index} + 3;
+            float ${temp} = ${current_stack_index} + 3;
             STACK[(int) ${temp}] = (float) -1;
             `;
             return;
@@ -199,7 +330,7 @@ export class Element {
             let temp_att_index: number = Element.heap_index;
             Element.heap_index = Element.heap_index + this.childs.length + 1;
             for (let i = 0; i < this.childs.length;i++){
-                this.childs[i].set3DCode();
+                this.childs[i].set3DCode(current_stack_index);
             }
             for (let i = 0; i < this.childs.length;i++){
                 let temp1: string = Element.getNextTemp();
@@ -208,13 +339,13 @@ export class Element {
                 HEAP[(int) ${temp1}] = ${this.childs[i].stack_index_};
                 `;
             }
-            Element.code_definition = Element.code_definition + `float ${temp} = ${current_heap_index} + 3;
+            Element.code_definition = Element.code_definition + `float ${temp} = ${current_stack_index} + 3;
             STACK[(int) ${temp}] = (float) ${temp_att_index};
             `;
         }
     }
 
-    private static pushStringToHeap(str_val){
+    private static pushStringToHeap(str_val: string){
 
         for(let i = 0; i < str_val.length; i++){
             let temp = Element.getNextTemp();
@@ -244,134 +375,21 @@ export class Element {
         return "t" + temp;
     }
 
+    private setParent(current_stack_index: string, parent:string){
+        let temp: string = Element.getNextTemp();
+        if(parent == null){
+            Element.code_definition = Element.code_definition + `
+    float ${temp} = ${current_stack_index} + 4;
+    STACK[(int) ${temp}] = (float) -1; // Parent NULL
+`;
+        }else{
+            Element.code_definition = Element.code_definition + `
+    float ${temp} = ${current_stack_index} + 4;
+    STACK[(int) ${temp}] = ${parent}; // Parent
+`;
+        }
+    }
 
     /*********************End of 3D code ****************************/
-
-    verificateNames(): string {
-        if ((this.id_close !== null) && (this.id_open !== this.id_close))
-            return "La etiqueta de apertura no coincide con la de cierre.";
-        if (this.id_open.replace(/\s/g, '').toLowerCase() === "xml")
-            return "No se puede nombrar una etiqueta con las letras XML";
-        return "";
-    }
-
-    /*
-    * Devuelve el HTML para el AST del XML
-    * */
-    public getASTXMLTree(): string {
-        let str: string = "";
-        str = "<li><a href=''>" + this.id_open + "</a>";
-        if (this.attributes == null && this.childs == null && this.value == null) {
-            str = str + "</li>";
-            return str;
-        }
-        str = str + "<ul>";
-
-        if (this.attributes != null) {
-            str = str + "<li><a href=''>Atributos</a><ul>";
-            this.attributes.forEach((value) => {
-                str = str + "<li><a href=''>Atributo</a><ul>";
-                str = str + "<li><a href=''>" + value.id.slice(0, -1) + "</a></li>"
-                str = str + "<li><a href=''>" + value.value + "</a></li>"
-                str = str + "</ul></li>\n";
-            })
-            str = str + "</ul></li>";
-        }
-
-
-        if (this.value != null) {
-            str = str + "<li><a href=''>Value</a><ul><li><a href=''>" + this.value + "</a></li></ul></li></ul></li>\n"
-            return str;
-        }
-        if (this.id_close == null) {
-            str = str + "</ul></li>\n";
-            return str;
-        }
-
-        if (this.childs != null) {
-            str = str + "<li><a href=''>Children</a><ul>"
-            this.childs.forEach((value) => {
-                str = str + value.getASTXMLTree();
-            });
-            str = str + "</ul></li>\n";
-        }
-
-        str = str + "</ul></li>\n";
-        return str;
-    }
-
-
-    /*PROPERTIES*/
-    set Att_Arr(value: Array<Atributo>) {
-        this.attributes = value;
-    }
-    set Children(value) {
-        if (value == null) { return; }
-        this.childs = value;
-        this.childs.forEach((value) => {
-            if (value == null) { return; }
-            value.Father = this;
-        });
-    }
-    set Close(value: string) {
-        this.id_close = value;
-    }
-    set Value(value: string) {
-        this.value = value;
-    }
-    set Father(value: any) {
-        this.father = value;
-    }
-
-
-    get Children() {
-        return this.childs;
-    }
-
-
-
-    /*DO NOT INCLUDE*/
-    printTest(tab_num: any) {
-        let str: string = "";
-        str = this.getDashes(tab_num) + "Nodo: " + this.id_open + "\t";
-
-
-        if (this.attributes != null) {
-            str = str + "\tAtributos:\t";
-            this.attributes.forEach((value) => {
-                str = str + value.id + ": " + value.value + "   ";
-            })
-        }
-        if (this.value != null) {
-            str = str + "*** Valor *** " + this.value;
-            console.log(str);
-            return;
-        }
-        if (this.id_close == null) {
-            console.log(str);
-            return;
-        }
-        if (this.childs != null) {
-            str = str + "*** Children **** ";
-            console.log(str);
-            this.childs.forEach((value) => {
-                value.printTest(tab_num + 1);
-            });
-        }
-    }
-    getDashes(num: any): string {
-        let a = "";
-        for (let i = 0; i < num * 2; i++) {
-            a += "-";
-        }
-        return a;
-    }
-    public printChildren() {
-        if (this.childs == null) { return; }
-        this.childs.forEach((value) => {
-            console.log(this);
-            value.printChildren();
-        });
-    }
 
 }
