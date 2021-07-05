@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 import { XQueryTranslator } from "../c_translator/xQueryTranslator";
-=======
-const XQueryTranslator = require("../../test/backend/c_translator/XMLTranslator").XQueryTranslator;
->>>>>>> master
 
 function translate(req: any) {
     let errors: Array<any> = [];
@@ -41,11 +37,7 @@ function translate(req: any) {
             }
         }
 
-<<<<<<< HEAD
         let xQueryTranslator = new XQueryTranslator(xQuery_ast, xml_parse[0]); //xquery_parse
-=======
-        let xQueryTranslator = new XQueryTranslator(xquery_parse, xml_parse);
->>>>>>> master
         xQueryTranslator.translate();
         let code = xQueryTranslator.getCode();
 

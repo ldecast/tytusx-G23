@@ -4,11 +4,7 @@ import { Variable } from "../../../model/xml/Ambito/Variable";
 import { Tipos } from "../../../model/xpath/Enum";
 import Expresion from "../../xpath/Expresion/Expresion";
 
-<<<<<<< HEAD
 function Exec(_instr: any, _ambito: Ambito, _contexto: Contexto, _id?: any): any { // Buscar la función, asignar los nuevos parámetros y ejecutarla.
-=======
-function Exec(_instr: any, _ambito: Ambito, _contexto: Contexto, _id?: any) { // Buscar la función, asignar los nuevos parámetros y ejecutarla.
->>>>>>> master
     let name: string = _instr.name;
     let parametros: Array<any> = _instr.parametros;
     let funcion = _ambito.getFunction(name, parametros.length);

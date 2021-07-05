@@ -60,12 +60,8 @@ function compile(req: any) {
         let bloque;
         let consola: string = "";
         if (xQuery_ast.xquery) {
-<<<<<<< HEAD
             let _str: Array<any> = [];
             bloque = Bloque.getOutput(xQuery_ast.xquery, cadena.ambito, root, _str); // Procesa las instrucciones de XQuery (fase 2)
-=======
-            bloque = Bloque.getOutput(xQuery_ast.xquery, cadena.ambito, root); // Procesa las instrucciones de XQuery (fase 2)
->>>>>>> master
         }
         else if (xQuery_ast.xpath) {
             bloque = XPath(xQuery_ast.xpath, cadena.ambito, root); // Procesa las instrucciones si sólo viene XPath (fase 1)
