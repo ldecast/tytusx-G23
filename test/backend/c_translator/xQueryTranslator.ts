@@ -1,4 +1,4 @@
-import {Environment} from "./Environment";
+
 import {Element} from "../model/xml/Element";
 
 
@@ -10,7 +10,7 @@ export class XQueryTranslator {
     private str: string = "";
     private debug: boolean = false;
     private show_obj: boolean = false;
-    private environment: Environment = new Environment();
+
     private header: string = "";
     private code:  string = "";
     private tagNumber: number = -1;
@@ -22,7 +22,7 @@ export class XQueryTranslator {
     private global_vars: string[] = [];
 
 
-    constructor( public ast:object[], public root: Element) {
+    public constructor( public ast:object[], public root: Element) {
         this.HP = Element.heap_index;
         this.SP = Element.stack_index;
         console.log(this.HP)
@@ -51,7 +51,7 @@ export class XQueryTranslator {
         for(let i = 0; i < this.ast.length; i++){
             switch (this.ast[i]['tipo']) {
                 case 'FOR_LOOP':
-                    this.FOR_LOOP(this.ast[i], this.environment);
+                    this.FOR_LOOP(this.ast[i]);
                     break;
                 case 'ORDER_BY_CLAUSE':
                     this.ORDER_BY_CLAUSE(this.ast[i]);
@@ -74,7 +74,7 @@ export class XQueryTranslator {
 
 
 
-    private  FOR_LOOP(obj: object, env: Environment): void{
+    private  FOR_LOOP(obj: object): void{
         console.log(obj)
         let dec_Arr: object[] = [];
         let ret_Arr: object[] = [];
@@ -2051,63 +2051,12 @@ void mergeTwoLists(){
 
 /*************************TODELETE***************************************/
 
-void print_tags_from_heap(){
-    //printf("First: %d\\n", SF);
-    //SF = SF - 1;
-    int t0 = SF - 1;
-    int t1 = STACK_FUNC[t0];
-    int t2 = HEAP[t1];
-    //printf("%d\\n", t1);
-
-    label_x10:
-    if(t2 == 0){goto label_x11;}
-    STACK_FUNC[SF] = t2;
-    //printf("t3: %d val: %d\\n", t2, (int)STACK_FUNC[SF]);
-    SF = SF + 1;
-    print_tag();
-    SF = SF - 1;
-
-    t1 = t1 + 1;
-    t2 = HEAP[t1];
-    //printf("%d\\n", (int)SF);
-    goto label_x10;
-    label_x11:
-    int t3 = 0;
-    STACK_FUNC[SF] = t3;
-    ;
-    printf("%d\\n", SF);
-}
-void print_value_by_index(int index) {
-    //int t0 = STACK[index];
-    int t0 = index;
-    char val = (char) HEAP[t0];
-    while (val != '\\0') { printf("%c", val); t0++; val = (char) HEAP[t0];
-
-    }
-    printf("\\n");
-}
-
-
-void print_child_by_index(int index) {
-    int t0 = STACK[index];
-    //int t0 = index;
-    char val = (char) HEAP[t0];
-    while (val != '\\0') { printf("%c", val); t0++; val = (char) HEAP[t0];
-
-    }
-    printf("\\n");
-}
 
 
 
 
-void printHeap(){
-    int i = 0;
-    for(int i = 1; i <1000; i++ ){
-        printf("HEAP[%d] = %f\\n", i, HEAP[i]);
-    }
 
-}
+
 `;
 
         this.header = this.header + `void compareTwoStrings();

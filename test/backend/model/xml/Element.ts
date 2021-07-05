@@ -345,7 +345,7 @@ export class Element {
         }
     }
 
-    private static pushStringToHeap(str_val){
+    private static pushStringToHeap(str_val: string){
 
         for(let i = 0; i < str_val.length; i++){
             let temp = Element.getNextTemp();

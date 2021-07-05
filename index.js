@@ -82,7 +82,8 @@ const main = ()=>{
 
 
 
-
+    console.log(ast_xml.ast[0]);
+    /*
     let xQueryTranslator = new XQueryTranslator(ast_xquery, ast_xml.ast[0]);
     xQueryTranslator.translate();
     let code = xQueryTranslator.getCode ();
@@ -93,7 +94,7 @@ const main = ()=>{
         // success case, the file was saved
         console.log('Code saved!');
     });
-
+    */
 }
 
 var files = {
