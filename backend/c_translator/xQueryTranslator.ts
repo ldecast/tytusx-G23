@@ -37,7 +37,7 @@ export class XQueryTranslator {
             this.ast = this.ast['xquery'];
             this.xQueryTranslate();
         }else if(xpath != undefined){
-            this.ast = this.ast['xpath'];
+            this.ast = this.ast['xpath'][0];
             this.xPathTranslate();
         }else {
             console.log("Error 8")
@@ -64,11 +64,96 @@ export class XQueryTranslator {
             }
         }
     }
+
+
+
+
+
+
     private xPathTranslate(){
+        let lastElement:  object = this.ast[this.ast.length - 1];
+        let text_print = false;
+        if (lastElement['tipo'] == 'SELECT_FROM_ROOT' || lastElement['tipo'] == 'SELECT_FROM_CURRENT'){
+            if(lastElement['expresion']['expresion']['tipo'] == 'FUNCION_TEXT'){
+                text_print = true;
+                this.ast.pop();
+            }
+        }
+
+        let main_func: object = this.XPAT_DECLARACION(this.ast);
+
+
+
+        let helperFunc: string = this.getNextFun();
+        this.header = this.header + `
+void ${helperFunc}();
+`;
+
+
+        this.code = this.code + `void ${helperFunc}(){
+        ${main_func['function']}();
+    
+    SF = SF + 1;`;
+        if(text_print){
+            this.code = this.code + `
+        print_textFunc();
+`;
+        }else {
+            this.code = this.code + `
+        printResultXPath();
+`;
+        }
+
+        this.code = this.code + `SF = SF - 1;
+
+}   
+        `;
+
+
+        this.global_vars.push(helperFunc);
 
     }
 
+    private XPAT_DECLARACION(obj: object[]):object{
+        console.log(obj)
 
+
+        //let length = obj['iterators'].length;
+        let function_name = null;
+
+        for (let i: number = obj.length - 1; i >= 0; i--){
+            switch (obj[i]['tipo']){
+                case 'SELECT_FROM_CURRENT':
+                    //console.log('SELECT_FROM_CURRENT');
+                    //console.log(obj['iterators'][i]);
+                    function_name = this.EXPRESION(obj[i]['expresion'], (i ==0), function_name, FOR_TYPE.SELECT_FROM_CURRENT);
+                    break;
+                case 'SELECT_FROM_ROOT':
+                    console.log(obj[i]['expresion'])
+                    //console.log('SELECT_FROM_ROOT');
+                    //console.log(obj['iterators'][i]);
+                    function_name = this.EXPRESION(obj[i]['expresion'], (i ==0),  function_name, FOR_TYPE.SELECT_FROM_ROOT);
+                    break;
+                case 'EXPRESION':
+                    console.log('EXPRESION');
+                    function_name = this.EXPRESION(obj[i], (i ==0), function_name, FOR_TYPE.EXPRESION);
+                    break;
+                case 'SELECT_AXIS':
+                    console.log('SELECT_AXIS');
+                    function_name = this.EXPRESION(obj[i], (i ==0), function_name, FOR_TYPE.SELECT_AXIS);
+                    break;
+                case 'VALORES':
+                    console.log('VALORES');
+                    break;
+                default:
+                    console.log(obj)
+                    console.log("ERROR 3\n" + obj['iterators'][i]);
+                    break;
+            }
+        }
+        return  {'function': function_name, 'temp': ''};
+
+    }
 
 
 
@@ -152,8 +237,6 @@ void ${function_name}(){
     }
 
 
-
-
     private ORDER_BY_CLAUSE(obj: object): void{
         if(this.debug){console.log("ORDER_BY_CLAUSE" + (this.show_obj? "\n"+obj:""));}
 
@@ -161,7 +244,7 @@ void ${function_name}(){
     private RETURN_STATEMENT(obj: object): object{
         let function_name = null;
         for(let i:number = obj['expresion'].length - 1; i >= 0 ; i --){
-            console.log(obj['expresion'][i]);
+            //console.log(obj['expresion'][i]);
             if (i == 0){break;}
 
             switch (obj['expresion'][i]['tipo']){
@@ -253,12 +336,13 @@ void ${function_name}();
         this.code = this.code + `
     label_x1:
     if(HEAP[result] == 0){goto label_x0;}
-
+    if(HEAP[result] == -1){goto label_x2;}
         STACK_FUNC[SF] = HEAP[result];
         SF = SF + 1;
         print_tag();
         SF = SF - 1;
         //print_child_by_index(HEAP[result]);
+        label_x2:
         result++;
         goto label_x1;
         label_x0:;
@@ -432,13 +516,340 @@ void ${function_name}();
     }
 
 
-    private predicate(obj: object) : string{
-        //console.log(obj);
+    private predicate(arr: object[]) : string{
+        if (arr == null){return; }
+        let function_name: string = null;
+        console
+        for(let i = 0; i < arr.length; i++){
+            console.log(arr[i]['condicion']);
+            switch (arr[i]['condicion']['tipo']){
+                case 'RELACIONAL_IGUAL':
+                    function_name = this.predEqual(arr[i]['condicion']['opIzq'], arr[i]['condicion']['opDer']);
+                    //console.log(arr[i]['condicion']['opIzq']);
+                    //console.log(arr[i]['condicion']['opDer']);
+                    break;
+            }
+            if(i > 0){break;}// TODO: Solo maneja un predicado
+        }
 
-        let function_name: string = this.getNextFun();
-        if(obj != null ){ console.log("Predicado" + function_name);}
+
+        return function_name;
+
+
+    }
+
+
+
+    private predEqual(left: object[], right: object[]):string{
+        let function_name: string = null;
+        switch (left[0]['tipo']) {
+            case 'SELECT_FROM_ROOT':
+            case 'SELECT_FROM_CURRENT':
+
+                break;
+            case 'EXPRESION':
+                if(left[0]['expresion']['tipo'] == 'SELECT_ATTRIBUTES'){
+
+                    if(right[0]['expresion']['tipo'] =='NUMBER'){
+                        function_name = this.predAttrNum(left[0]['expresion']['expresion'], right[0]['expresion']['valor']);
+                    }else if(right[0]['expresion']['tipo'] =='STRING'){
+                        function_name = this.predAttrStr(left[0]['expresion']['expresion'], right[0]['expresion']['valor']);
+                    }
+                }
+                break;
+            default:
+                console.log("Error 9")
+        }
         return function_name;
     }
+
+
+
+    //Esta funcion debe dar una lista de indices y el tipo
+
+
+    private predAttrNum(attr_name : string, val: number):string{
+        let function_name: string = this.getNextFun();
+        this.header = this.header + `
+void ${function_name}();
+`;
+
+        this.code = this.code + `void ${function_name}(){
+    int t30 = SF - 1;
+    int element = STACK_FUNC[t30];
+    int attr_lf_name = HP;
+`;
+
+        for(let i = 0; i < attr_name.length; i++){
+            this.code = this.code + `   HEAP[(int)HP] = ${attr_name[i].charCodeAt(0)}; //STR_val = ${attr_name[i]}
+    HP = HP + 1;
+`;}
+        this.code = this.code + `   HEAP[(int)HP] = 0;
+    HP = HP + 1;`
+
+
+
+        this.code = this.code + `
+        
+        label_x1:
+    if(HEAP[element] == 0){goto label_x0;}
+    int t32 = HEAP[element];
+    t32 = t32 + 2; // Index to attr
+    int t33 = STACK[t32]; // index to heap of attr if ==  -1 no attributes
+    float valueToCompare = ${val};
+    int valueMissing = 1;
+    if(t33 == -1){goto label_x2;}
+
+    label_x4:
+    if(HEAP[t33] == 0){goto label_x3;}
+
+    int attr_index = HEAP[t33];
+    if(t33 == -1){goto label_x5;}
+
+
+    int attr_name = HEAP[attr_index];
+    attr_index = attr_index + 1;
+    int attr_type = HEAP[attr_index];
+    attr_index = attr_index + 1;
+    float attr_value = HEAP[attr_index];
+    //Comparar nombre
+
+    STACK_FUNC[SF] = attr_lf_name;
+    SF = SF + 1;
+    STACK_FUNC[SF] = attr_name;
+    SF = SF + 1;
+    compareTwoStrings();
+    int compareResult = STACK_FUNC[SF];
+    SF = SF - 1;
+    SF = SF - 1;
+
+    if(compareResult != 1){goto label_x6; }
+    if(attr_value != valueToCompare){goto label_x7;}
+    valueMissing = 0;
+    label_x7:
+    label_x6:
+    label_x5:
+    t33++;
+    goto label_x4;
+    label_x3:
+
+    label_x2:
+        if(valueMissing != 1){ goto label_x8;}
+        HEAP[element] = -1;
+    label_x8:
+        //print_child_by_index(HEAP[element]);
+
+        element++;
+        goto label_x1;
+
+    label_x0:
+
+;
+}`;
+        return function_name;
+    }
+
+
+    private predAttrStr(attr_name : string, val: string):string{
+        let function_name: string = this.getNextFun();
+        this.header = this.header + `
+void ${function_name}();
+`;
+
+        this.code = this.code + `void ${function_name}(){
+    int t30 = SF - 1;
+    int element = STACK_FUNC[t30];
+    int attr_lf_name = HP;
+`;
+
+
+
+        for(let i = 0; i < attr_name.length; i++){
+            this.code = this.code + `   HEAP[(int)HP] = ${attr_name[i].charCodeAt(0)}; //STR_val = ${attr_name[i]}
+    HP = HP + 1;
+`;}
+        this.code = this.code + `   HEAP[(int)HP] = 0;
+    HP = HP + 1;
+    int attr_lf_val = HP;
+    `;
+
+        for(let i = 0; i < val.length; i++){
+            this.code = this.code + `   HEAP[(int)HP] = ${val[i].charCodeAt(0)}; //STR_val = ${val[i]}
+    HP = HP + 1;
+`;}
+        this.code = this.code + `   HEAP[(int)HP] = 0;
+    HP = HP + 1;
+    
+    label_x1:
+    while(HEAP[element] == 0){goto label_x0;}
+    int t32 = HEAP[element];
+    t32 = t32 + 2; // Index to attr
+    int t33 = STACK[t32]; // index to heap of attr if ==  -1 no attributes
+    int valueMissing = 1;
+
+    if(t33 == -1){goto label_x2;}
+
+    label_x4:
+    if(HEAP[t33] == 0){goto label_x3;}
+    int attr_index = HEAP[t33];
+
+    if(t33 == -1){goto label_x5;}
+    int attr_name = HEAP[attr_index];
+    attr_index = attr_index + 1;
+    int attr_type = HEAP[attr_index];
+    attr_index = attr_index + 1;
+    int attr_value_index = HEAP[attr_index];
+    //Comparar nombre
+
+    STACK_FUNC[SF] = attr_lf_name;
+    SF = SF + 1;
+    STACK_FUNC[SF] = attr_name;
+    SF = SF + 1;
+    compareTwoStrings();
+    int compareResult = STACK_FUNC[SF];
+    SF = SF - 1;
+    SF = SF - 1;
+
+    if(compareResult != 1){goto label_x6;}
+    STACK_FUNC[SF] = attr_lf_val;
+    SF = SF + 1;
+    STACK_FUNC[SF] = attr_value_index;
+    SF = SF + 1;
+    compareTwoStrings();
+    int val_comparison = STACK_FUNC[SF];
+    SF = SF - 1;
+    SF = SF - 1;
+    if(val_comparison != 1){ goto label_x7;}
+    valueMissing = 0;
+    label_x7:
+    label_x6:
+    label_x5:
+    t33++;
+    goto label_x4;
+    label_x3:
+    label_x2:
+    if(valueMissing != 1){goto label_x8;}
+    HEAP[element] = -1;
+    label_x8:
+    element++;
+    goto label_x1;
+    label_x0:
+    ;
+
+    
+    
+    `;
+
+
+
+
+
+
+
+        this.code = this.code + `
+
+}`;
+        return function_name;
+
+    }
+
+    private predNormalExp(node_name:string){
+        let function_name: string = this.getNextFun();
+        let var1 = this.getNextVar();
+        let var2 = this.getNextVar();
+        let var3 = this.getNextVar();
+        let var4 = this.getNextVar();
+        let var5 = this.getNextVar();
+        let var6 = this.getNextVar();
+        let var15 = this.getNextVar();
+
+
+
+        let tag6: string = this.getNextTag();
+        let tag8: string = this.getNextTag();
+        let tag9: string = this.getNextTag();
+        let tag10: string = this.getNextTag();
+        let tag11: string = this.getNextTag();
+        let tag12: string = this.getNextTag();
+
+        this.header = this.header + `
+void ${function_name}();
+`;
+        this.code = this.code + `
+void ${function_name}(){
+    
+    
+    int ${var1} = SF - 1;
+    int ${var15} = STACK_FUNC[${var1}];//List in HEAP to pointers on STACK
+    
+    STACK_FUNC[SF] = HP; //Pointer to Node value
+    SF = SF + 1;
+`;
+        for(let i = 0; i < node_name.length; i++){
+            this.code = this.code + `   HEAP[(int)HP] = ${node_name[i].charCodeAt(0)}; //STR_val = ${node_name[i]}
+    HP = HP + 1;
+`;
+        }
+
+
+        this.code = this.code + `    HEAP[(int)HP] = 0;
+    HP = HP + 1;
+
+    int ${var4} = HP; // sets the start of the result list
+    HEAP[(int) HP] = 0; // If no Nodes found then the list will start with 0
+
+    int ${var3} = ${var15};
+    int ${var2} = HEAP[${var3}];
+    
+    ${tag12}://inicio del primer for
+    if(${var2} == 0){goto ${tag8};}//exit extern for
+    if(${var2} == -1){goto ${tag11};}
+    ${var2} = ${var2} + 3; //index to children of first node in HEAP    //${var2} = 4
+    int tag_child_index = STACK[${var2}];
+    if(tag_child_index == -1){goto ${tag11};}
+    int child = HEAP[tag_child_index];
+
+
+    ${tag10}:
+    if(child == 0){goto ${tag9};}
+
+    int ${var5} = STACK[child];
+    STACK_FUNC[SF] = ${var5};
+    SF = SF + 1;
+    compareTwoStrings();
+    int ${var6} = (int) STACK_FUNC[SF];
+    if(${var6} != 1){goto ${tag6};}
+    HEAP[(int)HP] = child;
+    HP = HP + 1;
+    ${tag6}:
+    STACK_FUNC[SF] = 0;
+    SF = SF - 1;
+    STACK_FUNC[SF] = 0;
+    tag_child_index = tag_child_index + 1;
+    child = HEAP[tag_child_index];
+    goto ${tag10};
+    ${tag9}:
+
+
+    ${tag11}: // Next iteration extern for / Exit inner for
+    ${var3} = ${var3} + 1;
+    ${var2} = HEAP[${var3}];
+    goto ${tag12}; //Repeat extern for
+    ${tag8}://Exit extern for
+    HEAP[(int) HP] = 0;
+    HP = HP + 1;
+    STACK_FUNC[SF] = 0;
+    SF = SF - 1;
+    STACK_FUNC[SF] = 0;
+    
+    int result = ${var4};
+    STACK_FUNC[SF] = result;// merged_list
+`;
+    }
+
+    private predAttr_int(){}
+
+
 
 
 
@@ -472,7 +883,7 @@ void ${function_name}(){
 
         if(predicate_f != null){
             this.code = this.code + `${predicate_f}();
-            result = STACK_FUNC[SF]; 
+            //result = STACK_FUNC[SF]; 
             `;
         }
 
@@ -532,7 +943,7 @@ void ${function_name}(){
 `;
         if(predicate_f != null){
             this.code = this.code + `${predicate_f}();
-            result = STACK_FUNC[SF]; 
+            //result = STACK_FUNC[SF]; 
             `;
         }
 
@@ -603,7 +1014,7 @@ void ${function_name}(){
 
         if(predicate_f != null){
             this.code = this.code + `${predicate_f}();
-            result = STACK_FUNC[SF]; 
+            //result = STACK_FUNC[SF]; 
             `;
         }
 
@@ -732,7 +1143,7 @@ void ${function_name}(){
 `;
         if(predicate_f != null){
             this.code = this.code + `${predicate_f}();
-            result = STACK_FUNC[SF]; 
+            //result = STACK_FUNC[SF]; 
             `;
         }
 
@@ -936,7 +1347,7 @@ void ${function_name}(){
 `;
         if(predicate_f != null){
             this.code = this.code + `${predicate_f}();
-            result = STACK_FUNC[SF]; 
+            //result = STACK_FUNC[SF]; 
             `;
         }
 
@@ -1014,7 +1425,7 @@ void ${function_name}(){
 `;
         if(predicate_f != null){
             this.code = this.code + `${predicate_f}();
-            result = STACK_FUNC[SF]; 
+            //result = STACK_FUNC[SF]; 
             `;
         }
         this.code = this.code + `   
@@ -1047,7 +1458,7 @@ void ${function_name}(){
     result = STACK_FUNC[SF];
     SF = SF - 1;
     STACK_FUNC[SF] = 0;
-
+    STACK_FUNC[SF] = result;
 `;
         }
 
@@ -1065,15 +1476,7 @@ void ${function_name}(){
 
 
         this.code = this.code + `
-    //TODELETE
-    int counter = 0;
-    while(HEAP[result] != 0){
-        print_child_by_index(HEAP[result]);
-        result++;
-        counter ++;
-    }
 
-    printf("Total: %d", SF);
 }    
 `;
         this.functions_Arr= [];
@@ -1157,7 +1560,7 @@ void ${function_name}(){//setSearchMethodFromStack
 
         if(predicate_f != null){
             this.code = this.code + `${predicate_f}();
-            result = STACK_FUNC[SF]; 
+            //result = STACK_FUNC[SF]; 
             `;
         }
         this.code = this.code + `
@@ -1202,15 +1605,7 @@ void ${function_name}(){//setSearchMethodFromStack
 
 
         this.code = this.code + `
-    //TODELETE
-    int counter = 0;
-    while(HEAP[result] != 0){
-        print_child_by_index(HEAP[result]);
-        result++;
-        counter ++;
-    }
 
-    printf("Total: %d", SF);
 }    
 `;
 
@@ -1220,17 +1615,7 @@ void ${function_name}(){//setSearchMethodFromStack
         return function_name;
     }
 
-    private setSearchNodeDoubleBar(node_name: string, predicate_f?: string, next_fun?: string): string{
-        let main_var = this.getNextVar();
-        return main_var;
-    }
 
-    private setSearchNodeOneBar(node_name: string, predicate_f?: string, next_fun?: string): string{
-        let main_var = this.getNextVar();
-        return main_var;
-    }
-
-//TEST
 
 
     private setHelpFunctions(){
@@ -1343,6 +1728,27 @@ void ${function_name}(){//setSearchMethodFromStack
 
 
         this.code = this.code + `
+        
+        void print_textFunc(){
+    int t0 = SF - 1;
+    int list = STACK_FUNC[t0];
+
+    label_x1:
+    if(HEAP[list] == 0){goto label_x0;}
+        int stk_pointer = HEAP[list];
+        int val = stk_pointer + 1;
+        STACK_FUNC[SF] = STACK[val];
+        SF = SF + 1;
+        print_content();
+        printf("\\n");
+        SF = SF - 1;
+        list++;
+
+        goto label_x1;
+    label_x0:
+    ;
+}
+
 void isItemInList(){
     int ${var55} = SF - 1;
     int ${var56} = STACK_FUNC[${var55}];
@@ -1670,7 +2076,22 @@ void print_close_tag(){
 
  
 
-
+void printResultXPath(){
+    int t0 = SF - 1;
+    int result = STACK_FUNC[t0];
+    label_x1:
+    if(HEAP[result] == 0){goto label_x0;}
+    if(HEAP[result] == -1){goto label_x2;}
+    STACK_FUNC[SF] = HEAP[result];
+    SF = SF + 1;
+    print_tag();
+    SF = SF - 1;
+    //print_child_by_index(HEAP[result]);
+    label_x2:
+    result++;
+    goto label_x1;
+    label_x0:;
+}
 
 //merge a list with a list of lists
 void mergeLists(){
@@ -1763,13 +2184,6 @@ void addItemToList(){
     label_x1:
     ;
 }
-
-
-
-
-
-
-
 
 
 
@@ -2050,6 +2464,67 @@ void mergeTwoLists(){
 
 
 /*************************TODELETE***************************************/
+/*
+void print_tags_from_heap(){
+    //printf("First: %d\\n", SF);
+    //SF = SF - 1;
+    int t0 = SF - 1;
+    int t1 = STACK_FUNC[t0];
+    int t2 = HEAP[t1];
+    //printf("%d\\n", t1);
+
+    label_x10:
+    if(t2 == 0){goto label_x11;}
+    STACK_FUNC[SF] = t2;
+    //printf("t3: %d val: %d\\n", t2, (int)STACK_FUNC[SF]);
+    SF = SF + 1;
+    print_tag();
+    SF = SF - 1;
+
+    t1 = t1 + 1;
+    t2 = HEAP[t1];
+    //printf("%d\\n", (int)SF);
+    goto label_x10;
+    label_x11:
+    int t3 = 0;
+    STACK_FUNC[SF] = t3;
+    ;
+    printf("%d\\n", SF);
+}
+void print_value_by_index(int index) {
+    //int t0 = STACK[index];
+    int t0 = index;
+    char val = (char) HEAP[t0];
+    while (val != 0) { printf("%c", val); t0++; val = (char) HEAP[t0];
+
+    }
+    printf("\\n");
+}
+
+
+void print_child_by_index(int index) {
+    int t0 = STACK[index];
+    //int t0 = index;
+    char val = (char) HEAP[t0];
+    while (val != 0) { printf("%c", val); t0++; val = (char) HEAP[t0];
+
+    }
+    printf("\\n");
+}
+
+
+
+
+void printHeap(){
+    int i = 0;
+    for(int i = 1; i <1000; i++ ){
+        printf("HEAP[%d] = %f\\n", i, HEAP[i]);
+    }
+
+}*/
+
+
+
 
 
 `;
@@ -2079,8 +2554,8 @@ void AxisPreceding();
 void AxisPrecedingSibling();
 void AxisSelf();
 void mergeTwoLists();
-
-
+void printResultXPath();
+void  print_textFunc();
 /*************************TODELETE***************************************/
 void print_tags_from_heap();
 void print_value_by_index(int);
