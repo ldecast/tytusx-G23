@@ -14,7 +14,6 @@ function optimizar(req: any) {
         let tree = ast[1];
 
         let salida = OptiSintactico.OptiSintactico.optimizarC3D(entrada, tree);
-        console.log(salida);
 
         let output = {
             arreglo_errores: errors,

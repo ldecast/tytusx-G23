@@ -301,6 +301,7 @@ int main()
         switch (id) {
           case 1:
             this.entrada = String(text);
+            this.consulta = '';
             break;
           case 2:
             this.consulta = String(text);

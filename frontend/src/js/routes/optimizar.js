@@ -10,7 +10,6 @@ function optimizar(req) {
         let graph = ast[0];
         let tree = ast[1];
         let salida = OptiSintactico.OptiSintactico.optimizarC3D(entrada, tree);
-        console.log(salida);
         let output = {
             arreglo_errores: errors,
             optimizado: salida[0],
