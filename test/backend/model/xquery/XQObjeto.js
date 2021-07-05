@@ -151,6 +151,7 @@ var XQObjeto = /** @class */ (function () {
             parametros: _parametros,
             tipado: _tipado,
             instrucciones: _instrucciones,
+            tipo: Enum_1.Tipos.DECLARACION_FUNCION,
             linea: _linea,
             columna: _columna
         };
@@ -159,6 +160,16 @@ var XQObjeto = /** @class */ (function () {
         return {
             name: _name,
             parametros: _parametros,
+            tipo: Enum_1.Tipos.LLAMADA_FUNCION,
+            linea: _linea,
+            columna: _columna
+        };
+    };
+    XQObjeto.prototype.llamadaNativa = function (_name, _parametros, _linea, _columna) {
+        return {
+            name: _name,
+            parametros: _parametros,
+            tipo: Enum_1.Tipos.LLAMADA_NATIVA,
             linea: _linea,
             columna: _columna
         };
