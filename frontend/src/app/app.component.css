@@ -16,11 +16,21 @@
 }
 
 .file-console {
-    height: 375px;
+    height: 400px;
+}
+
+.file-query {
+    height: 150px;
 }
 
 .subtitulo {
     font-size: large;
+}
+
+.subtitulo_t {
+    font-size: large;
+    position: absolute;
+    bottom: 2px;
 }
 
 .foot {
@@ -30,10 +40,6 @@
 hr {
     border-width: 0.13em;
     border-color: gray;
-}
-
-.fc:first-letter {
-    text-transform: capitalize
 }
 
 .item:hover {
@@ -47,4 +53,9 @@ hr {
 .sel_g {
     position: absolute;
     right: 0%;
+}
+
+.boton {
+    width: 170px;
+    margin-bottom: 0px;
 }
