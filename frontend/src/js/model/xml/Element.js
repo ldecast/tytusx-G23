@@ -3,10 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.Element = void 0;
 class Element {
     constructor(id_open, attributes, value, childs, line, column, id_close) {
-<<<<<<< HEAD
         this.stack_index_ = 0;
-=======
->>>>>>> master
         this.id_open = id_open;
         this.id_close = id_close;
         this.attributes = attributes;
@@ -133,7 +130,6 @@ class Element {
             value.printChildren();
         });
     }
-<<<<<<< HEAD
     set3DCode(parent) {
         let stack_temp = Element.getNextTemp();
         Element.code_definition = Element.code_definition + `float ${stack_temp} = SP;
@@ -341,8 +337,6 @@ class Element {
 `;
         }
     }
-=======
->>>>>>> master
 }
 exports.Element = Element;
 /*********************3D Code*****************************/
