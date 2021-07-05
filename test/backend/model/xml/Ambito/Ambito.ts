@@ -1,35 +1,59 @@
+import { Contexto } from "../../../controller/Contexto";
 import { Tipos } from "../../xpath/Enum";
 import { Atributo } from "../Atributo";
 import { Element } from "../Element";
+import { Variable } from "./Variable";
 
 export class Ambito {
 
     anterior: Ambito;
     tipo: string;
     tablaSimbolos: Array<Element>;
+    tablaVariables: Array<Variable>;
+    contextFromVar?: any;
+    // tablaFunciones: Array<Funcion>;
 
     constructor(_anterior: any, _tipo: string) {
         this.anterior = _anterior
         this.tipo = _tipo
         this.tablaSimbolos = [];
-    }
-
-    isGlobal(): boolean {
-        return this.tipo === "global";
+        this.tablaVariables = [];
     }
 
     addSimbolo(_simbolo: Element) {
         this.tablaSimbolos.push(_simbolo);
     }
 
+    addVariabe(_variable: Variable) {
+        this.tablaVariables.unshift(_variable);
+    }
+
+    existeVariable(_id: string): boolean {
+        for (let i = 0; i < this.tablaVariables.length; i++) {
+            const variable = this.tablaVariables[i];
+            if (_id == variable.id && variable.contexto)
+                return true;
+        }
+        return false;
+    }
+
+    getContextFromVar(_id: string): Contexto {
+        for (let i = 0; i < this.tablaVariables.length; i++) {
+            const variable = this.tablaVariables[i];
+            if (_id == variable.id && variable.contexto)
+                return variable.contexto;
+        }
+        return new Contexto();
+    }
+
     nodesFunction(_element: Element, _nodes: Array<any>): Array<any> { // Todos los descendientes (con textos)
-        _nodes.push({ elementos: _element });
         if (_element.childs) {
             _element.childs.forEach(child => {
                 _nodes = this.nodesFunction(child, _nodes);
             });
         }
         if (_element.value) {
+            _nodes.push({ elementos: _element });
             _nodes.push({ textos: _element.value });
         }
         return _nodes;
@@ -57,8 +81,49 @@ export class Ambito {
             _element.attributes.forEach(attr => {
                 if (attr.id === _attribute.id && attr.line == _attribute.line && attr.column == _attribute.column) {
                     _elements.push(_element);
+                    return _elements;
                 }
             });
+        }
+        return _elements;
+    }
+
+    searchDadFromText(_element: Element, _text: string, _elements: Array<Element>): Array<Element> {
+        if (_element.childs) {
+            _element.childs.forEach(child => {
+                _elements = this.searchDadFromText(child, _text, _elements);
+            });
+        }
+        if (_element.value) {
+            if (_element.value === _text) {
+                _elements.push(_element);
+                return _elements
+            }
+        }
+        if (_element.attributes) {
+            _element.attributes.forEach(attr => {
+                if (attr.value === _text) {
+                    _elements.push(_element);
+                    return _elements;
+                }
+            });
+        }
+        return _elements;
+    }
+
+    searchDadFromNode(_element: Element, _node: any, _elements: Array<Element>): Array<Element> {
+        if (_element.childs) {
+            _element.childs.forEach(child => {
+                _elements = this.searchDadFromNode(child, _node, _elements);
+            });
+        }
+        if (_element.value && _node.textos) {
+            if (_element.value == _node.textos)
+                _elements.push(_element);
+        }
+        if (_element.value && _node.elementos) {
+            if (_element == _node.elementos)
+                _elements.push(_element);
         }
         return _elements;
     }
