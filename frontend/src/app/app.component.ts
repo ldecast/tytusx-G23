@@ -151,6 +151,7 @@ return $x/title`;
   }
 
   optimizarC3D() {
+<<<<<<< HEAD
     if (this.traduccion != "") {
       const x = {
         traduccion: this.traduccion, // documento XML
@@ -161,6 +162,9 @@ return $x/title`;
       console.log('Data received!');
     } else
       alert("Alguna entrada se encuentra vacía. Intente de nuevo.");
+=======
+
+>>>>>>> master
   }
 
   getAST() {
@@ -221,12 +225,17 @@ return $x/title`;
     if (this.traduccion != "") {
       let grammar_value = (<HTMLSelectElement>document.getElementById('grammar_selector')).value;
       const x = {
+<<<<<<< HEAD
         traduccion: this.traduccion, // código 3d
+=======
+        c3d: this.traduccion, // código 3d
+>>>>>>> master
         grammar: Number(grammar_value), // gramática 1=ascendente, 2=descendente
         report: "C3D-AST",
       }
       let data = require('../js/routes/reports').generateReport(x);
       this.salida = data.output;
+<<<<<<< HEAD
       this.exportFile(data.ast, "3CD Report.dot");
       console.log('AST C3D received!');
     } else
@@ -248,9 +257,36 @@ return $x/title`;
       f.click();
     }
     console.log('File exported!');
+=======
+      this.errores = data.arreglo_errores;
+      this.exportFile(data.grammar_report, "3CD Report.dot");
+      console.log('AST C3D received!');
+    } else
+      alert("Traducción vacía. No se puede generar el reporte de C3D.");
+>>>>>>> master
   }
 
+  exportFile(data: string, fname: string) {
+    this.simbolos = [];
+    this.errores = [];
+    var f = document.createElement('a');
+    f.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(data));
+    f.setAttribute('download', fname);
+    if (document.createEvent) {
+      var event = document.createEvent('MouseEvents');
+      event.initEvent('click', true, true);
+      f.dispatchEvent(event);
+    }
+    else {
+      f.click();
+    }
+    console.log('File exported!');
+  }
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> master
   saveFile(id: number) {
     var f = document.createElement('a');
     let data = "";

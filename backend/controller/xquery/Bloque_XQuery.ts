@@ -16,7 +16,10 @@ import Nativa from "./Funciones/Nativas";
 
 let reset: Contexto;
 let output: Array<Contexto> = [];
+<<<<<<< HEAD
 let _str: Array<any>;
+=======
+>>>>>>> master
 
 function Bloque(_instruccion: Array<any>, _ambito: Ambito, _retorno: Contexto, id?: any): any {
     output = [];
@@ -46,6 +49,7 @@ function Bloque(_instruccion: Array<any>, _ambito: Ambito, _retorno: Contexto, i
             return ForLoop(instr, _ambito, _retorno);
         }
         else if (instr.tipo === Tipos.LLAMADA_FUNCION) {
+<<<<<<< HEAD
             let _exec = Exec(instr, _ambito, _retorno, id);
             if (_exec.valor) _str.push(_exec.valor);
             continue;
@@ -54,6 +58,12 @@ function Bloque(_instruccion: Array<any>, _ambito: Ambito, _retorno: Contexto, i
             let _nativ = Nativa(instr, _ambito, _retorno, id);
             if (_nativ.valor) _str.push(_nativ.valor);
             continue;
+=======
+            return Exec(instr, _ambito, _retorno, id);
+        }
+        else if (instr.tipo === Tipos.LLAMADA_NATIVA) {
+            return Nativa(instr, _ambito, _retorno, id);
+>>>>>>> master
         }
         else if (instr.tipo === Tipos.IF_THEN_ELSE) {
             return IfConditional(instr.condicionIf, instr.instruccionesThen, instr.instruccionesElse, _ambito, _retorno, id);
@@ -72,16 +82,25 @@ function Bloque(_instruccion: Array<any>, _ambito: Ambito, _retorno: Contexto, i
         output.push(_retorno);
 }
 
+<<<<<<< HEAD
 function getOutput(_instruccion: Array<any>, _ambito: Ambito, _retorno: Contexto, _string: Array<any>) {
     _str = _string;
+=======
+function getOutput(_instruccion: Array<any>, _ambito: Ambito, _retorno: Contexto) {
+>>>>>>> master
     let _bloque = Bloque(_instruccion, _ambito, _retorno);
     if (_bloque && _bloque.error) {
         if (_bloque.error.error) return _bloque.error;
         return _bloque;
     }
+<<<<<<< HEAD
     if ((_bloque && _bloque.valor !== undefined)) _str.push(_bloque.valor);
     let cadena = (_str.length > 0) ? _str.join('\n') : writeOutput();
     /* let cadena = (_bloque && _bloque.valor !== undefined) ? (_bloque.valor) : writeOutput(); */
+=======
+    /* let cadena = (_str.length > 0) ? _str.join('\n') : writeOutput(); */
+    let cadena = (_bloque && _bloque.valor !== undefined) ? (_bloque.valor) : writeOutput();
+>>>>>>> master
     return { cadena: replaceEntity(String(cadena)) };
 }
 

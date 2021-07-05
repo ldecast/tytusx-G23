@@ -59,11 +59,20 @@ let req = {
 // local:fibo_sequence(25)
 // `,
 
+<<<<<<< HEAD
 query: `number("6"),
 substring("hola mundo",3),
 upper-case("calificacion en mayusculas"),
 lower-case("CALIFICACION EN MINUSCULAS"),
 string(1511861)`,  //<- funciona (la más lenta)
+=======
+query: `let $x := /bookstore/book
+if ($x/@category="COOKING")
+then $x/title
+else if ($x/@category="WEB")
+then data($x/price)
+else ()`,  //<- funciona (la más lenta)
+>>>>>>> master
 
   grammar: 1
 }

@@ -8,7 +8,6 @@ function generateReport(req) {
         let grammar_selected = req.grammar;
         let report = req.report;
         let traduccion = (req.traduccion) ? (req.traduccion) : null;
-        // Gramáticas a usarse según la selección: 1=ascendente, 2=descendente
         let parser_xml, parser_xPath;
         switch (grammar_selected) {
             case 1:

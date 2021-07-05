@@ -2051,6 +2051,7 @@ void mergeTwoLists(){
 
 /*************************TODELETE***************************************/
 
+<<<<<<< HEAD
 void print_tags_from_heap(){
     //printf("First: %d\\n", SF);
     //SF = SF - 1;
@@ -2108,6 +2109,9 @@ void printHeap(){
     }
 
 }
+=======
+
+>>>>>>> master
 `;
 
         this.header = this.header + `void compareTwoStrings();
