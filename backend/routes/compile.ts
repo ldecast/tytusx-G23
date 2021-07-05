@@ -76,15 +76,15 @@ function compile(req: any) {
             arreglo_simbolos: simbolos,
             arreglo_errores: errors,
             output: consola,
-            encoding: encoding,
-            codigo3d: bloque?.codigo3d
+            encoding: encoding
         }
         errors = [];
         return output;
 
     } catch (error) {
         console.log(error);
-        errors.push({ tipo: "Desconocido", error: "Error en tiempo de ejecución.", origen: "", linea: "", columna: "" });
+        if (error.message) errors.push({ tipo: "Sintáctico", error: String(error.message), origen: "Entrada", linea: "", columna: "" });
+        else errors.push({ tipo: "Desconocido", error: "Error en tiempo de ejecución.", origen: "", linea: "", columna: "" });
         let output = {
             arreglo_simbolos: [],
             arreglo_errores: errors,
