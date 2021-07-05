@@ -577,6 +577,7 @@ function getGrammarReport(obj){
 "duration"				return 'tk_duration'
 "time"					return 'tk_time'
 "integer"				return 'tk_integer'
+"int"				    return 'tk_int'
 "decimal"				return 'tk_decimal'
 "boolean"				return 'tk_boolean'
 "true"					return 'tk_true'
@@ -663,8 +664,12 @@ ini: XPATH_U EOF{
 		}
 ;
 
-XQUERY: XQUERY INSTR_QUERY  { $1.push($2); $$=$1; }
-        | INSTR_QUERY { $$=[$1]; }
+XQUERY: XQUERY INSTR_QUERY COMX { $1.push($2); $$=$1; }
+        | INSTR_QUERY COMX { $$=[$1]; }
+;
+
+COMX: tk_coma
+    |
 ;
 
 INSTR_QUERY: FOR_LOOP { $$=$1; }
@@ -983,6 +988,7 @@ AXISNAME: tk_ancestor { $$ = Tipos.AXIS_ANCESTOR;
 
 RESERVED_TYPES: tk_string { $$ = Tipos.TIPADO_STRING; }
 		| tk_integer { $$ = Tipos.TIPADO_INTEGER; }
+		| tk_int { $$ = Tipos.TIPADO_INTEGER; }
 		| tk_decimal { $$ = Tipos.TIPADO_DECIMAL; }
 		| tk_boolean { $$ = Tipos.TIPADO_BOOLEANO; }
 		| tk_normalizedString { $$ = Tipos.TIPADO_STRING; }

@@ -1,5 +1,5 @@
 "use strict";
-const XQueryTranslator = require("../../test/backend/c_translator/XMLTranslator").XQueryTranslator;
+const xQueryTranslator_1 = require("../c_translator/xQueryTranslator");
 function translate(req) {
     let errors = [];
     try {
@@ -34,7 +34,7 @@ function translate(req) {
                 return { output: "La consulta contiene errores para analizar.\nIntente de nuevo.", arreglo_errores: errors };
             }
         }
-        let xQueryTranslator = new XQueryTranslator(xquery_parse, xml_parse);
+        let xQueryTranslator = new xQueryTranslator_1.XQueryTranslator(xQuery_ast, xml_parse[0]); //xquery_parse
         xQueryTranslator.translate();
         let code = xQueryTranslator.getCode();
         let output = {

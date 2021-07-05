@@ -87,8 +87,7 @@ function getOutput(_instruccion, _ambito, _retorno) {
     }
     /* let cadena = (_str.length > 0) ? _str.join('\n') : writeOutput(); */
     let cadena = (_bloque && _bloque.valor !== undefined) ? (_bloque.valor) : writeOutput();
-    let codigo3d = ""; // Agregar función que devuelva código tres direcciones
-    return { cadena: replaceEntity(String(cadena)), codigo3d: codigo3d };
+    return { cadena: replaceEntity(String(cadena)) };
 }
 function getIterators(_instruccion, _ambito, _retorno, _id) {
     let _bloque = Bloque(_instruccion, _ambito, _retorno, _id);
@@ -2558,6 +2557,2043 @@ module.exports = Eje;
 
 /***/ }),
 
+/***/ "ENWa":
+/*!*************************************************!*\
+  !*** ./src/js/c_translator/xQueryTranslator.js ***!
+  \*************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.XQueryTranslator = void 0;
+const Element_1 = __webpack_require__(/*! ../model/xml/Element */ "Kypw");
+var FOR_TYPE;
+(function (FOR_TYPE) {
+    FOR_TYPE[FOR_TYPE["SELECT_FROM_CURRENT"] = 0] = "SELECT_FROM_CURRENT";
+    FOR_TYPE[FOR_TYPE["SELECT_FROM_ROOT"] = 1] = "SELECT_FROM_ROOT";
+    FOR_TYPE[FOR_TYPE["EXPRESION"] = 2] = "EXPRESION";
+    FOR_TYPE[FOR_TYPE["SELECT_AXIS"] = 3] = "SELECT_AXIS";
+})(FOR_TYPE || (FOR_TYPE = {}));
+class XQueryTranslator {
+    constructor(ast, root) {
+        this.ast = ast;
+        this.root = root;
+        this.str = "";
+        this.debug = false;
+        this.show_obj = false;
+        this.header = "";
+        this.code = "";
+        this.tagNumber = -1;
+        this.varNumber = -1;
+        this.funNumber = -1;
+        this.functions_Arr = [];
+        this.global_vars = [];
+        this.HP = Element_1.Element.heap_index;
+        this.SP = Element_1.Element.stack_index;
+        console.log(this.HP);
+        console.log(this.SP);
+    }
+    translate() {
+        let xquery = this.ast['xquery'];
+        let xpath = this.ast['xpath'];
+        if (xquery != undefined) {
+            this.ast = this.ast['xquery'];
+            this.xQueryTranslate();
+        }
+        else if (xpath != undefined) {
+            this.ast = this.ast['xpath'];
+            this.xPathTranslate();
+        }
+        else {
+            console.log("Error 8");
+        }
+    }
+    //TEST
+    xQueryTranslate() {
+        for (let i = 0; i < this.ast.length; i++) {
+            switch (this.ast[i]['tipo']) {
+                case 'FOR_LOOP':
+                    this.FOR_LOOP(this.ast[i]);
+                    break;
+                case 'ORDER_BY_CLAUSE':
+                    this.ORDER_BY_CLAUSE(this.ast[i]);
+                    break;
+                case 'RETURN_STATEMENT':
+                    this.RETURN_STATEMENT(this.ast[i]);
+                    break;
+                default:
+                    console.log("Error 1");
+            }
+        }
+    }
+    xPathTranslate() {
+    }
+    FOR_LOOP(obj) {
+        console.log(obj);
+        let dec_Arr = [];
+        let ret_Arr = [];
+        if (this.debug) {
+            console.log("FOR_LOOP" + (this.show_obj ? "\n" + obj : ""));
+        }
+        for (let i = 0; i < obj['cuerpo'].length; i++) {
+            switch (obj['cuerpo'][i]['tipo']) {
+                case 'DECLARACION':
+                    dec_Arr.push(this.DECLARACION(obj['cuerpo'][i]));
+                    break;
+                default:
+                    console.log("ERROR 2:\n" + obj);
+            }
+        }
+        for (let i = 0; i < obj['instrucciones'].length; i++) {
+            switch (obj['instrucciones'][i]['tipo']) {
+                case 'WHERE_CONDITION':
+                    break;
+                case 'RETURN_STATEMENT':
+                    let ret_obj = this.RETURN_STATEMENT(obj['instrucciones'][i]);
+                    if (ret_obj != null) {
+                        ret_Arr.push(ret_obj);
+                    }
+                    break;
+            }
+        }
+        this.setForFunction(dec_Arr, ret_Arr);
+    }
+    setForFunction(variables, rets) {
+        let function_name = this.getNextFun();
+        this.header = this.header + `
+void ${function_name}();
+`;
+        this.code = this.code + `
+void ${function_name}(){
+`;
+        for (let i = 0; i < variables.length; i++) {
+            let temp = this.getNextVar();
+            variables[i]['temp'] = temp;
+            this.code = this.code + `SF = SF + 1;
+    ${variables[i]['function']}();
+    int ${temp} = STACK_FUNC[SF];
+    STACK_FUNC[SF] = 0;
+    SF = SF - 1;
+    `;
+            //console.log(variables[i]['name'])
+        }
+        //{'function': function_name, 'variable': var_name}
+        for (let i = 0; i < rets.length; i++) {
+            for (let j = 0; j < variables.length; j++) {
+                if (variables[j]['name'] == rets[i]['variable']) {
+                    this.code = this.code + `
+                    STACK_FUNC[SF] = ${variables[j]['temp']};
+                    SF = SF + 1;
+                    ${rets[i]['function']}();
+                    SF = SF - 1;
+            `;
+                }
+            }
+        }
+        this.code = this.code + `}`;
+        this.global_vars.push(function_name);
+        return function_name;
+    }
+    ORDER_BY_CLAUSE(obj) {
+        if (this.debug) {
+            console.log("ORDER_BY_CLAUSE" + (this.show_obj ? "\n" + obj : ""));
+        }
+    }
+    RETURN_STATEMENT(obj) {
+        let function_name = null;
+        for (let i = obj['expresion'].length - 1; i >= 0; i--) {
+            console.log(obj['expresion'][i]);
+            if (i == 0) {
+                break;
+            }
+            switch (obj['expresion'][i]['tipo']) {
+                case 'SELECT_FROM_CURRENT':
+                    //console.log('SELECT_FROM_CURRENT');
+                    //console.log(obj['iterators'][i]);
+                    function_name = this.EXPRESION(obj['expresion'][i]['expresion'], (i == 0), function_name, FOR_TYPE.SELECT_FROM_CURRENT);
+                    break;
+                case 'SELECT_FROM_ROOT':
+                    //console.log('SELECT_FROM_ROOT');
+                    //console.log(obj['iterators'][i]);
+                    function_name = this.EXPRESION(obj['expresion'][i]['expresion'], (i == 0), function_name, FOR_TYPE.SELECT_FROM_ROOT);
+                    break;
+                case 'EXPRESION':
+                    console.log('EXPRESION');
+                    function_name = this.EXPRESION(obj['expresion'][i], (i == 0), function_name, FOR_TYPE.EXPRESION);
+                    break;
+                case 'SELECT_AXIS':
+                    console.log('SELECT_AXIS');
+                    function_name = this.EXPRESION(obj['expresion'][i], (i == 0), function_name, FOR_TYPE.SELECT_AXIS);
+                    break;
+                case 'VALORES':
+                    console.log('VALORES');
+                    break;
+                default:
+                    console.log(obj);
+                    console.log("ERROR 3\n" + obj['iterators'][i]);
+                    break;
+            }
+        }
+        let name = obj['expresion'][0]['expresion']['expresion']['expresion'];
+        if (name.charAt(0) == '$') {
+            let ret_obj = this.return_main_var(name, null, null, null);
+            return ret_obj;
+        }
+        //if(obj['expresion'][0]['expresion']['expresion']){}
+    }
+    return_main_var(var_name, predicate_f, next_fun, axis) {
+        let function_name = this.getNextFun();
+        this.header = this.header + `
+void ${function_name}();
+`;
+        this.code = this.code + `void ${function_name}(){    
+    int t0 = SF - 1;
+    int result = STACK_FUNC[t0];
+`;
+        this.code = this.code + `
+        `;
+        if (axis != null) {
+            this.code = this.code + `
+   
+    STACK_FUNC[SF] = result;
+    SF = SF + 1;
+    ${axis}();
+    result = STACK_FUNC[SF];
+    STACK_FUNC[SF] = 0;
+    SF = SF - 1;
+    STACK_FUNC[SF] = result;
+`;
+        }
+        for (let i = this.functions_Arr.length - 1; i >= 0; i--) {
+            //functions_Arr
+            this.code = this.code + `STACK_FUNC[SF] = result;
+`;
+            this.code = this.code + `    SF = SF + 1;
+    ${this.functions_Arr[i]}();
+    result = STACK_FUNC[SF];
+    SF = SF - 1;
+    STACK_FUNC[SF] = 0;
+
+`;
+        }
+        //Aqui pueden ir ejes y llamados a otras func
+        this.code = this.code + `
+    label_x1:
+    if(HEAP[result] == 0){goto label_x0;}
+
+        STACK_FUNC[SF] = HEAP[result];
+        SF = SF + 1;
+        print_tag();
+        SF = SF - 1;
+        //print_child_by_index(HEAP[result]);
+        result++;
+        goto label_x1;
+        label_x0:;
+}
+    ;`;
+        this.functions_Arr = [];
+        return { 'function': function_name, 'variable': var_name };
+    }
+    DECLARACION(obj) {
+        //console.log(obj);
+        if (this.debug) {
+            console.log('DECLARATION' + (this.show_obj ? "\n" + obj : ""));
+        }
+        //let length = obj['iterators'].length;
+        let function_name = null;
+        for (let i = obj['iterators'].length - 1; i >= 0; i--) {
+            switch (obj['iterators'][i]['tipo']) {
+                case 'SELECT_FROM_CURRENT':
+                    //console.log('SELECT_FROM_CURRENT');
+                    //console.log(obj['iterators'][i]);
+                    function_name = this.EXPRESION(obj['iterators'][i]['expresion'], (i == 0), function_name, FOR_TYPE.SELECT_FROM_CURRENT);
+                    break;
+                case 'SELECT_FROM_ROOT':
+                    //console.log('SELECT_FROM_ROOT');
+                    //console.log(obj['iterators'][i]);
+                    function_name = this.EXPRESION(obj['iterators'][i]['expresion'], (i == 0), function_name, FOR_TYPE.SELECT_FROM_ROOT);
+                    break;
+                case 'EXPRESION':
+                    console.log('EXPRESION');
+                    function_name = this.EXPRESION(obj['iterators'][i], (i == 0), function_name, FOR_TYPE.EXPRESION);
+                    break;
+                case 'SELECT_AXIS':
+                    console.log('SELECT_AXIS');
+                    function_name = this.EXPRESION(obj['iterators'][i], (i == 0), function_name, FOR_TYPE.SELECT_AXIS);
+                    break;
+                case 'VALORES':
+                    console.log('VALORES');
+                    break;
+                default:
+                    console.log(obj);
+                    console.log("ERROR 3\n" + obj['iterators'][i]);
+                    break;
+            }
+        }
+        return { 'function': function_name, 'name': obj['variable']['variable'], 'temp': '' };
+        //TODO: al final el ultimo function name es el correcto
+    }
+    //fromStack if its the first iteration will look on stack
+    EXPRESION(obj, fromStack, next_fun, type) {
+        //console.log(obj)
+        let func_return = null;
+        let predicate = obj['predicate'];
+        if (predicate == null) { }
+        switch (obj['tipo']) {
+            case 'EXPRESION':
+                func_return = this.expresion_(obj['expresion'], fromStack, (predicate == null ? null : this.predicate(obj['predicate'])), next_fun, type, null);
+                return func_return;
+            case 'SELECT_AXIS':
+                func_return = this.axis_(obj['nodetest'], fromStack, (predicate == null ? null : this.predicate(obj['predicate'])), next_fun, type, this.getAxisFunc(obj['axisname']));
+                break;
+        }
+        return func_return;
+    }
+    axis_(obj, fromStack, predicate_f, next_fun, type, axis) {
+        return this.expresion_(obj['expresion'], fromStack, predicate_f, next_fun, type, axis);
+    }
+    getAxisFunc(Axis_type) {
+        switch (Axis_type) {
+            case 'ANCESTOR':
+                return 'AxisAncestor';
+            case 'ANCESTOR_OR_SELF':
+                return 'AxisAncestorSelf';
+            case 'AXIS_ATTRIBUTE':
+                return 'AxisAttributes';
+            case 'AXIS_CHILD':
+                return 'AxisChild';
+            case 'AXIS_DESCENDANT':
+                return 'AxisDescendant';
+            case 'AXIS_DESCENDANT_OR_SELF':
+                return 'AxisDescendantSelf';
+            case 'AXIS_FOLLOWING':
+                return 'AxisFollowing';
+            case 'AXIS_FOLLOWING_SIBLING':
+                return 'AxisFollowingSibling';
+            case 'AXIS_NAMESPACE':
+                return null;
+            case 'AXIS_PARENT':
+                return 'AxisParent';
+            case 'AXIS_PRECEDING':
+                return 'AxisPreceding';
+            case 'AXIS_PRECEDING_SIBLING':
+                return 'AxisPrecedingSibling';
+            case 'AXIS_SELF':
+                return null;
+        }
+        return null;
+    }
+    expresion_(obj, fromStack, predicate_f, next_fun, type, axis) {
+        let func_return = null;
+        switch (obj['tipo']) {
+            case 'NODENAME':
+                //console.log(obj);
+                //console.log(obj['nodename']);
+                if (fromStack) {
+                    if (type == FOR_TYPE.SELECT_FROM_CURRENT || type == FOR_TYPE.EXPRESION) {
+                        func_return = this.setSearchMethodFromStack(obj['nodename'], predicate_f, next_fun, axis);
+                    }
+                    else if (type == FOR_TYPE.SELECT_FROM_ROOT) {
+                        func_return = this.setSearchMethodFromFirstStack(obj['nodename'], predicate_f, next_fun, axis);
+                    }
+                    else {
+                        console.log("Error 9");
+                    }
+                }
+                else {
+                    if (type == FOR_TYPE.SELECT_FROM_CURRENT) {
+                        func_return = this.setSearchDoubleBar(obj['nodename'], predicate_f, next_fun, axis);
+                    }
+                    else if (type == FOR_TYPE.SELECT_FROM_ROOT) {
+                        func_return = this.setSearchOneBar(obj['nodename'], predicate_f, next_fun, axis);
+                    }
+                    else {
+                    }
+                }
+                /*buscar en el stack todos los que coincidan con nodeName obj['nodename']
+                // push obj['nodename'] en un the heap while increasing heap counter
+                // push nodename index into stack_params
+                // iterate through the stack by increments of 4 send the pointer of each element to the compare funciont
+                // if returns true save the element returned on the heap keeping track of the first one
+                // to keep it like index*/
+                break;
+            case 'SELECT_PARENT':
+                func_return = this.setSelectParent(null, predicate_f, next_fun, axis);
+                break;
+            case 'SELECT_CURRENT':
+                if (obj['expresion'] == '.') {
+                    //DO NOTHING
+                }
+                //si es from root tambien usar
+                console.log("Error 5");
+                //console.log(obj);
+                //console.log(obj['expresion']);
+                break;
+            case 'ASTERISCO':
+                if (fromStack) {
+                    func_return = this.setAsteriskRoot(null, predicate_f, next_fun, axis);
+                }
+                else {
+                    func_return = this.setAsteriskAnyWhere(null, predicate_f, next_fun, axis);
+                }
+                break;
+            default:
+                console.log("Error 6" + obj['tipo']);
+                break;
+        }
+        return func_return;
+    }
+    predicate(obj) {
+        //console.log(obj);
+        let function_name = this.getNextFun();
+        if (obj != null) {
+            console.log("Predicado" + function_name);
+        }
+        return function_name;
+    }
+    /*ASTERISCO*/
+    setAsteriskRoot(node_name, predicate_f, next_fun, axis) {
+        let function_name = this.getNextFun();
+        this.header = this.header + `
+void ${function_name}();
+`;
+        this.code = this.code + `
+void ${function_name}(){
+    int result = HP; // sets the start of the result list
+    HEAP[(int) HP] = 0; // If no Nodes found then the list will start with 0
+    int node_index = 1; // This is pulling the root which is in the 1st pos of stack
+
+
+    label_x1:
+    if(STACK[node_index]== 0){goto label_x0;}
+    HEAP[(int) HP] = node_index;
+    HP = HP + 1;
+    node_index = node_index + 5;
+    
+    goto label_x1;
+    label_x0:
+    HEAP[(int) HP] = 0;
+    HP = HP + 1;
+    STACK_FUNC[SF] = result;
+    SF = SF + 1;
+    
+`;
+        if (predicate_f != null) {
+            this.code = this.code + `${predicate_f}();
+            result = STACK_FUNC[SF]; 
+            `;
+        }
+        this.code = this.code + `SF = SF - 1;
+    STACK_FUNC[SF] = result;
+    `;
+        if (axis != null) {
+            this.code = this.code + ` 
+            SF = SF + 1;
+            ${axis}();
+    result = STACK_FUNC[SF];
+    SF = SF - 1;
+    STACK_FUNC[SF] = 0;
+    STACK_FUNC[SF] = result;
+    
+`;
+        }
+        for (let i = this.functions_Arr.length - 1; i >= 0; i--) {
+            //functions_Arr
+            this.code = this.code + `STACK_FUNC[SF] = result;
+`;
+            this.code = this.code + `    SF = SF + 1;
+    ${this.functions_Arr[i]}();
+    result = STACK_FUNC[SF];
+    SF = SF - 1;
+    STACK_FUNC[SF] = 0;
+    STACK_FUNC[SF] = result;
+`;
+        }
+        this.code = this.code + `
+        }`;
+        this.functions_Arr = [];
+        return function_name;
+    }
+    setAsteriskAnyWhere(node_name, predicate_f, next_fun, axis) {
+        let function_name = this.getNextFun();
+        this.functions_Arr.push(function_name);
+        this.header = this.header + `
+void ${function_name}();
+`;
+        this.code = this.code + `
+void ${function_name}(){
+    SF = SF + 1;
+    AxisChild();
+    int result = STACK_FUNC[SF];
+    SF = SF - 1;
+    STACK_FUNC[SF] = result;
+    SF = SF + 1;
+`;
+        if (predicate_f != null) {
+            this.code = this.code + `${predicate_f}();
+            result = STACK_FUNC[SF]; 
+            `;
+        }
+        this.code = this.code + `SF = SF - 1;
+    STACK_FUNC[SF] = result;
+    `;
+        if (axis != null) {
+            this.code = this.code + ` 
+            SF = SF + 1;
+            ${axis}();
+    result = STACK_FUNC[SF];
+    SF = SF - 1;
+    STACK_FUNC[SF] = 0;
+    STACK_FUNC[SF] = result;
+    
+`;
+        }
+        this.code = this.code + `}`;
+        return function_name;
+    }
+    /* .. */
+    setSelectParent(node_name, predicate_f, next_fun, axis) {
+        let function_name = this.getNextFun();
+        this.functions_Arr.push(function_name);
+        this.header = this.header + `
+void ${function_name}();
+`;
+        this.code = this.code + `
+void ${function_name}(){
+    int t0 = SF - 1;
+    int pointers_list = STACK_FUNC[t0];//List in HEAP to pointers on STACK
+    int return_list = HP;
+    STACK_FUNC[SF] = return_list;
+    SF = SF + 1;
+    int node = HEAP[pointers_list];
+    label_x2:
+    if(node == 0){goto label_x1;}
+    if(node == -1){goto label_x0;}
+    int t1 = node + 4;
+    int father = STACK[t1];
+    STACK_FUNC[SF] = father;
+    SF = SF + 1;
+    addItemToList();
+    SF = SF - 1;
+    STACK_FUNC[SF] = 0;
+    label_x0:
+    pointers_list++;
+    node = HEAP[pointers_list];
+    goto label_x2;
+    label_x1:
+    HEAP[(int) HP] = 0;
+    HP = HP + 1;
+    SF = SF - 1;
+    STACK_FUNC[SF] = 0;
+    int result = return_list;
+    STACK_FUNC[SF] = result;
+    SF = SF + 1;
+`;
+        if (predicate_f != null) {
+            this.code = this.code + `${predicate_f}();
+            result = STACK_FUNC[SF]; 
+            `;
+        }
+        this.code = this.code + `SF = SF - 1;
+    STACK_FUNC[SF] = result;
+    `;
+        if (axis != null) {
+            this.code = this.code + ` 
+            SF = SF + 1;
+            ${axis}();
+    result = STACK_FUNC[SF];
+    SF = SF - 1;
+    STACK_FUNC[SF] = 0;
+    STACK_FUNC[SF] = result;
+    `;
+        }
+        this.code = this.code + `
+    
+    
+}
+    `;
+        return function_name;
+    }
+    setSearchOneBar(node_name, predicate_f, next_fun, axis) {
+        let function_name = this.getNextFun();
+        this.functions_Arr.push(function_name);
+        let var1 = this.getNextVar();
+        let var2 = this.getNextVar();
+        let var3 = this.getNextVar();
+        let var4 = this.getNextVar();
+        let var5 = this.getNextVar();
+        let var6 = this.getNextVar();
+        let var15 = this.getNextVar();
+        let tag6 = this.getNextTag();
+        let tag8 = this.getNextTag();
+        let tag9 = this.getNextTag();
+        let tag10 = this.getNextTag();
+        let tag11 = this.getNextTag();
+        let tag12 = this.getNextTag();
+        this.header = this.header + `
+void ${function_name}();
+`;
+        this.code = this.code + `
+void ${function_name}(){
+    
+    
+    int ${var1} = SF - 1;
+    int ${var15} = STACK_FUNC[${var1}];//List in HEAP to pointers on STACK
+    
+    STACK_FUNC[SF] = HP; //Pointer to Node value
+    SF = SF + 1;
+`;
+        for (let i = 0; i < node_name.length; i++) {
+            this.code = this.code + `   HEAP[(int)HP] = ${node_name[i].charCodeAt(0)}; //STR_val = ${node_name[i]}
+    HP = HP + 1;
+`;
+        }
+        this.code = this.code + `    HEAP[(int)HP] = 0;
+    HP = HP + 1;
+
+    int ${var4} = HP; // sets the start of the result list
+    HEAP[(int) HP] = 0; // If no Nodes found then the list will start with 0
+
+    int ${var3} = ${var15};
+    int ${var2} = HEAP[${var3}];
+    
+    ${tag12}://inicio del primer for
+    if(${var2} == 0){goto ${tag8};}//exit extern for
+    if(${var2} == -1){goto ${tag11};}
+    ${var2} = ${var2} + 3; //index to children of first node in HEAP    //${var2} = 4
+    int tag_child_index = STACK[${var2}];
+    if(tag_child_index == -1){goto ${tag11};}
+    int child = HEAP[tag_child_index];
+
+
+    ${tag10}:
+    if(child == 0){goto ${tag9};}
+
+    int ${var5} = STACK[child];
+    STACK_FUNC[SF] = ${var5};
+    SF = SF + 1;
+    compareTwoStrings();
+    int ${var6} = (int) STACK_FUNC[SF];
+    if(${var6} != 1){goto ${tag6};}
+    HEAP[(int)HP] = child;
+    HP = HP + 1;
+    ${tag6}:
+    STACK_FUNC[SF] = 0;
+    SF = SF - 1;
+    STACK_FUNC[SF] = 0;
+    tag_child_index = tag_child_index + 1;
+    child = HEAP[tag_child_index];
+    goto ${tag10};
+    ${tag9}:
+
+
+    ${tag11}: // Next iteration extern for / Exit inner for
+    ${var3} = ${var3} + 1;
+    ${var2} = HEAP[${var3}];
+    goto ${tag12}; //Repeat extern for
+    ${tag8}://Exit extern for
+    HEAP[(int) HP] = 0;
+    HP = HP + 1;
+    STACK_FUNC[SF] = 0;
+    SF = SF - 1;
+    STACK_FUNC[SF] = 0;
+    
+    int result = ${var4};
+    STACK_FUNC[SF] = result;// merged_list
+    
+    SF = SF + 1;
+`;
+        if (predicate_f != null) {
+            this.code = this.code + `${predicate_f}();
+            result = STACK_FUNC[SF]; 
+            `;
+        }
+        this.code = this.code + `SF = SF - 1;
+    STACK_FUNC[SF] = result;
+    SF = SF + 1;
+    `;
+        //axis
+        if (axis != null) {
+            this.code = this.code + ` ${axis}();
+    result = STACK_FUNC[SF];
+    STACK_FUNC[SF] = 0;
+    `;
+        }
+        this.code = this.code + `SF = SF - 1;
+    STACK_FUNC[SF] = result;
+    
+}
+    `;
+        return function_name;
+    }
+    setSearchDoubleBar(node_name, predicate_f, next_fun, axis) {
+        console.log("Double bar " + axis);
+        let function_name = this.getNextFun();
+        this.functions_Arr.push(function_name);
+        let var1 = this.getNextVar();
+        let var2 = this.getNextVar();
+        let var3 = this.getNextVar();
+        let var4 = this.getNextVar();
+        let var5 = this.getNextVar();
+        let var6 = this.getNextVar();
+        let var7 = this.getNextVar();
+        let var8 = this.getNextVar();
+        let var9 = this.getNextVar();
+        let var10 = this.getNextVar();
+        let var11 = this.getNextVar();
+        let var12 = this.getNextVar();
+        let var13 = this.getNextVar();
+        let var14 = this.getNextVar();
+        let var15 = this.getNextVar();
+        let tag1 = this.getNextTag();
+        let tag2 = this.getNextTag();
+        let tag3 = this.getNextTag();
+        let tag4 = this.getNextTag();
+        let tag5 = this.getNextTag();
+        let tag6 = this.getNextTag();
+        let tag7 = this.getNextTag();
+        let tag8 = this.getNextTag();
+        let tag9 = this.getNextTag();
+        let tag10 = this.getNextTag();
+        let tag11 = this.getNextTag();
+        let tag12 = this.getNextTag();
+        let tag13 = this.getNextTag();
+        let tag14 = this.getNextTag();
+        let tag15 = this.getNextTag();
+        this.header = this.header + `void ${function_name}();
+`;
+        this.code = this.code + `
+void ${function_name}(){
+    
+    
+    int ${var1} = SF - 1;
+    int ${var15} = STACK_FUNC[${var1}];//List in HEAP to pointers on STACK
+    
+    STACK_FUNC[SF] = HP; //Pointer to Node value
+    SF = SF + 1;
+`;
+        for (let i = 0; i < node_name.length; i++) {
+            this.code = this.code + `   HEAP[(int)HP] = ${node_name[i].charCodeAt(0)}; //STR_val = ${node_name[i]}
+    HP = HP + 1;
+`;
+        }
+        this.code = this.code + `    HEAP[(int)HP] = 0;
+    HP = HP + 1;
+
+    int ${var4} = HP; // sets the start of the result list
+    HEAP[(int) HP] = 0; // If no Nodes found then the list will start with 0
+
+    int ${var3} = ${var15};
+    int ${var2} = HEAP[${var3}];
+    
+    ${tag12}://inicio del primer for
+    if(${var2} == 0){goto ${tag8};}//exit extern for
+    if(${var2} == -1){goto ${tag11};}
+    ${var2} = ${var2} + 3; //index to children of first node in HEAP    //${var2} = 4
+    int tag_child_index = STACK[${var2}];
+    if(tag_child_index == -1){goto ${tag11};}
+    int child = HEAP[tag_child_index];
+
+
+    ${tag10}:
+    if(child == 0){goto ${tag9};}
+
+    int ${var5} = STACK[child];
+    STACK_FUNC[SF] = ${var5};
+    SF = SF + 1;
+    compareTwoStrings();
+    int ${var6} = (int) STACK_FUNC[SF];
+    if(${var6} != 1){goto ${tag6};}
+    HEAP[(int)HP] = child;
+    HP = HP + 1;
+    ${tag6}:
+    STACK_FUNC[SF] = 0;
+    SF = SF - 1;
+    STACK_FUNC[SF] = 0;
+    tag_child_index = tag_child_index + 1;
+    child = HEAP[tag_child_index];
+    goto ${tag10};
+    ${tag9}:
+
+
+    ${tag11}: // Next iteration extern for / Exit inner for
+    ${var3} = ${var3} + 1;
+    ${var2} = HEAP[${var3}];
+    goto ${tag12}; //Repeat extern for
+    ${tag8}://Exit extern for
+    HEAP[(int) HP] = 0;
+    HP = HP + 1;
+    STACK_FUNC[SF] = 0;
+    SF = SF - 1;
+    STACK_FUNC[SF] = 0;
+
+
+    /**************************** End of first list*************/
+    //La primera lista esta en ${var4};
+    //Crear una segunda lista vacia del tamano de los hijos de ${var15};
+    /********************Reserve spaces in HEAP for the possible list of its children********************************/
+
+    int index_of_lists = HP;
+    int ${var13} = ${var15};
+    //int copy_of_actual_index = actual_index;
+    ${tag5}:
+    int ${var7} = HEAP[${var13}];
+    if(${var7} == 0){goto ${tag4};}
+    int ${var8} = HEAP[${var13}];
+    int index_to_children_ = ${var8} + 3; //Children pointer
+    int ${var9} = STACK[index_to_children_];
+    if(${var9} == -1){goto ${tag3};}
+    int children_ =  STACK[index_to_children_];// indice al heap of children
+    HP = HP + 1;
+    ${tag3}:
+    ${var13} = ${var13} + 1;
+    goto ${tag5};
+    ${tag4}:
+    HEAP[(int)HP] = 0;
+    HP = HP + 1;
+    /********************Reserve spaces in HEAP for the possible list of its children********************************/
+
+
+    /*******************************Set up the list to return**********************************/
+    int ${var14} = ${var15};
+    int copy_of_list_index = index_of_lists;
+    ${tag2}:
+    int ${var10} = HEAP[${var14}];
+    if(${var10} == 0){goto ${tag1};}
+    int ${var11} = HEAP[${var14}];
+    int index_to_children = ${var11} + 3; //Pointer to Children of element in HEAP
+    int index_to_children_heap = STACK[index_to_children];
+
+    if( index_to_children_heap == -1){goto ${tag7};}
+    int ${var12} = STACK[index_to_children];
+    STACK_FUNC[SF] = ${var12};//HEAP[children];
+    SF = SF + 1;
+    f0();
+    int return_list_pointer = (int) STACK_FUNC[SF];
+    STACK_FUNC[SF] = 0;
+    SF = SF - 1;
+    STACK_FUNC[SF] = 0;
+    HEAP[copy_of_list_index] = return_list_pointer;
+    copy_of_list_index = copy_of_list_index + 1;
+    ${tag7}:
+    ${var14} = ${var14} + 1;
+    goto ${tag2};
+    ${tag1}:
+    STACK_FUNC[SF] = index_of_lists;
+    SF = SF + 1;
+    STACK_FUNC[SF] = ${var4};
+    SF = SF + 1;
+    mergeLists();
+    int result = STACK_FUNC[SF];
+    //pop result
+    STACK_FUNC[SF] = 0;
+    SF = SF - 1;
+    STACK_FUNC[SF] = 0;
+    SF = SF - 1;
+    STACK_FUNC[SF] = 0;
+    STACK_FUNC[SF] = result;// merged_list
+    SF = SF + 1;
+`;
+        if (predicate_f != null) {
+            this.code = this.code + `${predicate_f}();
+            result = STACK_FUNC[SF]; 
+            `;
+        }
+        this.code = this.code + `SF = SF - 1;
+    STACK_FUNC[SF] = result;
+    SF = SF + 1;
+    `;
+        if (axis != null) {
+            this.code = this.code + ` ${axis}();
+    result = STACK_FUNC[SF];
+    STACK_FUNC[SF] = 0;
+    `;
+        }
+        this.code = this.code + `SF = SF - 1;
+    STACK_FUNC[SF] = result;
+    
+}
+    `;
+        return function_name;
+    }
+    //Look only index 1
+    setSearchMethodFromFirstStack(node_name, predicate_f, next_fun, axis) {
+        console.log("setSearchMethodFromFirstStack");
+        let main_var = this.getNextVar();
+        let function_name = this.getNextFun();
+        let var1 = this.getNextVar();
+        let var2 = this.getNextVar();
+        let label1 = this.getNextTag();
+        this.header = this.header + `void ${function_name}();
+`;
+        this.code = this.code + `
+        /*This is the code to pull data from the stack, searches for ONLY FIRST tag ${node_name} // setSearchMethodFromFirstStack*/
+void ${function_name}(){
+    STACK_FUNC[SF] = HP;
+    SF = SF + 1;
+`;
+        for (let i = 0; i < node_name.length; i++) {
+            this.code = this.code + `   HEAP[(int)HP] = ${node_name[i].charCodeAt(0)}; //STR_val = ${node_name[i]}
+    HP = HP + 1;
+`;
+        }
+        this.code = this.code + `   HEAP[(int)HP] = 0;
+    HP = HP + 1;
+    int ${main_var} = HP; // sets the start of the result list
+    HEAP[(int) HP] = 0; // If no Nodes found then the list will start with 0
+    int ${var1} = 1; // This is pulling the root which is in the 1st pos of stack
+    STACK_FUNC[SF] = STACK[${var1}];
+    SF = SF + 1;
+    compareTwoStrings();
+    int ${var2} = (int) STACK_FUNC[SF];
+    if(${var2} != 1){goto ${label1};}
+    HEAP[(int)HP] = ${var1};
+    HP = HP + 1;
+    ${label1}:
+    STACK_FUNC[SF] = 0;
+    SF = SF -1;
+    STACK_FUNC[SF] = 0;
+    
+    SF = SF -1;
+    STACK_FUNC[SF] = 0;
+    HEAP[(int)HP] = 0;
+    HP = HP + 1;
+    //TODO Manage Predicate
+    int result = ${main_var};
+    STACK_FUNC[SF] = result;
+    SF = SF + 1;
+`;
+        if (predicate_f != null) {
+            this.code = this.code + `${predicate_f}();
+            result = STACK_FUNC[SF]; 
+            `;
+        }
+        this.code = this.code + `   
+    SF = SF - 1;
+    STACK_FUNC[SF] = result;`;
+        if (axis != null) {
+            this.code = this.code + `
+   
+    STACK_FUNC[SF] = result;
+    SF = SF + 1;
+    ${axis}();
+    result = STACK_FUNC[SF];
+    STACK_FUNC[SF] = 0;
+    SF = SF - 1;
+    STACK_FUNC[SF] = result;
+`;
+        }
+        for (let i = this.functions_Arr.length - 1; i >= 0; i--) {
+            //functions_Arr
+            this.code = this.code + `STACK_FUNC[SF] = result;
+`;
+            this.code = this.code + `    SF = SF + 1;
+    ${this.functions_Arr[i]}();
+    result = STACK_FUNC[SF];
+    SF = SF - 1;
+    STACK_FUNC[SF] = 0;
+
+`;
+        }
+        this.code = this.code + ` /*STACK_FUNC[SF] = ${main_var};
+    SF = SF + 1;    
+    ${next_fun}();
+    int result = STACK_FUNC[SF];
+    SF = SF - 1;
+    STACK_FUNC[SF] = 0;*/
+`;
+        this.code = this.code + `
+    //TODELETE
+    int counter = 0;
+    while(HEAP[result] != 0){
+        print_child_by_index(HEAP[result]);
+        result++;
+        counter ++;
+    }
+
+    printf("Total: %d", SF);
+}    
+`;
+        this.functions_Arr = [];
+        return function_name;
+    }
+    //Look for all nodes
+    setSearchMethodFromStack(node_name, predicate_f, next_fun, axis) {
+        console.log("setSearchMethodFromStack");
+        let main_var = this.getNextVar();
+        let function_name = this.getNextFun();
+        let var1 = this.getNextVar();
+        let var2 = this.getNextVar();
+        let var3 = this.getNextVar();
+        let label1 = this.getNextTag();
+        let label2 = this.getNextTag();
+        let label3 = this.getNextTag();
+        let label4 = this.getNextTag();
+        this.header = this.header + `void ${function_name}();
+`;
+        this.code = this.code + `
+        /*This is the code to pull data from the stack, searches for tag ${node_name} // setSearchMethodFromStack*/
+void ${function_name}(){//setSearchMethodFromStack
+    STACK_FUNC[SF] = HP;
+    SF = SF + 1;
+`;
+        for (let i = 0; i < node_name.length; i++) {
+            this.code = this.code + `   HEAP[(int)HP] = ${node_name[i].charCodeAt(0)}; //STR_val = ${node_name[i]}
+    HP = HP + 1;
+`;
+        }
+        this.code = this.code + `   HEAP[(int)HP] = 0;
+    HP = HP + 1;
+    int ${main_var} = HP; // sets the start of the result list
+    HEAP[(int) HP] = 0; // If no Nodes found then the list will start with 0
+    int ${var1} = 1; // This is pulling the root which is in the 1st pos of stack
+    STACK_FUNC[SF] = STACK[${var1}];
+    SF = SF + 1;
+    compareTwoStrings();
+    int ${var2} = (int) STACK_FUNC[SF];
+    if(${var2} != 1){goto ${label1};}
+    HEAP[(int)HP] = ${var1};
+    HP = HP + 1;
+    ${label1}:
+    STACK_FUNC[SF] = 0;
+    SF = SF -1;
+    STACK_FUNC[SF] = 0;
+ 
+    ${var1} = 6;
+    ${label2}:
+    ;
+    if(STACK[${var1}] == 0){goto ${label3};}
+    STACK_FUNC[SF] = STACK[${var1}];
+    SF = SF + 1;
+    compareTwoStrings();
+    int ${var3} = (int) STACK_FUNC[SF];
+    if(${var3} != 1){goto ${label4};}
+    HEAP[(int)HP] = ${var1};
+    HP = HP + 1;
+    ${label4}:
+    STACK_FUNC[SF] = 0;
+    SF = SF -1;
+    STACK_FUNC[SF] = 0;
+    ${var1} = ${var1} + 5;
+    goto ${label2};
+    ${label3}:
+    SF = SF -1;
+    STACK_FUNC[SF] = 0;;
+    HEAP[(int)HP] = 0;
+    HP = HP + 1;
+    //Manage Predicate
+    int result = ${main_var};
+    STACK_FUNC[SF] = result;
+    SF = SF + 1;    
+`;
+        if (predicate_f != null) {
+            this.code = this.code + `${predicate_f}();
+            result = STACK_FUNC[SF]; 
+            `;
+        }
+        this.code = this.code + `
+    SF = SF - 1;
+    STACK_FUNC[SF] = result;
+    
+
+    //Manejar Axis
+`;
+        if (axis != null) {
+            this.code = this.code + `
+   
+    STACK_FUNC[SF] = result;
+    SF = SF + 1;
+    ${axis}();
+    result = STACK_FUNC[SF];
+    STACK_FUNC[SF] = 0;
+    SF = SF - 1;
+    STACK_FUNC[SF] = result;
+`;
+        }
+        for (let i = this.functions_Arr.length - 1; i >= 0; i--) {
+            //functions_Arr
+            this.code = this.code + `STACK_FUNC[SF] = result;
+`;
+            this.code = this.code + `    SF = SF + 1;
+    ${this.functions_Arr[i]}();
+    result = STACK_FUNC[SF];
+    SF = SF - 1;
+    STACK_FUNC[SF] = 0;
+    
+`;
+        }
+        this.code = this.code + `
+    //TODELETE
+    int counter = 0;
+    while(HEAP[result] != 0){
+        print_child_by_index(HEAP[result]);
+        result++;
+        counter ++;
+    }
+
+    printf("Total: %d", SF);
+}    
+`;
+        this.functions_Arr = [];
+        return function_name;
+    }
+    setSearchNodeDoubleBar(node_name, predicate_f, next_fun) {
+        let main_var = this.getNextVar();
+        return main_var;
+    }
+    setSearchNodeOneBar(node_name, predicate_f, next_fun) {
+        let main_var = this.getNextVar();
+        return main_var;
+    }
+    //TEST
+    setHelpFunctions() {
+        let var1 = this.getNextVar();
+        let var2 = this.getNextVar();
+        let var3 = this.getNextVar();
+        let var4 = this.getNextVar();
+        let var5 = this.getNextVar();
+        let var6 = this.getNextVar();
+        let var7 = this.getNextVar();
+        let var8 = this.getNextVar();
+        let var9 = this.getNextVar();
+        let var10 = this.getNextVar();
+        let var11 = this.getNextVar();
+        let var12 = this.getNextVar();
+        let var13 = this.getNextVar();
+        let var14 = this.getNextVar();
+        let var15 = this.getNextVar();
+        let var16 = this.getNextVar();
+        let var17 = this.getNextVar();
+        let var18 = this.getNextVar();
+        let var19 = this.getNextVar();
+        let var20 = this.getNextVar();
+        let var21 = this.getNextVar();
+        let var22 = this.getNextVar();
+        let var23 = this.getNextVar();
+        let var24 = this.getNextVar();
+        let var25 = this.getNextVar();
+        let var26 = this.getNextVar();
+        let var27 = this.getNextVar();
+        let var28 = this.getNextVar();
+        let var29 = this.getNextVar();
+        let var30 = this.getNextVar();
+        let var31 = this.getNextVar();
+        let var32 = this.getNextVar();
+        let var33 = this.getNextVar();
+        let var34 = this.getNextVar();
+        let var35 = this.getNextVar();
+        let var36 = this.getNextVar();
+        let var37 = this.getNextVar();
+        let var38 = this.getNextVar();
+        let var39 = this.getNextVar();
+        let var40 = this.getNextVar();
+        let var41 = this.getNextVar();
+        let var42 = this.getNextVar();
+        let var43 = this.getNextVar();
+        let var44 = this.getNextVar();
+        let var45 = this.getNextVar();
+        let var46 = this.getNextVar();
+        let var47 = this.getNextVar();
+        let var48 = this.getNextVar();
+        let var49 = this.getNextVar();
+        let var50 = this.getNextVar();
+        let var51 = this.getNextVar();
+        let var52 = this.getNextVar();
+        let var53 = this.getNextVar();
+        let var54 = this.getNextVar();
+        let var55 = this.getNextVar();
+        let var56 = this.getNextVar();
+        let var57 = this.getNextVar();
+        let var58 = this.getNextVar();
+        let var59 = this.getNextVar();
+        let var60 = this.getNextVar();
+        let tag1 = this.getNextTag();
+        let tag2 = this.getNextTag();
+        let tag3 = this.getNextTag();
+        let tag4 = this.getNextTag();
+        let tag5 = this.getNextTag();
+        let tag6 = this.getNextTag();
+        let tag7 = this.getNextTag();
+        let tag8 = this.getNextTag();
+        let tag9 = this.getNextTag();
+        let tag10 = this.getNextTag();
+        let tag11 = this.getNextTag();
+        let tag12 = this.getNextTag();
+        let tag13 = this.getNextTag();
+        let tag14 = this.getNextTag();
+        let tag15 = this.getNextTag();
+        let tag16 = this.getNextTag();
+        let tag17 = this.getNextTag();
+        let tag18 = this.getNextTag();
+        let tag19 = this.getNextTag();
+        let tag20 = this.getNextTag();
+        let tag21 = this.getNextTag();
+        let tag22 = this.getNextTag();
+        let tag23 = this.getNextTag();
+        let tag24 = this.getNextTag();
+        let tag25 = this.getNextTag();
+        let tag26 = this.getNextTag();
+        let tag27 = this.getNextTag();
+        let tag28 = this.getNextTag();
+        let tag29 = this.getNextTag();
+        let tag30 = this.getNextTag();
+        let tag31 = this.getNextTag();
+        let tag32 = this.getNextTag();
+        let tag33 = this.getNextTag();
+        let tag34 = this.getNextTag();
+        let tag35 = this.getNextTag();
+        let tag36 = this.getNextTag();
+        let tag37 = this.getNextTag();
+        let tag38 = this.getNextTag();
+        let tag39 = this.getNextTag();
+        let tag40 = this.getNextTag();
+        this.code = this.code + `
+void isItemInList(){
+    int ${var55} = SF - 1;
+    int ${var56} = STACK_FUNC[${var55}];
+    ${var55} = SF - 2;
+    int ${var57} = STACK_FUNC[${var55}];
+    ${var55} = SF - 3;
+    int ${var58} = STACK_FUNC[${var55}];
+
+    ${tag37}:
+    if(${var58} >= ${var57}){goto ${tag38};}
+    int ${var59} = HEAP[${var58}];
+    if(${var59} == ${var56}){goto ${tag39};}
+    ${var58} = ${var58} + 1;
+    goto ${tag37};
+    ${tag38}:
+    //Item is not in list
+    HEAP[(int)HP] = ${var56};
+    HP = HP + 1;
+    return;
+    ${tag39}:
+    //The Item is already in list;
+    ;
+}
+        
+//0 are different 1 are equal
+void compareTwoStrings(){
+    int ${var1} = SF -1;
+    int ${var2} = (int )STACK_FUNC[${var1}];
+    ${var1} = SF -2;
+    int ${var3} = (int )STACK_FUNC[${var1}];
+    int ${var8} = 0;
+
+    ${tag1}:
+    if(HEAP[${var2}] == 0){goto ${tag3};}
+    if(HEAP[${var3}] == 0 ){goto ${tag3};}
+    int ${var4} = HEAP[${var2}];
+    int ${var5} = HEAP[${var3}];
+    if(${var4} == ${var5}){goto ${tag2};}
+    goto ${tag4};
+    ${tag2}:
+    ${var2} = ${var2} + 1;
+    ${var3} = ${var3} + 1;
+    goto ${tag1};
+    ${tag3}:
+    int ${var6} = HEAP[${var2}];
+    int ${var7} = HEAP[${var3}];
+    if(${var6} == ${var7}){goto ${tag5};}
+    ${tag4}:
+    ${var1} = SF;
+    ${var8} = 0;
+    STACK_FUNC[${var1}] = ${var8};
+    goto ${tag6};
+
+    ${tag5}:
+    ${var1} = SF;
+    ${var8} = 1;
+    STACK_FUNC[${var1}] = ${var8};
+
+    ${tag6}:
+    ;
+}
+
+//Functions to print Tags
+// Receives index from heap, print itself and its children
+void print_tag(){
+    int ${var9} = SF - 1;
+    int ${var10} = STACK_FUNC[${var9}];
+    int ${var11} = ${var10} + 1;
+    int ${var12} = ${var10} + 2;
+    int ${var13} = ${var10} + 3;
+    int parent = ${var10} + 4; //TODO: new
+    
+    
+    int tag_name = STACK[${var10}];
+    int tag_val = STACK[${var11}];
+    int tag_attr_index = STACK[${var12}];
+    int tag_child_index = STACK[${var13}];
+    int tag_parent = STACK[parent]; // TODO: new
+
+    STACK_FUNC[SF] = tag_name;
+    SF = SF + 1;
+    print_open_tag();
+    SF = SF - 1;
+    STACK_FUNC[SF] = 0;
+
+    if(tag_attr_index == -1){goto ${tag7};}
+    STACK_FUNC[SF] = tag_attr_index;
+    SF = SF + 1;
+    print_attributes();
+    SF = SF - 1;
+    STACK_FUNC[SF] = 0;
+
+
+    ${tag7}:
+    int ${var14} = 62; //TODO
+    printf("%c", (char) ${var14});
+    if(tag_child_index == -1){goto ${tag8};}
+    ${var14} = 10; // TODO
+    printf("%c", (char) ${var14});
+    ${var14} = 13; // TODO
+    printf("%c", (char) ${var14});
+    STACK_FUNC[SF] = tag_child_index;
+    SF = SF + 1;
+    print_children();
+    SF = SF - 1;
+    STACK_FUNC[SF] = 0;
+
+
+    ${tag8}://CLOSING TAG
+    if(tag_val == -1){goto ${tag9};}
+    STACK_FUNC[SF] = tag_val;
+    SF = SF + 1;
+    print_content();
+    SF = SF - 1;
+    STACK_FUNC[SF] = 0;
+
+    ${tag9}:
+    STACK_FUNC[SF] = tag_name;
+    SF = SF + 1;
+    print_close_tag();
+    SF = SF - 1;
+    STACK_FUNC[SF] = 0;
+    
+    /*
+    STACK_FUNC[SF] = tag_parent;
+    SF = SF + 1;
+    print_father();
+    SF = SF - 1;
+    STACK_FUNC[SF] = 0;
+    */
+
+}
+
+void print_father(){
+    int t1 = SF - 1;
+    int t2 = STACK_FUNC[t1];
+    int t3 = STACK[t2];
+
+    if(t3 == -1){ goto label_38; }
+    label_37:
+    int t60 = HEAP[t3];
+    if(t60 ==0){goto label_38;}
+    printf("%c", (char) t60);
+    t3 = t3 + 1;
+    goto label_37;
+   
+    label_38:
+    ;
+}
+
+
+
+void print_content(){
+    int ${var15} = SF - 1;
+    int ${var16} = STACK_FUNC[${var15}];
+    int ${var17} = HEAP[${var16}]; // type
+    int ${var18} = ${var16} + 1;
+    float ${var19} = HEAP[${var18}]; // Pointer to heap
+
+    if(${var17} == 1){goto ${tag10};}
+    STACK_FUNC[SF] = ${var18};
+    SF = SF + 1;
+    print_val();
+    SF = SF - 1;
+    STACK_FUNC[SF] = 0;
+    goto ${tag11};
+    ${tag10}:
+    STACK_FUNC[SF] = ${var19};
+    SF = SF + 1;
+    print_number();
+    SF = SF - 1;
+    STACK_FUNC[SF] = 0;
+    ${tag11}:
+    ;
+}
+
+void print_children(){
+    int ${var20} = SF - 1;
+    int ${var21} = STACK_FUNC[${var20}];
+    int ${var22} = HEAP[${var21}];
+
+    ${tag12}:
+    if(${var22}==0){goto ${tag13};}
+
+    STACK_FUNC[SF] = ${var22};
+    SF = SF + 1;
+    print_tag();
+    SF = SF - 1;
+    ${var21} = ${var21} + 1;
+    ${var22} = HEAP[${var21}];
+
+    goto ${tag12};
+    ${tag13}:
+    ;
+}
+
+//Receives an index for stack;
+void print_attributes(){
+    int ${var23} = SF - 1;
+    int ${var24} = STACK_FUNC[${var23}];
+    int ${var25} = HEAP[${var24}];
+    ${tag14}:
+    if(${var25} == 0){goto ${tag15};}
+    STACK_FUNC[SF] = ${var25};
+    SF = SF + 1;
+    print_single_attribute();
+    SF = SF - 1;
+    ${var24} = ${var24} + 1;
+    ${var25} = HEAP[${var24}];
+
+    goto ${tag14};
+    ${tag15}:
+    ;
+}
+
+void print_single_attribute(){
+
+    int ${var26} = SF - 1;
+    int ${var27} = (int)  STACK_FUNC[${var26}];
+    int ${var28} = (int) HEAP[${var27}];// Name
+    int ${var29} = ${var27} + 1;
+    int ${var30} = (int) HEAP[${var29}];//Type
+    int ${var31} = ${var27} + 2;
+    float ${var32} =  HEAP[${var31}];// Value
+
+    printf(" ");
+    STACK_FUNC[SF] = ${var28};
+    SF = SF + 1;
+    print_val();
+    SF = SF - 1;
+    STACK_FUNC[SF] = 0;
+    printf("=\\"");
+
+
+    if (${var30} == 2) goto ${tag16};
+    STACK_FUNC[SF] = ${var32};
+    SF = SF + 1;
+    print_number();
+    SF = SF - 1;
+    STACK_FUNC[SF] = 0;
+
+    goto ${tag17};
+    ${tag16}:
+    STACK_FUNC[SF] = ${var32};
+    SF = SF + 1;
+    print_val();
+    SF = SF - 1;
+    STACK_FUNC[SF] = 0;
+
+    ${tag17}:
+    printf("\\"");
+
+
+}
+
+void print_val(){
+    int ${var33} = SF - 1;
+    int ${var34} = STACK_FUNC[${var33}];
+    int ${var35} = HEAP[${var34}];
+
+    ${tag18}:
+    if (${var35} == 0){goto ${tag19};}
+    printf("%c", (char) ${var35});
+    ${var34} = ${var34} +1;
+    ${var35} = HEAP[${var34}];
+    goto ${tag18};
+    ${tag19}:
+    ;
+}
+
+void print_number(){
+    int ${var36} = SF - 1;
+    float ${var37} = STACK_FUNC[${var36}];
+    int ${var38} = (int) ${var37};
+    float ${var39} = ${var37} - ${var38};
+    if(${var39} == 0.0f){goto ${tag20};}
+    printf("%0.2f", ${var37});
+    goto ${tag21};
+    ${tag20}:
+    printf("%d", ${var38});
+    ${tag21}:
+    ;
+}
+
+void print_open_tag(){
+    int ${var40} = 60;
+    printf("%c", (char) ${var40});
+    int ${var41} = SF - 1;
+    int ${var42} = STACK_FUNC[${var41}];
+    ${tag22}:
+    int ${var43} = HEAP[${var42}];
+    if(${var43} ==0){goto ${tag23};}
+    printf("%c", (char) ${var43});
+    ${var42} = ${var42} + 1;
+    goto ${tag22};
+
+    ${tag23}:
+    ;
+
+
+
+}
+
+void print_close_tag(){
+    int ${var44} = 60;
+    printf("%c", (char) ${var44});
+    ${var44} = 47;
+    printf("%c", (char) ${var44});
+    int ${var45} = SF - 1;
+    int ${var46} = STACK_FUNC[${var45}];
+    ${tag24}:
+    int ${var47} = HEAP[${var46}];
+    if(${var47} ==0){goto ${tag25};}
+    printf("%c", (char) ${var47});
+    ${var46} = ${var46} + 1;
+    goto ${tag24};
+    ${tag25}:
+    ${var44} = 62;
+    printf("%c", (char) ${var44});
+    ${var44} = 10;
+    printf("%c", (char) ${var44});
+    ${var44} = 13;
+    printf("%c", (char) ${var44});
+}
+
+ 
+
+
+
+//merge a list with a list of lists
+void mergeLists(){
+    int ${var48} = SF - 1;
+    int ${var51} = STACK_FUNC[${var48}];
+    ${var48} = SF - 2;
+    int ${var52} = STACK_FUNC[${var48}]; // index_of_lists
+    int ${var53} = HP;
+
+
+    ${tag26}:
+    if(HEAP[${var51}] == 0){goto ${tag28};}
+    if(HEAP[${var51}] == -1){goto ${tag27};}
+    int ${var49} = HEAP[${var51}];
+    HEAP[(int)HP] = ${var49};
+    HP = HP + 1;
+    ${tag27}:
+    ${var51} = ${var51} + 1;
+    goto ${tag26};
+    ${tag28}:
+    ;
+
+
+    ${tag29}:
+    if(HEAP[${var52}] == 0){goto ${tag34};}
+    if(HEAP[${var52}] == -1){goto ${tag33};}
+
+    /**********************Inner For**************************/
+    int ${var54} = HEAP[${var52}];
+    ${tag30}:
+    if(HEAP[${var54}] == 0){goto ${tag32};}
+    if(HEAP[${var54}] == -1){goto ${tag31};}
+    STACK_FUNC[SF] = ${var53}; // Beginning
+    SF = SF + 1;
+    int t2 = HP - 1;
+    STACK_FUNC[SF] = t2;// Ending
+    SF = SF + 1;
+    int ${var50} = HEAP[${var54}];
+    STACK_FUNC[SF] = ${var50}; // Value
+    SF = SF + 1;
+    isItemInList();
+    SF = SF - 1;
+    STACK_FUNC[SF] = 0;
+    SF = SF - 1;
+    STACK_FUNC[SF] = 0;
+    SF = SF - 1;
+    STACK_FUNC[SF] = 0;
+
+    ${tag31}:
+    ${var54} = ${var54} + 1;
+    goto ${tag30};
+    ${tag32}:
+    /**********************Inner For**************************/
+    ${tag33}:
+    ${var52} = ${var52} + 1;
+    goto ${tag29};
+    ${tag34}:
+    ;
+    if(${var53} == HP){ goto ${tag35};}
+    HEAP[(int)HP] = 0;
+    HP = HP + 1;
+    STACK_FUNC[SF] = ${var53};
+    goto ${tag36};
+    ${tag35}:
+    STACK_FUNC[SF] = -1;
+    ${tag36}:
+    ;
+}
+
+
+
+//add one item to the list if its not already there
+//value, list
+void addItemToList(){
+    int t0 = SF - 1;
+    int value = STACK_FUNC[t0];//List in HEAP to pointers on STACK
+    int t1 = SF - 2;
+    int list = STACK_FUNC[t1];//List in HEAP to pointers on STACK
+
+    label_x2:
+    if(HEAP[list] == 0){goto label_x0;}
+    if(HEAP[list] == value){goto label_x1;}
+    list++;
+    goto label_x2;
+    label_x0:
+    if(value == -1){goto label_x1;}
+    //if(HEAP[t1] == 0){goto label_x1;}
+    HEAP[(int) HP] = value;
+    HP = HP + 1;
+    label_x1:
+    ;
+}
+
+
+
+
+
+
+
+
+
+
+
+void AxisParent(){
+    int t0 = SF - 1;
+    int pointers_list = STACK_FUNC[t0];//List in HEAP to pointers on STACK
+    int return_list = HP;
+    STACK_FUNC[SF] = return_list;
+    SF = SF + 1;
+    int node = HEAP[pointers_list];
+    label_x2:
+    if(node == 0){goto label_x1;}
+    if(node == -1){goto label_x0;}
+    int t1 = node + 4;
+    int father = STACK[t1];
+    STACK_FUNC[SF] = father;
+    SF = SF + 1;
+    addItemToList();
+    SF = SF - 1;
+    STACK_FUNC[SF] = 0;
+    label_x0:
+    pointers_list++;
+    node = HEAP[pointers_list];
+    goto label_x2;
+    label_x1:
+    HEAP[(int) HP] = 0;
+    HP = HP + 1;
+    SF = SF - 1;
+    STACK_FUNC[SF] = 0;
+    STACK_FUNC[SF] = return_list;
+}
+
+void AxisAncestor(){
+
+    int t0 = SF - 1;
+    int pointers_list = STACK_FUNC[t0];//List in HEAP to pointers on STACK
+    int return_list = HP;
+    HEAP[(int)HP] = 0;
+    STACK_FUNC[SF] = return_list;
+    SF = SF + 1;
+    int node = HEAP[pointers_list];
+    label_x2:
+    if(node == 0){goto label_x1;}
+    if(node == -1){goto label_x0;}
+    int t1 = node + 4;
+    int father = STACK[t1];
+    STACK_FUNC[SF] = father;
+    SF = SF + 1;
+    addItemToList();
+    SF = SF - 1;
+    STACK_FUNC[SF] = 0;
+    label_x0:
+    pointers_list++;
+    node = HEAP[pointers_list];
+    goto label_x2;
+    label_x1:
+    HEAP[(int) HP] = 0;
+    HP = HP + 1;
+    SF = SF - 1;
+    STACK_FUNC[SF] = 0;
+
+
+    if(HEAP[return_list] == 0){goto label_x3;}
+    STACK_FUNC[SF] = return_list;
+    SF = SF + 1;
+    AxisAncestor();
+    int extra_list = STACK_FUNC[SF];
+    STACK_FUNC[SF] = 0;
+    SF = SF - 1;
+    STACK_FUNC[SF] = 0;
+    if(HEAP[extra_list] == 0){goto label_x3;} // si la lista esta vacia
+    //merge return_list and extra_list and assign the value to return_list
+    STACK_FUNC[SF] = return_list;
+    SF = SF + 1;
+    STACK_FUNC[SF] = extra_list;
+    SF = SF + 1;
+    mergeTwoLists();
+    return_list = STACK_FUNC[SF];
+    STACK_FUNC[SF] = 0;
+    SF = SF - 1;
+    STACK_FUNC[SF] = 0;
+    SF = SF - 1;
+    STACK_FUNC[SF] = 0;
+
+    label_x3:
+    STACK_FUNC[SF] = return_list;
+    ;
+
+
+}
+
+void AxisAncestorSelf(){
+    int t65 = SF - 1;
+    int list = STACK_FUNC[t65];
+    //Just sends through the list received
+    AxisAncestor();
+    int result = STACK_FUNC[SF];
+    STACK_FUNC[SF] = result;
+    SF = SF + 1;
+    STACK_FUNC[SF] = list;
+    SF = SF + 1;
+    mergeTwoLists();
+    list = STACK_FUNC[SF];
+    STACK_FUNC[SF] = 0;
+    SF = SF - 1;
+    STACK_FUNC[SF] = 0;
+    SF = SF - 1;
+    STACK_FUNC[SF] = 0;
+    STACK_FUNC[SF] = list;
+
+    //Add items to list which is in result.
+}
+
+void AxisChild(){
+    int t65 = SF - 1;
+    int list = STACK_FUNC[t65];
+    int result = HP;
+    HEAP[(int) HP] = 0;
+
+    int node_index = HEAP[list];
+
+    label_x1:
+    if(node_index == 0){goto label_x0;}
+    int children_index = node_index + 3;
+    int child_index = STACK[children_index];
+    if(child_index == -1) {goto label_x2;}
+
+    label_x4:
+    if(HEAP[child_index] == 0){goto label_x2;}
+    STACK_FUNC[SF] = result;
+    SF = SF + 1;
+    STACK_FUNC[SF] = HEAP[child_index];
+    SF = SF + 1;
+    addItemToList();
+    SF = SF - 1;
+    STACK_FUNC[SF] = 0;
+    SF = SF - 1;
+    STACK_FUNC[SF] = 0;
+    //print_child_by_index(HEAP[child_index]);
+    child_index++;
+    goto label_x4;
+
+
+    label_x2:
+    list++;
+    node_index = HEAP[list];
+
+    goto label_x1;
+    label_x0:
+    HEAP[(int) HP] = 0;
+    HP = HP + 1;
+    STACK_FUNC[SF] = result;
+
+
+  
+}
+
+void AxisDescendant(){
+    AxisChild();//Sends the parameter being carrrited
+    int result = STACK_FUNC[SF];
+    int second_list = result;
+    STACK_FUNC[SF] = 0;
+
+    //goto label_x0;
+
+    //while(HEAP[second_list] != 0){
+    label_x1:
+    if(HEAP[second_list] == 0){goto label_x0;}
+        STACK_FUNC[SF] = second_list;
+        SF = SF + 1;
+        AxisChild();
+        second_list = STACK_FUNC[SF];
+        STACK_FUNC[SF] = 0;
+        SF = SF - 1;
+        STACK_FUNC[SF] = 0;
+
+
+        STACK_FUNC[SF] = result;
+        SF = SF + 1;
+        STACK_FUNC[SF] = second_list;
+        SF = SF + 1;
+        mergeTwoLists();
+        result = STACK_FUNC[SF];
+        STACK_FUNC[SF] = 0;
+        SF = SF - 1;
+        STACK_FUNC[SF] = 0;
+        SF = SF - 1;
+        STACK_FUNC[SF] = 0;
+
+    //}
+    goto label_x1;
+    label_x0:
+
+    HEAP[(int) HP] = 0;
+    HP = HP + 1;
+    STACK_FUNC[SF] = result;
+}
+
+void AxisDescendantSelf(){
+    int t65 = SF - 1;
+    int list = STACK_FUNC[t65];
+    AxisDescendant();
+    int result = STACK_FUNC[SF];
+    STACK_FUNC[SF] = result;
+    SF = SF + 1;
+    STACK_FUNC[SF] = list;
+    SF = SF + 1;
+    mergeTwoLists();
+    list = STACK_FUNC[SF];
+    STACK_FUNC[SF] = 0;
+    SF = SF - 1;
+    STACK_FUNC[SF] = 0;
+    SF = SF - 1;
+    STACK_FUNC[SF] = 0;
+    STACK_FUNC[SF] = list;
+}
+
+void AxisAttributes(){}
+
+void AxisFollowing(){}
+void AxisFollowingSibling(){}
+
+void AxisPreceding(){}
+void AxisPrecedingSibling(){}
+
+void AxisSelf(){
+    //Empty
+}
+
+void mergeTwoLists(){
+    int t65 = SF - 1;
+    int list1 = STACK_FUNC[t65];
+    int t0 = SF - 2;
+    int list2 = STACK_FUNC[t0];
+    int list_result = HP;
+
+    label_x1:
+    if(HEAP[list1] == 0){ goto  label_x0;}
+        STACK_FUNC[SF] = list_result;
+        SF = SF + 1;
+        STACK_FUNC[SF] = HEAP[list1];
+        SF = SF + 1;
+        addItemToList();
+        SF = SF - 1;
+        STACK_FUNC[SF] = 0 ;
+        SF = SF - 1;
+        STACK_FUNC[SF] = 0 ;
+        list1++;
+    
+    goto label_x1;
+    label_x0:
+
+
+
+    label_x3:
+    if(HEAP[list2] == 0){goto label_x2;}
+        STACK_FUNC[SF] = list_result;
+        SF = SF + 1;
+        STACK_FUNC[SF] = HEAP[list2];
+        SF = SF + 1;
+        addItemToList();
+        SF = SF - 1;
+        STACK_FUNC[SF] = 0 ;
+        SF = SF - 1;
+        STACK_FUNC[SF] = 0 ;
+        list2++;
+    
+    goto label_x3;
+    label_x2:
+    
+    
+    HEAP[(int) HP] = 0;
+    HP = HP + 1;
+    STACK_FUNC[SF] = list_result;
+
+}
+
+
+/*************************TODELETE***************************************/
+
+void print_tags_from_heap(){
+    //printf("First: %d\\n", SF);
+    //SF = SF - 1;
+    int t0 = SF - 1;
+    int t1 = STACK_FUNC[t0];
+    int t2 = HEAP[t1];
+    //printf("%d\\n", t1);
+
+    label_x10:
+    if(t2 == 0){goto label_x11;}
+    STACK_FUNC[SF] = t2;
+    //printf("t3: %d val: %d\\n", t2, (int)STACK_FUNC[SF]);
+    SF = SF + 1;
+    print_tag();
+    SF = SF - 1;
+
+    t1 = t1 + 1;
+    t2 = HEAP[t1];
+    //printf("%d\\n", (int)SF);
+    goto label_x10;
+    label_x11:
+    int t3 = 0;
+    STACK_FUNC[SF] = t3;
+    ;
+    printf("%d\\n", SF);
+}
+void print_value_by_index(int index) {
+    //int t0 = STACK[index];
+    int t0 = index;
+    char val = (char) HEAP[t0];
+    while (val != '\\0') { printf("%c", val); t0++; val = (char) HEAP[t0];
+
+    }
+    printf("\\n");
+}
+
+
+void print_child_by_index(int index) {
+    int t0 = STACK[index];
+    //int t0 = index;
+    char val = (char) HEAP[t0];
+    while (val != '\\0') { printf("%c", val); t0++; val = (char) HEAP[t0];
+
+    }
+    printf("\\n");
+}
+
+
+
+
+void printHeap(){
+    int i = 0;
+    for(int i = 1; i <1000; i++ ){
+        printf("HEAP[%d] = %f\\n", i, HEAP[i]);
+    }
+
+}
+`;
+        this.header = this.header + `void compareTwoStrings();
+void print_tag();
+void print_content();        
+void print_children();        
+void print_attributes();        
+void print_single_attribute();
+void print_val();
+void print_number();
+void print_open_tag();
+void print_close_tag();
+void mergeLists();
+void isItemInList();
+void AxisAncestor();
+void AxisAncestorSelf();
+void AxisAttributes();
+void AxisChild();
+void AxisDescendant();
+void AxisDescendantSelf();
+void AxisFollowing();
+void AxisFollowingSibling();
+void AxisParent();
+void AxisPreceding();
+void AxisPrecedingSibling();
+void AxisSelf();
+void mergeTwoLists();
+
+
+/*************************TODELETE***************************************/
+void print_tags_from_heap();
+void print_value_by_index(int);
+void print_child_by_index(int);      
+void printHeap(); 
+void isItemInList();
+void print_father();
+void addItemToList();
+        `;
+    }
+    getCode() {
+        this.root.set3DCode(null);
+        let temp = `float HEAP[100000];
+float STACK[10000];
+float STACK_FUNC[10000];
+float SP = 1;
+float HP = 1;
+int SF = 0;
+        
+int main(){
+` + Element_1.Element.code_definition + `
+    HP = ${Element_1.Element.heap_index};
+    SP = ${Element_1.Element.stack_index};
+    `;
+        for (let i = 0; i < this.global_vars.length; i++) {
+            temp = temp + `${this.global_vars[i]}();
+`;
+        }
+        temp = temp + `
+    return 0;
+}
+ `;
+        this.code = temp + this.code;
+        this.setHelpFunctions();
+        return "#include <stdio.h>\n" + this.header + this.code;
+    }
+    getNextVar() {
+        return 't' + (++this.varNumber);
+    }
+    getNextTag() {
+        return 'label_' + (++this.tagNumber);
+    }
+    getNextFun() {
+        return 'f' + (++this.funNumber);
+    }
+}
+exports.XQueryTranslator = XQueryTranslator;
+
+
+/***/ }),
+
 /***/ "EfzR":
 /*!***********************************************!*\
   !*** ./src/js/model/xml/Encoding/Encoding.js ***!
@@ -3156,7 +5192,6 @@ function getASTTree(obj) {
 
 
 function printObj(obj, lines, name) {
-  console.log(obj)
   let str = "";
   let str_ = "";
   if (Array.isArray(obj)) { //IS ARRAY
@@ -3169,7 +5204,6 @@ function printObj(obj, lines, name) {
       str = str + printObj(obj.expresion, 0, (obj.tipo === 'SELECT_FROM_ROOT' ? "/" : "//"));
       str = str + getPredicados(obj.expresion);
       str = str + `</li>`
-      console.log(str);
     } else if (obj.tipo === 'EXPRESION') {
       if (typeof obj.expresion === 'object') {
         str = `<a>` + name + getName(obj.expresion) + `</a>`;
@@ -3205,15 +5239,12 @@ function getName(obj) {
   } else if (obj.tipo === 'SELECT_ATTRIBUTES') {
     return obj.expresion;
   } else {
-    console.log("Error 1")
-    console.log(obj)
   }
   return str
 }
 
 function getPredicados(obj) {
   let str = "";
-  console.log(obj)
   if (obj.predicate !== null && obj.predicate !== undefined) {
 
     str = `<ul>\n`;
@@ -3248,8 +5279,6 @@ function getPredicado(obj) {
             `;
 
     } else {
-      console.log("error 2")
-      console.log(obj)
     }
 
 
@@ -3281,6 +5310,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.Element = void 0;
 class Element {
     constructor(id_open, attributes, value, childs, line, column, id_close) {
+        this.stack_index_ = 0;
         this.id_open = id_open;
         this.id_close = id_close;
         this.attributes = attributes;
@@ -3407,8 +5437,220 @@ class Element {
             value.printChildren();
         });
     }
+    set3DCode(parent) {
+        let stack_temp = Element.getNextTemp();
+        Element.code_definition = Element.code_definition + `float ${stack_temp} = SP;
+        `;
+        this.stack_index_ = Element.stack_index;
+        Element.stack_index = Element.stack_index + 5;
+        Element.code_definition = Element.code_definition + `SP = ${Element.stack_index};
+        STACK[(int)${stack_temp}] = (float) ${Element.heap_index};         
+        `;
+        Element.pushStringToHeap(this.id_open);
+        this.setContent(stack_temp);
+        this.setAttributes(stack_temp);
+        this.setChildren(stack_temp);
+        this.setParent(stack_temp, parent);
+    }
+    /*
+     1) tipo
+     2) apuntador al valor si es string o valor si es number
+    */
+    setContent(current_stack_index) {
+        let temp_content_index = Element.heap_index;
+        let temp = Element.getNextTemp();
+        if (this.value == null) {
+            Element.code_definition = Element.code_definition + `
+            int ${temp} = ${current_stack_index} + 1;
+            STACK[(int) ${temp}] = (float) -1;
+            `;
+            return;
+        }
+        else {
+            Element.code_definition = Element.code_definition + `
+            int ${temp} = ${current_stack_index} + 1;
+            STACK[(int) ${temp}] = (float) ${Element.heap_index};
+            `;
+            let str_val = this.value;
+            if (isNaN(Number(str_val))) { // Is string
+                Element.code_definition = Element.code_definition + `${temp} = ${Element.heap_index};
+            HEAP[${temp}] = 2;`;
+                Element.heap_index++;
+                Element.pushStringToHeap(str_val);
+            }
+            else { //Is Number
+                Element.code_definition = Element.code_definition + `${temp} = ${Element.heap_index};
+            HEAP[${temp}] = 1;`;
+                Element.heap_index++;
+                Element.code_definition = Element.code_definition + `${temp} = ${Element.heap_index};
+                HEAP[${temp}] = ${str_val};
+                `;
+                Element.heap_index++;
+            }
+        }
+    }
+    setAttributes(current_heap_index) {
+        let temp = Element.getNextTemp();
+        if (this.attributes == null) {
+            Element.code_definition = Element.code_definition + `
+            float ${temp} = ${current_heap_index} + 2;
+            STACK[(int) ${temp}] = (float) -1;
+            `;
+            return;
+        }
+        else {
+            Element.code_definition = Element.code_definition + `/*  ***********Atributos********** */
+            float ${temp} = ${current_heap_index} + 2;
+            STACK[(int) ${temp}] = (float) ${Element.heap_index};
+            `;
+            // temp_att_gen_index es el indice para mis atributos y el heap es el indice para los actual key value
+            let temp_att_gen_index = Element.heap_index;
+            Element.heap_index = Element.heap_index + this.attributes.length + 1;
+            for (let i = 0; i < this.attributes.length; i++) {
+                let temp1 = Element.getNextTemp();
+                let index_attr = Element.setSingleAttribute(this.attributes[i]);
+                Element.code_definition = Element.code_definition + `
+                float ${temp1} = ${temp_att_gen_index + i};  
+                HEAP[(int) ${temp1}] = ${index_attr};
+                `;
+            }
+            let temp2 = Element.getNextTemp();
+            Element.code_definition = Element.code_definition + `float ${temp2} = ${temp_att_gen_index + this.attributes.length};
+            HEAP[(int)${temp2}] = 0;
+            `; //TODO: \\0
+        }
+    }
+    /*
+    1) reservar su memoria en heap
+    2) devolverme su indice inicial
+
+    Type = 1 number; = 2 String
+        */
+    static setSingleAttribute(attr) {
+        let temp_att_index = Element.heap_index;
+        Element.heap_index = Element.heap_index + 4; // 1) key 2) value 3) type 4) NULL
+        let temp = Element.getNextTemp();
+        let attr_id_index = Element.setAttributeKey(attr.id);
+        Element.code_definition = Element.code_definition + `
+        /*Start single attribute*/
+        int ${temp} = ${temp_att_index};
+        HEAP[ ${temp}] = ${attr_id_index};  
+                `;
+        temp_att_index++;
+        let attr_val = attr.value;
+        if (isNaN(Number(attr_val))) { // Is string
+            Element.code_definition = Element.code_definition + `${temp} = ${temp_att_index};
+            HEAP[${temp}] = 2;
+            `;
+            temp_att_index++;
+            //let attr_val_index = Element.setAttributeValue(attr.value.slice(0,-1).substring(1));
+            let attr_val_index = Element.setAttributeValue(attr.value);
+            Element.code_definition = Element.code_definition + `${temp} = ${temp_att_index};
+        HEAP[(int) ${temp}] = ${attr_val_index}; // index_val_attr = ${attr_val}   
+                `;
+            temp_att_index++;
+        }
+        else { // Is number
+            Element.code_definition = Element.code_definition + `${temp} = ${temp_att_index};
+            HEAP[${temp}] = 1;
+            `;
+            temp_att_index++;
+            Element.code_definition = Element.code_definition + `${temp} = ${temp_att_index};
+        HEAP[(int) ${temp}] = ${attr_val};// val_attr = ${attr_val}  
+                `;
+            temp_att_index++;
+        }
+        Element.code_definition = Element.code_definition + `${temp} = ${temp_att_index};
+        HEAP[(int) ${temp}] = 0;
+        /*End single attribute*/
+                `; //TODO \\0
+        return temp_att_index - 3;
+    }
+    static setAttributeKey(val) {
+        let temp = Element.heap_index;
+        Element.pushStringToHeap(val);
+        return temp;
+    }
+    static setAttributeValue(val) {
+        let temp = Element.heap_index;
+        Element.pushStringToHeap(val);
+        return temp;
+    }
+    setChildren(current_stack_index) {
+        let temp = Element.getNextTemp();
+        if (this.childs == null) { // It doesnt have children;
+            Element.code_definition = Element.code_definition + `
+            float ${temp} = ${current_stack_index} + 3;
+            STACK[(int) ${temp}] = (float) -1;
+            `;
+            return;
+        }
+        else {
+            let temp_att_index = Element.heap_index;
+            Element.heap_index = Element.heap_index + this.childs.length + 1;
+            for (let i = 0; i < this.childs.length; i++) {
+                this.childs[i].set3DCode(current_stack_index);
+            }
+            for (let i = 0; i < this.childs.length; i++) {
+                let temp1 = Element.getNextTemp();
+                Element.code_definition = Element.code_definition + `float ${temp1} = ${temp_att_index + i}; 
+                HEAP[(int) ${temp1}] = ${this.childs[i].stack_index_};
+                `;
+            }
+            Element.code_definition = Element.code_definition + `float ${temp} = ${current_stack_index} + 3;
+            STACK[(int) ${temp}] = (float) ${temp_att_index};
+            `;
+        }
+    }
+    static pushStringToHeap(str_val) {
+        for (let i = 0; i < str_val.length; i++) {
+            let temp = Element.getNextTemp();
+            Element.code_definition = Element.code_definition + `float ${temp} = ${Element.heap_index};
+            HEAP[(int)${temp}] = (float) ${str_val[i].charCodeAt(0)}; // PSH = ${str_val[i]} 
+            `;
+            Element.heap_index++;
+            Element.code_definition = Element.code_definition + `HP = ${Element.heap_index};
+            `;
+        }
+        let temp = Element.getNextTemp();
+        Element.code_definition = Element.code_definition + `float ${temp} = HP;
+            HEAP[(int)${temp}] = (float) 0;
+            `;
+        Element.heap_index++;
+        /*Element.code_definition = Element.code_definition + `HP = ${Element.heap_index};
+
+        Heap pointer value is ${Element.heap_index}
+        Stack pointer value is ${Element.stack_index}
+
+            `;*/
+    }
+    static getNextTemp() {
+        Element.temp_counter++;
+        let temp = Element.temp_counter;
+        return "t" + temp;
+    }
+    setParent(current_stack_index, parent) {
+        let temp = Element.getNextTemp();
+        if (parent == null) {
+            Element.code_definition = Element.code_definition + `
+    float ${temp} = ${current_stack_index} + 4;
+    STACK[(int) ${temp}] = (float) -1; // Parent NULL
+`;
+        }
+        else {
+            Element.code_definition = Element.code_definition + `
+    float ${temp} = ${current_stack_index} + 4;
+    STACK[(int) ${temp}] = ${parent}; // Parent
+`;
+        }
+    }
 }
 exports.Element = Element;
+/*********************3D Code*****************************/
+Element.temp_counter = -1;
+Element.heap_index = 1;
+Element.stack_index = 1;
+Element.code_definition = "";
 
 
 /***/ }),
@@ -3597,6 +5839,81 @@ var Tipos;
     Tipos["TO_NUMBER"] = "TO_NUMBER";
     Tipos["SUBSTRING"] = "SUBSTRING";
 })(Tipos = exports.Tipos || (exports.Tipos = {}));
+
+
+/***/ }),
+
+/***/ "P7zU":
+/*!************************************!*\
+  !*** ./src/js/routes/translate.js ***!
+  \************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+const xQueryTranslator_1 = __webpack_require__(/*! ../c_translator/xQueryTranslator */ "ENWa");
+function translate(req) {
+    let errors = [];
+    try {
+        // Datos de la petición desde Angular
+        let xml = req.xml;
+        let xQuery = req.query;
+        let parser_xml = __webpack_require__(/*! ../analyzers/xml_up */ "nxic");
+        let parser_xQuery = __webpack_require__(/*! ../analyzers/xquery */ "lv3P");
+        // Análisis de XML
+        let xml_ast = parser_xml.parse(xml);
+        let xml_parse = xml_ast.ast; // AST que genera Jison
+        let encoding = xml_ast.encoding; // Encoding del documento XML
+        if (encoding.encoding === encoding.codes.INVALID) {
+            errors.push({ tipo: "Léxico", error: "La codificación del XML no es válida.", origen: "XML", linea: "1", columna: "1" });
+        }
+        if (xml_ast.errors.length > 0 || xml_parse === null || xml_ast === true) {
+            if (xml_ast.errors.length > 0)
+                errors = errors.concat(xml_ast.errors);
+            if (xml_parse === null || xml_ast === true) {
+                errors.push({ tipo: "Sintáctico", error: "Sintaxis errónea del documento XML.", origen: "XML", linea: "1", columna: "1" });
+                return { output: "El documento XML contiene errores para analizar.\nIntente de nuevo.", arreglo_errores: errors };
+            }
+        }
+        // Análisis de xQuery
+        let xQuery_ast = parser_xQuery.parse(xQuery);
+        let xquery_parse = (xQuery_ast.xquery) ? (xQuery_ast.xquery) : (xQuery_ast.xpath); // AST que genera Jison
+        if (xQuery_ast.errors.length > 0 || xquery_parse === null || xQuery_ast === true) {
+            if (xQuery_ast.errors.length > 0)
+                errors = xQuery_ast.errors;
+            if (xquery_parse === null || xQuery_ast === true) {
+                errors.push({ tipo: "Sintáctico", error: "Sintaxis errónea de la consulta digitada.", origen: "XQuery", linea: "1", columna: "1" });
+                return { output: "La consulta contiene errores para analizar.\nIntente de nuevo.", arreglo_errores: errors };
+            }
+        }
+        let xQueryTranslator = new xQueryTranslator_1.XQueryTranslator(xQuery_ast, xml_parse[0]);
+        xQueryTranslator.translate();
+        let code = xQueryTranslator.getCode();
+        let output = {
+            arreglo_errores: errors,
+            output: code,
+        };
+        errors = [];
+        return output;
+    }
+    catch (error) {
+        console.log(error);
+        if (error.message)
+            errors.push({ tipo: "Sintáctico", error: String(error.message), origen: "Entrada", linea: "", columna: "" });
+        else
+            errors.push({ tipo: "Desconocido", error: "Error en tiempo de ejecución.", origen: "", linea: "", columna: "" });
+        let output = {
+            arreglo_simbolos: [],
+            arreglo_errores: errors,
+            output: (error.message) ? String(error.message) : String(error),
+            encoding: "utf-8"
+        };
+        errors = [];
+        return output;
+    }
+}
+module.exports = { translate: translate };
 
 
 /***/ }),
@@ -4106,18 +6423,16 @@ module.exports = ExpresionQuery;
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "AppComponent", function() { return AppComponent; });
 /* harmony import */ var _angular_core__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @angular/core */ "fXoL");
-/* harmony import */ var _app_service__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./app.service */ "F5nt");
-/* harmony import */ var _angular_forms__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @angular/forms */ "3Pt+");
-/* harmony import */ var _materia_ui_ngx_monaco_editor__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! @materia-ui/ngx-monaco-editor */ "0LvA");
-/* harmony import */ var _angular_common__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! @angular/common */ "ofXK");
+/* harmony import */ var _angular_forms__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @angular/forms */ "3Pt+");
+/* harmony import */ var _materia_ui_ngx_monaco_editor__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @materia-ui/ngx-monaco-editor */ "0LvA");
+/* harmony import */ var _angular_common__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! @angular/common */ "ofXK");
 
 
 
 
-
-function AppComponent_tr_99_Template(rf, ctx) { if (rf & 1) {
+function AppComponent_tr_122_Template(rf, ctx) { if (rf & 1) {
     _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](0, "tr");
-    _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](1, "th", 40);
+    _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](1, "th", 52);
     _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](2);
     _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
     _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](3, "td");
@@ -4132,10 +6447,10 @@ function AppComponent_tr_99_Template(rf, ctx) { if (rf & 1) {
     _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](9, "td");
     _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](10);
     _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
-    _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](11, "td", 41);
+    _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](11, "td", 53);
     _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](12);
     _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
-    _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](13, "td", 41);
+    _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](13, "td", 53);
     _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](14);
     _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
     _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
@@ -4157,9 +6472,9 @@ function AppComponent_tr_99_Template(rf, ctx) { if (rf & 1) {
     _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵadvance"](2);
     _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtextInterpolate"](item_r3.columna);
 } }
-function AppComponent_tr_121_Template(rf, ctx) { if (rf & 1) {
+function AppComponent_tr_144_Template(rf, ctx) { if (rf & 1) {
     _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](0, "tr");
-    _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](1, "th", 40);
+    _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](1, "th", 52);
     _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](2);
     _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
     _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](3, "td");
@@ -4171,10 +6486,10 @@ function AppComponent_tr_121_Template(rf, ctx) { if (rf & 1) {
     _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](7, "td");
     _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](8);
     _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
-    _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](9, "td", 41);
+    _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](9, "td", 53);
     _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](10);
     _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
-    _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](11, "td", 41);
+    _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](11, "td", 53);
     _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](12);
     _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
     _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
@@ -4195,9 +6510,8 @@ function AppComponent_tr_121_Template(rf, ctx) { if (rf & 1) {
     _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtextInterpolate"](item_r5.columna);
 } }
 class AppComponent {
-    constructor(appService) {
-        this.appService = appService;
-        this.EditorOptions = {
+    constructor() {
+        this.XMLOptions = {
             theme: "vs-dark",
             automaticLayout: true,
             scrollBeyondLastLine: false,
@@ -4206,6 +6520,26 @@ class AppComponent {
                 enabled: true
             },
             language: 'xml'
+        };
+        this.QueryOptions = {
+            theme: "vs-dark",
+            automaticLayout: true,
+            scrollBeyondLastLine: false,
+            fontSize: 13.5,
+            minimap: {
+                enabled: true
+            },
+            language: 'sql'
+        };
+        this.C3DOptions = {
+            theme: "vs-dark",
+            automaticLayout: true,
+            scrollBeyondLastLine: false,
+            fontSize: 13,
+            minimap: {
+                enabled: true
+            },
+            language: 'c'
         };
         this.ConsoleOptions = {
             theme: "vs-dark",
@@ -4221,47 +6555,46 @@ class AppComponent {
         this.entrada = `<?xml version="1.0" encoding="UTF-8"?>
 <bookstore>
 
-<book category="COOKING">
-  <title lang="en">Everyday Italian</title>
-  <author>Giada De Laurentiis</author>
-  <year>2005</year>
-  <price>30.00</price>
-</book>
+  <book category="COOKING">
+    <title lang="en">Everyday Italian</title>
+    <author>Giada De Laurentiis</author>
+    <year>2005</year>
+    <price>30.00</price>
+  </book>
 
-<book category="CHILDREN">
-  <title lang="en">Harry Potter</title>
-  <author>J K. Rowling</author>
-  <year>2005</year>
-  <price>29.99</price>
-</book>
+  <book category="CHILDREN">
+    <title lang="en">Harry Potter</title>
+    <author>J K. Rowling</author>
+    <year>2005</year>
+    <price>29.99</price>
+  </book>
 
-<book category="WEB">
-  <title lang="en">XQuery Kick Start</title>
-  <author>James McGovern</author>
-  <author>Per Bothner</author>
-  <author>Kurt Cagle</author>
-  <author>James Linn</author>
-  <author>Vaidyanathan Nagarajan</author>
-  <year>2003</year>
-  <price>49.99</price>
-</book>
+  <book category="WEB">
+    <title lang="en">XQuery Kick Start</title>
+    <author>James McGovern</author>
+    <author>Per Bothner</author>
+    <author>Kurt Cagle</author>
+    <author>James Linn</author>
+    <author>Vaidyanathan Nagarajan</author>
+    <year>2003</year>
+    <price>49.99</price>
+  </book>
 
-<book category="WEB">
-  <title lang="en">Learning XML</title>
-  <author>Erik T. Ray</author>
-  <year>2003</year>
-  <price>39.95</price>
-</book>
+  <book category="WEB">
+    <title lang="en">Learning XML</title>
+    <author>Erik T. Ray</author>
+    <year>2003</year>
+    <price>39.95</price>
+  </book>
 
 </bookstore>`;
         this.consulta = `for $x in /bookstore/book
 where $x/price>30
 order by $x/title
 return $x/title`;
-        this.salida = '';
-        this.fname = '';
-        this.simbolos = [];
-        this.errores = [];
+        this.traduccion = this.salida = '';
+        this.simbolos = this.errores = [];
+        this.fname = ['input.xml', 'query.txt', 'translation.c'];
     }
     newTab() {
         window.open("/tytusx/20211SVAC/G23", "_blank");
@@ -4291,9 +6624,23 @@ return $x/title`;
         else
             alert("Alguna entrada se encuentra vacía. Intente de nuevo.");
     }
+    codigoIntermedio() {
+        if (this.entrada != "" && this.consulta != "" && this.entrada != '<?xml version="1.0" encoding="UTF-8"?>') {
+            const x = {
+                xml: this.entrada,
+                query: this.consulta,
+            };
+            let data = __webpack_require__(/*! ../js/routes/translate */ "P7zU").translate(x);
+            this.traduccion = data.output;
+            this.errores = data.arreglo_errores;
+            console.log('Data received!');
+        }
+        else
+            alert("Alguna entrada se encuentra vacía. Intente de nuevo.");
+    }
+    optimizarC3D() {
+    }
     getAST() {
-        this.simbolos = [];
-        this.errores = [];
         if (this.consulta != "") {
             let grammar_value = document.getElementById('grammar_selector').value;
             const x = {
@@ -4305,15 +6652,13 @@ return $x/title`;
             let data = __webpack_require__(/*! ../js/routes/reports */ "ieEo").generateReport(x);
             this.salida = data.output;
             this.errores = data.arreglo_errores;
-            this.exportFile(data.ast, "AST");
+            this.exportFile(data.ast, "AST.html");
             console.log('AST received!');
         }
         else
             alert("Entrada vacía. No se puede generar el reporte AST.");
     }
     getCST() {
-        this.simbolos = [];
-        this.errores = [];
         if (this.entrada != "") {
             let grammar_value = document.getElementById('grammar_selector').value;
             const x = {
@@ -4325,15 +6670,13 @@ return $x/title`;
             let data = __webpack_require__(/*! ../js/routes/reports */ "ieEo").generateReport(x);
             this.salida = data.output;
             this.errores = data.arreglo_errores;
-            this.exportFile(data.cst, "CST");
+            this.exportFile(data.cst, "CST.html");
             console.log('CST received!');
         }
         else
             alert("Entrada vacía. No se puede generar el reporte CST.");
     }
     getGrammarReport() {
-        this.simbolos = [];
-        this.errores = [];
         if (this.entrada != "") {
             let grammar_value = document.getElementById('grammar_selector').value;
             const x = {
@@ -4345,16 +6688,35 @@ return $x/title`;
             let data = __webpack_require__(/*! ../js/routes/reports */ "ieEo").generateReport(x);
             this.salida = data.output;
             this.errores = data.arreglo_errores;
-            this.exportFile(data.grammar_report, "Grammar report");
+            this.exportFile(data.grammar_report, "Grammar report.html");
             console.log('Grammar report received!');
         }
         else
             alert("Entrada vacía. No se puede generar el reporte gramatical.");
     }
+    getC3D() {
+        if (this.traduccion != "") {
+            let grammar_value = document.getElementById('grammar_selector').value;
+            const x = {
+                c3d: this.traduccion,
+                grammar: Number(grammar_value),
+                report: "C3D-AST",
+            };
+            let data = __webpack_require__(/*! ../js/routes/reports */ "ieEo").generateReport(x);
+            this.salida = data.output;
+            this.errores = data.arreglo_errores;
+            this.exportFile(data.grammar_report, "3CD Report.dot");
+            console.log('AST C3D received!');
+        }
+        else
+            alert("Traducción vacía. No se puede generar el reporte de C3D.");
+    }
     exportFile(data, fname) {
+        this.simbolos = [];
+        this.errores = [];
         var f = document.createElement('a');
         f.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(data));
-        f.setAttribute('download', fname + '.html');
+        f.setAttribute('download', fname);
         if (document.createEvent) {
             var event = document.createEvent('MouseEvents');
             event.initEvent('click', true, true);
@@ -4370,10 +6732,12 @@ return $x/title`;
         let data = "";
         if (id === 1)
             data = this.entrada;
-        else
+        else if (id === 2)
             data = this.consulta;
+        else if (id === 3)
+            data = this.traduccion;
         f.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(data));
-        f.setAttribute('download', this.fname ? this.fname.replace("C:\\fakepath\\", "") : (id === 1 ? 'file.xml' : 'file.xpath'));
+        f.setAttribute('download', this.fname[id - 1].replace("C:\\fakepath\\", ""));
         if (document.createEvent) {
             var event = document.createEvent('MouseEvents');
             event.initEvent('click', true, true);
@@ -4387,8 +6751,10 @@ return $x/title`;
     openDialog(id) {
         if (id === 1)
             document.getElementById("fileInput1").click();
-        else
+        else if (id === 2)
             document.getElementById("fileInput2").click();
+        else if (id === 3)
+            document.getElementById("fileInput3").click();
     }
     readFile(event, id) {
         let input = event.target;
@@ -4402,6 +6768,9 @@ return $x/title`;
                         break;
                     case 2:
                         this.consulta = String(text);
+                        break;
+                    case 3:
+                        this.traduccion = String(text);
                         break;
                 }
             }
@@ -4418,12 +6787,14 @@ return $x/title`;
             case 2:
                 this.consulta = "";
                 break;
+            case 3:
+                this.traduccion = "";
         }
         this.salida = "";
     }
 }
-AppComponent.ɵfac = function AppComponent_Factory(t) { return new (t || AppComponent)(_angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵdirectiveInject"](_app_service__WEBPACK_IMPORTED_MODULE_1__["AppService"])); };
-AppComponent.ɵcmp = _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵdefineComponent"]({ type: AppComponent, selectors: [["app-root"]], decls: 126, vars: 10, consts: [[1, "container-fluid", "title", "pt-2", "pb-1"], ["role", "toolbar", 1, "btn-toolbar"], [1, "mb-2", "btn-group"], [1, "dropdown"], ["type", "button", "id", "dropdownMenu", "data-toggle", "dropdown", "aria-haspopup", "flase", "aria-expanded", "false", 1, "btn", "btn-dark", "rounded-0"], [1, "dropdown-menu", "rounded-0", "bg-dark"], ["type", "button", 1, "dropdown-item", "text-white", "item", 3, "click"], ["id", "fileInput1", "type", "file", "accept", ".xml", 2, "display", "none", 3, "ngModel", "change", "ngModelChange"], ["id", "fileInput2", "type", "file", 2, "display", "none", 3, "ngModel", "change", "ngModelChange"], ["type", "button", 1, "btn", "btn-dark", "rounded-0", 3, "click"], ["type", "button", "id", "dropdownMenu", "data-toggle", "dropdown", "aria-haspopup", "true", "aria-expanded", "false", 1, "btn", "btn-dark", "rounded-0", "dropdown-toggle"], ["role", "group", 1, "btn-group", "sel_g"], ["id", "grammar_selector", 1, "form-select", "btn", "btn-dark", "rounded-0"], ["disabled", ""], ["selected", "", "value", "1"], ["value", "2"], [1, "container-fluid", "px-5", "pt-2"], ["novalidate", "", 1, "mb-4", 3, "ngSubmit"], ["iForm", "ngForm"], [1, "row", "mb-5", "file-editors"], [1, "col-lg-6", "col-sm-12"], [1, "my-0", "text-white", "subtitulo"], ["id", "entrada", "name", "entrada", 1, "codebox", 3, "options", "ngModel", "ngModelChange"], ["id", "consulta", "name", "consulta", 1, "codebox", 3, "options", "ngModel", "ngModelChange"], [1, "row", "text-center"], [1, "col-12"], ["type", "submit", 1, "btn", "btn-outline-light", "btn-lg"], [1, "fas", "fa-play-circle"], [1, "row", "mb-5", "file-console"], ["id", "salida", "name", "salida", 1, "console", 3, "options", "ngModel", "ngModelChange"], [1, "row", "my-5"], [1, "my-1", "text-white", "subtitulo"], [1, "table", "table-striped", "table-dark"], ["scope", "col"], ["scope", "col", 1, "text-center"], [4, "ngFor", "ngForOf"], [1, "mt-2", "mb-1", "text-white", "subtitulo"], [1, "text-center", "text-lg-start"], [1, "text-center", "p-3", 2, "background-color", "rgba(0, 0, 0, 0.2)"], [1, "foot", "my-0"], ["scope", "row"], [1, "text-center"]], template: function AppComponent_Template(rf, ctx) { if (rf & 1) {
+AppComponent.ɵfac = function AppComponent_Factory(t) { return new (t || AppComponent)(); };
+AppComponent.ɵcmp = _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵdefineComponent"]({ type: AppComponent, selectors: [["app-root"]], decls: 149, vars: 13, consts: [[1, "container-fluid", "title", "pt-2", "pb-1"], ["role", "toolbar", 1, "btn-toolbar"], [1, "mb-2", "btn-group"], [1, "dropdown"], ["type", "button", "id", "dropdownMenu", "data-toggle", "dropdown", "aria-haspopup", "flase", "aria-expanded", "false", 1, "btn", "btn-dark", "rounded-0"], [1, "dropdown-menu", "rounded-0", "bg-dark"], ["type", "button", 1, "dropdown-item", "text-white", "item", 3, "click"], ["id", "fileInput1", "type", "file", "accept", ".xml", 2, "display", "none", 3, "ngModel", "change", "ngModelChange"], ["id", "fileInput2", "type", "file", 2, "display", "none", 3, "ngModel", "change", "ngModelChange"], ["id", "fileInput3", "type", "file", "accept", ".c", 2, "display", "none", 3, "ngModel", "change", "ngModelChange"], ["type", "button", 1, "btn", "btn-dark", "rounded-0", 3, "click"], ["type", "button", "id", "dropdownMenu", "data-toggle", "dropdown", "aria-haspopup", "true", "aria-expanded", "false", 1, "btn", "btn-dark", "rounded-0", "dropdown-toggle"], ["role", "group", 1, "btn-group", "sel_g"], ["id", "grammar_selector", 1, "form-select", "btn", "btn-dark", "rounded-0"], ["disabled", ""], ["selected", "", "value", "1"], ["value", "2"], [1, "container-fluid", "px-5", "pt-2"], ["novalidate", "", 1, "mb-4", 3, "ngSubmit"], ["iForm", "ngForm"], [1, "row", "mb-5", "file-query"], [1, "col-10"], [1, "my-0", "text-white", "subtitulo"], ["id", "consulta", "name", "consulta", 1, "", 3, "options", "ngModel", "ngModelChange"], [1, "col-2", "align-self-center"], ["type", "submit", 1, "btn", "mt-5", "btn-outline-light", "boton", "btn-lg"], [1, "fas", "fa-code"], ["type", "button", 1, "btn", "mt-3", "btn-outline-light", "boton", "btn-lg", 3, "click"], [1, "fas", "fa-language"], [1, "row", "mb-5", "file-editors"], [1, "col-lg-6", "col-sm-12"], ["id", "entrada", "name", "entrada", 1, "codebox", 3, "options", "ngModel", "ngModelChange"], ["id", "salida", "name", "salida", 1, "codebox", 3, "options", "ngModel", "ngModelChange"], [1, "row"], [1, "col-6"], [1, "my-0", "text-white", "subtitulo_t"], [1, "col-6", "text-right"], ["type", "button", 1, "btn", "btn-dark", "rounded-0", "text-right", 3, "click"], [1, "fas", "fa-broom"], [1, "row", "mb-5", "file-console"], [1, "col-12"], ["id", "traduccion", "name", "traduccion", 1, "codebox", 3, "options", "ngModel", "ngModelChange"], [1, "row", "my-5"], [1, "my-1", "text-white", "subtitulo"], [1, "table", "table-striped", "table-dark"], ["scope", "col"], ["scope", "col", 1, "text-center"], [4, "ngFor", "ngForOf"], [1, "mt-2", "mb-1", "text-white", "subtitulo"], [1, "text-center", "text-lg-start"], [1, "text-center", "p-3", 2, "background-color", "rgba(0, 0, 0, 0.2)"], [1, "foot", "my-0"], ["scope", "row"], [1, "text-center"]], template: function AppComponent_Template(rf, ctx) { if (rf & 1) {
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](0, "div", 0);
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](1, "h2");
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](2, "TytusX");
@@ -4441,227 +6812,275 @@ AppComponent.ɵcmp = _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵdefineCompo
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](10, "XML");
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](11, "input", 7);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵlistener"]("change", function AppComponent_Template_input_change_11_listener($event) { return ctx.readFile($event, 1); })("ngModelChange", function AppComponent_Template_input_ngModelChange_11_listener($event) { return ctx.fname = $event; });
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵlistener"]("change", function AppComponent_Template_input_change_11_listener($event) { return ctx.readFile($event, 1); })("ngModelChange", function AppComponent_Template_input_ngModelChange_11_listener($event) { return (ctx.fname[0] = $event); });
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](12, "button", 6);
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵlistener"]("click", function AppComponent_Template_button_click_12_listener() { return ctx.openDialog(2); });
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](13, "XPath");
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](13, "XQuery");
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](14, "input", 8);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵlistener"]("change", function AppComponent_Template_input_change_14_listener($event) { return ctx.readFile($event, 2); })("ngModelChange", function AppComponent_Template_input_ngModelChange_14_listener($event) { return ctx.fname = $event; });
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵlistener"]("change", function AppComponent_Template_input_change_14_listener($event) { return ctx.readFile($event, 2); })("ngModelChange", function AppComponent_Template_input_ngModelChange_14_listener($event) { return (ctx.fname[1] = $event); });
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](15, "button", 6);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵlistener"]("click", function AppComponent_Template_button_click_15_listener() { return ctx.openDialog(3); });
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](16, "C\u00F3digo 3D");
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](17, "input", 9);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵlistener"]("change", function AppComponent_Template_input_change_17_listener($event) { return ctx.readFile($event, 3); })("ngModelChange", function AppComponent_Template_input_ngModelChange_17_listener($event) { return (ctx.fname[2] = $event); });
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](15, "div", 3);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](16, "button", 4);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](17, " Guardar ");
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](18, "div", 5);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](19, "button", 6);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵlistener"]("click", function AppComponent_Template_button_click_19_listener() { return ctx.saveFile(1); });
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](20, "XML");
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](21, "button", 6);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵlistener"]("click", function AppComponent_Template_button_click_21_listener() { return ctx.saveFile(2); });
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](22, "XPath");
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](18, "div", 3);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](19, "button", 4);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](20, " Guardar ");
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](21, "div", 5);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](22, "button", 6);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵlistener"]("click", function AppComponent_Template_button_click_22_listener() { return ctx.saveFile(1); });
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](23, "XML");
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](24, "button", 6);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵlistener"]("click", function AppComponent_Template_button_click_24_listener() { return ctx.saveFile(2); });
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](25, "XQuery");
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](23, "button", 9);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵlistener"]("click", function AppComponent_Template_button_click_23_listener() { return ctx.newTab(); });
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](24, "Nueva pesta\u00F1a");
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](26, "button", 6);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵlistener"]("click", function AppComponent_Template_button_click_26_listener() { return ctx.saveFile(3); });
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](27, "Traducci\u00F3n");
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](25, "button", 9);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵlistener"]("click", function AppComponent_Template_button_click_25_listener() { return ctx.closeTab(); });
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](26, "Cerrar pesta\u00F1a");
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](27, "div", 3);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](28, "button", 4);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](29, " Limpiar ");
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](30, "div", 5);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](31, "button", 6);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵlistener"]("click", function AppComponent_Template_button_click_31_listener() { return ctx.cleanEditor(1); });
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](32, "XML");
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](28, "button", 10);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵlistener"]("click", function AppComponent_Template_button_click_28_listener() { return ctx.newTab(); });
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](29, "Nueva pesta\u00F1a");
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](33, "button", 6);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵlistener"]("click", function AppComponent_Template_button_click_33_listener() { return ctx.cleanEditor(2); });
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](34, "XPath");
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](30, "button", 10);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵlistener"]("click", function AppComponent_Template_button_click_30_listener() { return ctx.closeTab(); });
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](31, "Cerrar pesta\u00F1a");
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](32, "div", 3);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](33, "button", 4);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](34, " Limpiar ");
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](35, "div", 5);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](36, "button", 6);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵlistener"]("click", function AppComponent_Template_button_click_36_listener() { return ctx.cleanEditor(1); });
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](37, "XML");
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](35, "div", 3);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](36, "button", 10);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](37, " Reportes ");
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](38, "button", 6);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵlistener"]("click", function AppComponent_Template_button_click_38_listener() { return ctx.cleanEditor(2); });
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](39, "XQuery");
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](38, "div", 5);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](39, "button", 6);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵlistener"]("click", function AppComponent_Template_button_click_39_listener() { return ctx.getAST(); });
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](40, "AST");
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](40, "button", 6);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵlistener"]("click", function AppComponent_Template_button_click_40_listener() { return ctx.cleanEditor(3); });
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](41, "Traducci\u00F3n");
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](41, "button", 6);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵlistener"]("click", function AppComponent_Template_button_click_41_listener() { return ctx.getCST(); });
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](42, "CST");
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](43, "button", 6);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵlistener"]("click", function AppComponent_Template_button_click_43_listener() { return ctx.getGrammarReport(); });
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](44, "Gramatical");
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](42, "div", 3);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](43, "button", 11);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](44, " Reportes ");
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](45, "div", 5);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](46, "button", 6);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵlistener"]("click", function AppComponent_Template_button_click_46_listener() { return ctx.getAST(); });
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](47, "AST");
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](48, "button", 6);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵlistener"]("click", function AppComponent_Template_button_click_48_listener() { return ctx.getCST(); });
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](49, "CST");
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](45, "div", 11);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](46, "select", 12);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](47, "option", 13);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](48, "Seleccione gram\u00E1tica");
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](50, "button", 6);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵlistener"]("click", function AppComponent_Template_button_click_50_listener() { return ctx.getC3D(); });
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](51, "C3D");
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](49, "option", 14);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](50, "Ascendente");
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](52, "button", 6);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵlistener"]("click", function AppComponent_Template_button_click_52_listener() { return ctx.getGrammarReport(); });
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](53, "Gramatical");
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](51, "option", 15);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](52, "Descendente");
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](54, "div", 12);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](55, "select", 13);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](56, "option", 14);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](57, "Seleccione gram\u00E1tica");
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](53, "div", 16);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](54, "form", 17, 18);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵlistener"]("ngSubmit", function AppComponent_Template_form_ngSubmit_54_listener() { return ctx.onSubmit(); });
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](56, "div", 19);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](57, "div", 20);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](58, "p", 21);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](59, "Entrada XML");
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](58, "option", 15);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](59, "Ascendente");
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](60, "ngx-monaco-editor", 22);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵlistener"]("ngModelChange", function AppComponent_Template_ngx_monaco_editor_ngModelChange_60_listener($event) { return ctx.entrada = $event; });
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](60, "option", 16);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](61, "Descendente");
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](61, "div", 20);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](62, "p", 21);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](63, "Editor de consultas");
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](64, "ngx-monaco-editor", 23);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵlistener"]("ngModelChange", function AppComponent_Template_ngx_monaco_editor_ngModelChange_64_listener($event) { return ctx.consulta = $event; });
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](62, "div", 17);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](63, "form", 18, 19);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵlistener"]("ngSubmit", function AppComponent_Template_form_ngSubmit_63_listener() { return ctx.onSubmit(); });
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](65, "div", 20);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](66, "div", 21);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](67, "p", 22);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](68, "\u00A0Editor de consultas");
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](69, "ngx-monaco-editor", 23);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵlistener"]("ngModelChange", function AppComponent_Template_ngx_monaco_editor_ngModelChange_69_listener($event) { return ctx.consulta = $event; });
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](65, "div", 24);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](66, "div", 25);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](67, "button", 26);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelement"](68, "i", 27);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](69, " COMPILAR");
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](70, "div", 24);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](71, "button", 25);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelement"](72, "i", 26);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](73, " EJECUTAR");
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](74, "button", 27);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵlistener"]("click", function AppComponent_Template_button_click_74_listener() { return ctx.codigoIntermedio(); });
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelement"](75, "i", 28);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](76, " TRADUCIR");
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](70, "div", 28);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](71, "div", 25);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](72, "p", 21);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](73, "Consola de salida");
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](74, "ngx-monaco-editor", 29);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵlistener"]("ngModelChange", function AppComponent_Template_ngx_monaco_editor_ngModelChange_74_listener($event) { return ctx.salida = $event; });
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](77, "div", 29);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](78, "div", 30);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](79, "p", 22);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](80, "\u00A0Entrada XML");
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](81, "ngx-monaco-editor", 31);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵlistener"]("ngModelChange", function AppComponent_Template_ngx_monaco_editor_ngModelChange_81_listener($event) { return ctx.entrada = $event; });
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelement"](75, "br");
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelement"](76, "hr");
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](77, "div", 30);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](78, "div", 25);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](79, "p", 31);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](80, "Tabla de s\u00EDmbolos");
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](82, "div", 30);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](83, "p", 22);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](84, "\u00A0Consola de salida");
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](81, "table", 32);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](82, "thead");
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](83, "tr");
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](84, "th", 33);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](85, "#");
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](85, "ngx-monaco-editor", 32);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵlistener"]("ngModelChange", function AppComponent_Template_ngx_monaco_editor_ngModelChange_85_listener($event) { return ctx.salida = $event; });
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](86, "th", 33);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](87, "Id");
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](88, "th", 33);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](89, "Tipo");
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](90, "th", 33);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](91, "Contenido");
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelement"](86, "br");
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](87, "div", 33);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](88, "div", 34);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](89, "p", 35);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](90, "Traducci\u00F3n");
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](92, "th", 33);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](93, "\u00C1mbito");
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](94, "th", 34);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](95, "Fila");
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](91, "div", 36);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](92, "button", 37);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵlistener"]("click", function AppComponent_Template_button_click_92_listener() { return ctx.optimizarC3D(); });
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelement"](93, "i", 38);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](94, " OPTIMIZAR");
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](96, "th", 34);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](97, "Columna");
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](95, "div", 39);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](96, "div", 40);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](97, "ngx-monaco-editor", 41);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵlistener"]("ngModelChange", function AppComponent_Template_ngx_monaco_editor_ngModelChange_97_listener($event) { return ctx.traduccion = $event; });
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](98, "tbody");
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtemplate"](99, AppComponent_tr_99_Template, 15, 7, "tr", 35);
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelement"](98, "br");
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelement"](99, "hr");
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](100, "div", 42);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](101, "div", 40);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](102, "p", 43);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](103, "Tabla de s\u00EDmbolos");
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelement"](100, "hr");
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](101, "div", 30);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](102, "div", 25);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](103, "p", 36);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](104, "Tabla de errores");
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](104, "table", 44);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](105, "thead");
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](106, "tr");
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](107, "th", 45);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](108, "#");
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](105, "table", 32);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](106, "thead");
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](107, "tr");
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](108, "th", 33);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](109, "#");
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](109, "th", 45);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](110, "Id");
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](110, "th", 33);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](111, "Tipo");
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](111, "th", 45);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](112, "Tipo");
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](112, "th", 33);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](113, "Error");
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](113, "th", 45);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](114, "Contenido");
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](114, "th", 33);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](115, "Origen");
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](115, "th", 45);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](116, "\u00C1mbito");
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](116, "th", 34);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](117, "Fila");
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](117, "th", 46);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](118, "Fila");
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](118, "th", 34);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](119, "Columna");
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](119, "th", 46);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](120, "Columna");
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](120, "tbody");
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtemplate"](121, AppComponent_tr_121_Template, 13, 6, "tr", 35);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](121, "tbody");
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtemplate"](122, AppComponent_tr_122_Template, 15, 7, "tr", 47);
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelement"](123, "hr");
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](124, "div", 42);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](125, "div", 40);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](126, "p", 48);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](127, "Tabla de errores");
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](122, "footer", 37);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](123, "div", 38);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](124, "p", 39);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](125, " \u00A9 2021 Grupo 23 - Organizaci\u00F3n de Lenguajes y Compiladores 2 - TytusX ");
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](128, "table", 44);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](129, "thead");
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](130, "tr");
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](131, "th", 45);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](132, "#");
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](133, "th", 45);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](134, "Tipo");
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](135, "th", 45);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](136, "Error");
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](137, "th", 45);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](138, "Origen");
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](139, "th", 46);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](140, "Fila");
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](141, "th", 46);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](142, "Columna");
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](143, "tbody");
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtemplate"](144, AppComponent_tr_144_Template, 13, 6, "tr", 47);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](145, "footer", 49);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](146, "div", 50);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](147, "p", 51);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](148, " \u00A9 2021 Grupo 23 - Organizaci\u00F3n de Lenguajes y Compiladores 2 - TytusX ");
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
     } if (rf & 2) {
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵadvance"](11);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵproperty"]("ngModel", ctx.fname);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵproperty"]("ngModel", ctx.fname[0]);
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵadvance"](3);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵproperty"]("ngModel", ctx.fname);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵadvance"](46);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵproperty"]("options", ctx.EditorOptions)("ngModel", ctx.entrada);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵproperty"]("ngModel", ctx.fname[1]);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵadvance"](3);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵproperty"]("ngModel", ctx.fname[2]);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵadvance"](52);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵproperty"]("options", ctx.QueryOptions)("ngModel", ctx.consulta);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵadvance"](12);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵproperty"]("options", ctx.XMLOptions)("ngModel", ctx.entrada);
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵadvance"](4);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵproperty"]("options", ctx.EditorOptions)("ngModel", ctx.consulta);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵadvance"](10);
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵproperty"]("options", ctx.ConsoleOptions)("ngModel", ctx.salida);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵadvance"](12);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵproperty"]("options", ctx.C3DOptions)("ngModel", ctx.traduccion);
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵadvance"](25);
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵproperty"]("ngForOf", ctx.simbolos);
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵadvance"](22);
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵproperty"]("ngForOf", ctx.errores);
-    } }, directives: [_angular_forms__WEBPACK_IMPORTED_MODULE_2__["DefaultValueAccessor"], _angular_forms__WEBPACK_IMPORTED_MODULE_2__["NgControlStatus"], _angular_forms__WEBPACK_IMPORTED_MODULE_2__["NgModel"], _angular_forms__WEBPACK_IMPORTED_MODULE_2__["NgSelectOption"], _angular_forms__WEBPACK_IMPORTED_MODULE_2__["ɵangular_packages_forms_forms_z"], _angular_forms__WEBPACK_IMPORTED_MODULE_2__["ɵangular_packages_forms_forms_ba"], _angular_forms__WEBPACK_IMPORTED_MODULE_2__["NgControlStatusGroup"], _angular_forms__WEBPACK_IMPORTED_MODULE_2__["NgForm"], _materia_ui_ngx_monaco_editor__WEBPACK_IMPORTED_MODULE_3__["MonacoEditorComponent"], _angular_common__WEBPACK_IMPORTED_MODULE_4__["NgForOf"]], styles: ["*[_ngcontent-%COMP%]:not(i) {\n    font-family: 'Varela Round', sans-serif;\n}\n\n.title[_ngcontent-%COMP%] {\n    background-color: #c1502e;\n    font-family: 'Varela Round', sans-serif;\n}\n\n.tbar[_ngcontent-%COMP%] {\n    height: 38px;\n}\n\n.file-editors[_ngcontent-%COMP%] {\n    height: 415px;\n}\n\n.file-console[_ngcontent-%COMP%] {\n    height: 375px;\n}\n\n.subtitulo[_ngcontent-%COMP%] {\n    font-size: large;\n}\n\n.foot[_ngcontent-%COMP%] {\n    color: lightgrey;\n}\n\nhr[_ngcontent-%COMP%] {\n    border-width: 0.13em;\n    border-color: gray;\n}\n\n.fc[_ngcontent-%COMP%]:first-letter {\n    text-transform: capitalize\n}\n\n.item[_ngcontent-%COMP%]:hover {\n    background-color: #292b2c;\n}\n\n.dropdown-menu[_ngcontent-%COMP%] {\n    padding: 0% !important;\n}\n\n.sel_g[_ngcontent-%COMP%] {\n    position: absolute;\n    right: 0%;\n}\n/*# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbImFwcC5jb21wb25lbnQuY3NzIl0sIm5hbWVzIjpbXSwibWFwcGluZ3MiOiJBQUFBO0lBQ0ksdUNBQXVDO0FBQzNDOztBQUVBO0lBQ0kseUJBQXlCO0lBQ3pCLHVDQUF1QztBQUMzQzs7QUFFQTtJQUNJLFlBQVk7QUFDaEI7O0FBRUE7SUFDSSxhQUFhO0FBQ2pCOztBQUVBO0lBQ0ksYUFBYTtBQUNqQjs7QUFFQTtJQUNJLGdCQUFnQjtBQUNwQjs7QUFFQTtJQUNJLGdCQUFnQjtBQUNwQjs7QUFFQTtJQUNJLG9CQUFvQjtJQUNwQixrQkFBa0I7QUFDdEI7O0FBRUE7SUFDSTtBQUNKOztBQUVBO0lBQ0kseUJBQXlCO0FBQzdCOztBQUVBO0lBQ0ksc0JBQXNCO0FBQzFCOztBQUVBO0lBQ0ksa0JBQWtCO0lBQ2xCLFNBQVM7QUFDYiIsImZpbGUiOiJhcHAuY29tcG9uZW50LmNzcyIsInNvdXJjZXNDb250ZW50IjpbIio6bm90KGkpIHtcbiAgICBmb250LWZhbWlseTogJ1ZhcmVsYSBSb3VuZCcsIHNhbnMtc2VyaWY7XG59XG5cbi50aXRsZSB7XG4gICAgYmFja2dyb3VuZC1jb2xvcjogI2MxNTAyZTtcbiAgICBmb250LWZhbWlseTogJ1ZhcmVsYSBSb3VuZCcsIHNhbnMtc2VyaWY7XG59XG5cbi50YmFyIHtcbiAgICBoZWlnaHQ6IDM4cHg7XG59XG5cbi5maWxlLWVkaXRvcnMge1xuICAgIGhlaWdodDogNDE1cHg7XG59XG5cbi5maWxlLWNvbnNvbGUge1xuICAgIGhlaWdodDogMzc1cHg7XG59XG5cbi5zdWJ0aXR1bG8ge1xuICAgIGZvbnQtc2l6ZTogbGFyZ2U7XG59XG5cbi5mb290IHtcbiAgICBjb2xvcjogbGlnaHRncmV5O1xufVxuXG5ociB7XG4gICAgYm9yZGVyLXdpZHRoOiAwLjEzZW07XG4gICAgYm9yZGVyLWNvbG9yOiBncmF5O1xufVxuXG4uZmM6Zmlyc3QtbGV0dGVyIHtcbiAgICB0ZXh0LXRyYW5zZm9ybTogY2FwaXRhbGl6ZVxufVxuXG4uaXRlbTpob3ZlciB7XG4gICAgYmFja2dyb3VuZC1jb2xvcjogIzI5MmIyYztcbn1cblxuLmRyb3Bkb3duLW1lbnUge1xuICAgIHBhZGRpbmc6IDAlICFpbXBvcnRhbnQ7XG59XG5cbi5zZWxfZyB7XG4gICAgcG9zaXRpb246IGFic29sdXRlO1xuICAgIHJpZ2h0OiAwJTtcbn0iXX0= */"] });
+    } }, directives: [_angular_forms__WEBPACK_IMPORTED_MODULE_1__["DefaultValueAccessor"], _angular_forms__WEBPACK_IMPORTED_MODULE_1__["NgControlStatus"], _angular_forms__WEBPACK_IMPORTED_MODULE_1__["NgModel"], _angular_forms__WEBPACK_IMPORTED_MODULE_1__["NgSelectOption"], _angular_forms__WEBPACK_IMPORTED_MODULE_1__["ɵangular_packages_forms_forms_z"], _angular_forms__WEBPACK_IMPORTED_MODULE_1__["ɵangular_packages_forms_forms_ba"], _angular_forms__WEBPACK_IMPORTED_MODULE_1__["NgControlStatusGroup"], _angular_forms__WEBPACK_IMPORTED_MODULE_1__["NgForm"], _materia_ui_ngx_monaco_editor__WEBPACK_IMPORTED_MODULE_2__["MonacoEditorComponent"], _angular_common__WEBPACK_IMPORTED_MODULE_3__["NgForOf"]], styles: ["*[_ngcontent-%COMP%]:not(i) {\n    font-family: 'Varela Round', sans-serif;\n}\n\n.title[_ngcontent-%COMP%] {\n    background-color: #c1502e;\n    font-family: 'Varela Round', sans-serif;\n}\n\n.tbar[_ngcontent-%COMP%] {\n    height: 38px;\n}\n\n.file-editors[_ngcontent-%COMP%] {\n    height: 415px;\n}\n\n.file-console[_ngcontent-%COMP%] {\n    height: 400px;\n}\n\n.file-query[_ngcontent-%COMP%] {\n    height: 150px;\n}\n\n.subtitulo[_ngcontent-%COMP%] {\n    font-size: large;\n}\n\n.subtitulo_t[_ngcontent-%COMP%] {\n    font-size: large;\n    position: absolute;\n    bottom: 2px;\n}\n\n.foot[_ngcontent-%COMP%] {\n    color: lightgrey;\n}\n\nhr[_ngcontent-%COMP%] {\n    border-width: 0.13em;\n    border-color: gray;\n}\n\n.item[_ngcontent-%COMP%]:hover {\n    background-color: #292b2c;\n}\n\n.dropdown-menu[_ngcontent-%COMP%] {\n    padding: 0% !important;\n}\n\n.sel_g[_ngcontent-%COMP%] {\n    position: absolute;\n    right: 0%;\n}\n\n.boton[_ngcontent-%COMP%] {\n    width: 170px;\n    margin-bottom: 0px;\n}\n/*# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbImFwcC5jb21wb25lbnQuY3NzIl0sIm5hbWVzIjpbXSwibWFwcGluZ3MiOiJBQUFBO0lBQ0ksdUNBQXVDO0FBQzNDOztBQUVBO0lBQ0kseUJBQXlCO0lBQ3pCLHVDQUF1QztBQUMzQzs7QUFFQTtJQUNJLFlBQVk7QUFDaEI7O0FBRUE7SUFDSSxhQUFhO0FBQ2pCOztBQUVBO0lBQ0ksYUFBYTtBQUNqQjs7QUFFQTtJQUNJLGFBQWE7QUFDakI7O0FBRUE7SUFDSSxnQkFBZ0I7QUFDcEI7O0FBRUE7SUFDSSxnQkFBZ0I7SUFDaEIsa0JBQWtCO0lBQ2xCLFdBQVc7QUFDZjs7QUFFQTtJQUNJLGdCQUFnQjtBQUNwQjs7QUFFQTtJQUNJLG9CQUFvQjtJQUNwQixrQkFBa0I7QUFDdEI7O0FBRUE7SUFDSSx5QkFBeUI7QUFDN0I7O0FBRUE7SUFDSSxzQkFBc0I7QUFDMUI7O0FBRUE7SUFDSSxrQkFBa0I7SUFDbEIsU0FBUztBQUNiOztBQUVBO0lBQ0ksWUFBWTtJQUNaLGtCQUFrQjtBQUN0QiIsImZpbGUiOiJhcHAuY29tcG9uZW50LmNzcyIsInNvdXJjZXNDb250ZW50IjpbIio6bm90KGkpIHtcbiAgICBmb250LWZhbWlseTogJ1ZhcmVsYSBSb3VuZCcsIHNhbnMtc2VyaWY7XG59XG5cbi50aXRsZSB7XG4gICAgYmFja2dyb3VuZC1jb2xvcjogI2MxNTAyZTtcbiAgICBmb250LWZhbWlseTogJ1ZhcmVsYSBSb3VuZCcsIHNhbnMtc2VyaWY7XG59XG5cbi50YmFyIHtcbiAgICBoZWlnaHQ6IDM4cHg7XG59XG5cbi5maWxlLWVkaXRvcnMge1xuICAgIGhlaWdodDogNDE1cHg7XG59XG5cbi5maWxlLWNvbnNvbGUge1xuICAgIGhlaWdodDogNDAwcHg7XG59XG5cbi5maWxlLXF1ZXJ5IHtcbiAgICBoZWlnaHQ6IDE1MHB4O1xufVxuXG4uc3VidGl0dWxvIHtcbiAgICBmb250LXNpemU6IGxhcmdlO1xufVxuXG4uc3VidGl0dWxvX3Qge1xuICAgIGZvbnQtc2l6ZTogbGFyZ2U7XG4gICAgcG9zaXRpb246IGFic29sdXRlO1xuICAgIGJvdHRvbTogMnB4O1xufVxuXG4uZm9vdCB7XG4gICAgY29sb3I6IGxpZ2h0Z3JleTtcbn1cblxuaHIge1xuICAgIGJvcmRlci13aWR0aDogMC4xM2VtO1xuICAgIGJvcmRlci1jb2xvcjogZ3JheTtcbn1cblxuLml0ZW06aG92ZXIge1xuICAgIGJhY2tncm91bmQtY29sb3I6ICMyOTJiMmM7XG59XG5cbi5kcm9wZG93bi1tZW51IHtcbiAgICBwYWRkaW5nOiAwJSAhaW1wb3J0YW50O1xufVxuXG4uc2VsX2cge1xuICAgIHBvc2l0aW9uOiBhYnNvbHV0ZTtcbiAgICByaWdodDogMCU7XG59XG5cbi5ib3RvbiB7XG4gICAgd2lkdGg6IDE3MHB4O1xuICAgIG1hcmdpbi1ib3R0b206IDBweDtcbn0iXX0= */"] });
 
 
 /***/ }),
@@ -7382,15 +9801,17 @@ function compile(req) {
             arreglo_simbolos: simbolos,
             arreglo_errores: errors,
             output: consola,
-            encoding: encoding,
-            codigo3d: bloque === null || bloque === void 0 ? void 0 : bloque.codigo3d
+            encoding: encoding
         };
         errors = [];
         return output;
     }
     catch (error) {
         console.log(error);
-        errors.push({ tipo: "Desconocido", error: "Error en tiempo de ejecución.", origen: "", linea: "", columna: "" });
+        if (error.message)
+            errors.push({ tipo: "Sintáctico", error: String(error.message), origen: "Entrada", linea: "", columna: "" });
+        else
+            errors.push({ tipo: "Desconocido", error: "Error en tiempo de ejecución.", origen: "", linea: "", columna: "" });
         let output = {
             arreglo_simbolos: [],
             arreglo_errores: errors,
@@ -9418,12 +11839,18 @@ case 1:
 					prod_1 = grammar_stack.pop();
 					prod_2 = grammar_stack.pop();
 			 		grammar_stack.push({'ini -> XPATH_U EOF': [prod_2, prod_1]});
-					// grammar_report =  getGrammarReport(grammar_stack); // cst = getCST(grammar_stack); // let arbol_ast = getASTTree($$[$0-1]);
-					ast = { xpath: $$[$0-1], errors: errors, cst: "cst", grammar_report: "grammar_report",  arbolAST : "arbol_ast" }; return ast;
+					grammar_report =  getGrammarReport(grammar_stack); cst = getCST(grammar_stack); arbol_ast = getASTTree($$[$0-1]);
+					ast = { xpath: $$[$0-1], errors: errors, cst: cst, grammar_report: grammar_report,  arbolAST : arbol_ast }; return ast;
                 
 break;
 case 2:
- ast = { xquery: $$[$0-1], errors: errors, cst: "cst", grammar_report: "grammar_report",  arbolAST : "arbol_ast" }; return ast; 
+
+				prod_1 = grammar_stack.pop();
+				prod_2 = grammar_stack.pop();
+				grammar_stack.push({'ini -> XQUERY EOF': [prod_2, prod_1]});
+				grammar_report =  getGrammarReport(grammar_stack); cst = getCST(grammar_stack); arbol_ast = getASTTree($$[$0-1]);
+				ast = { xquery: $$[$0-1], errors: errors, cst: cst, grammar_report: grammar_report,  arbolAST : arbol_ast }; return ast;
+		
 break;
 case 3: case 36: case 141:
  $$[$0-1].push($$[$0]); this.$=$$[$0-1]; 
@@ -9995,12 +12422,490 @@ var errors = [];
 let grammar_stack = [];
 let re = /[^\n\t\r ]+/g
 
+function getGrammarReport(obj){
+        let str = `<!DOCTYPE html>
+                     <html lang="en" xmlns="http://www.w3.org/1999/html">
+                     <head>
+                         <meta charset="UTF-8">
+                         <meta
+                         content="width=device-width, initial-scale=1, shrink-to-fit=no"
+                         name="viewport">
+                         <!-- Bootstrap CSS -->
+                         <link
+                         crossorigin="anonymous"
+                         href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+                               integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh"
+                               rel="stylesheet">
+                         <title>Title</title>
+                         <style>
+                             table, th, td {
+                                 border: 1px solid black;
+                             }
+                             ul, .ul-tree-view {
+                                 list-style-type: none;
+                             }
+
+                             #div-table{
+                                 width: 1200px;
+                                 margin: 100px;
+                                 border: 3px solid #73AD21;
+                             }
+
+                             .ul-tree-view {
+                                 margin: 0;
+                                 padding: 0;
+                             }
+
+                             .caret {
+                                 cursor: pointer;
+                                 -webkit-user-select: none; /* Safari 3.1+ */
+                                 -moz-user-select: none; /* Firefox 2+ */
+                                 -ms-user-select: none; /* IE 10+ */
+                                 user-select: none;
+                             }
+
+                             .caret::before {
+                                 content: "\u25B6";
+                                 color: black;
+                                 display: inline-block;
+                                 margin-right: 6px;
+                             }
+
+                             .caret-down::before {
+                                 -ms-transform: rotate(90deg); /* IE 9 */
+                                 -webkit-transform: rotate(90deg); /* Safari */'
+                             transform: rotate(90deg);
+                             }
+
+                             .nested {
+                                 display: none;
+                             }
+
+                             .active {
+                                 display: block;
+                             }
+
+                             li span:hover {
+                                 font-weight: bold;
+                                 color : white;
+                                 background-color: #dc5b27;
+                             }
+
+                             li span:hover + ul li  {
+                                 font-weight: bold;
+                                 color : white;
+                                 background-color: #dc5b27;
+                             }
+
+                             .tree-view{
+                                 display: inline-block;
+                             }
+
+                             li.string {
+                                 list-style-type: square;
+                             }
+                             li.string:hover {
+                                 color : white;
+                                 background-color: #dc5b27;
+                             }
+                             .center {
+                                margin: auto;
+                                width: 50%;
+                                border: 3px solid green;
+                                padding-left: 15%;
+                             }
+                         </style>
+                     </head>
+                     <body>
+                     <h1 class="center">Reporte Gramatical</h1>
+                     <div class="tree-view">
+                     <ul class="ul-tree-view" id="tree-root">`;
+
+
+        str = str + buildGrammarReport(obj);
+
+
+        str = str + `
+                    </ul>
+                    </ul>
+                    </div>
+                             <br>
+                             <br>
+                             <br>
+                             <br>
+                             <br>
+                             <br>
+                        <button onclick="fun1()">Expand Grammar Tree</button>
+
+                     <div id="div-table">
+                     <table style="width:100%">
+
+                     <tr><th>Produccion</th><th>Cuerpo</th><th>Accion</th></tr>
+                     <tr><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td></tr>
+                     <tr><th>ini</th><td>XPATH_U EOF</td><td>SS= S1</td></tr>
+                     <tr><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td></tr>
+                     <tr><th>XPATH_U</th><td>XPATH_U tk_line XPATH</td><td>S1.push(S3); SS = S1;</td></tr>
+                     <tr><th></th><td>XPATH_U tk_2line XPATH</td><td>S1.push(S3); SS = S1;</td></tr>
+                     <tr><th></th><td>XPATH</td><td>SS = [S1]</td></tr>
+                     <tr><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td></tr>
+                     <tr><th>XPATH</th><td>XPATH QUERY</td><td>S1.push(S2); SS = S1;</td></tr>
+                     <tr><th></th><td>QUERY</td><td>SS = [S1]</td></tr>
+                     <tr><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td></tr>
+                     <tr><th>QUERY</th><td>tk_2bar QUERY</td><td>SS=builder.newDoubleAxis(Param);</td></tr>
+                     <tr><th></th><td>tk_bar QUERY</td><td>SS=builder.newAxis(Param);</td></tr>
+                     <tr><th></th><td>EXP_PR</td><td>SS=S1</td></tr>
+                     <tr><th></th><td>AXIS</td><td>SS=S1</td></tr>
+                     <tr><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td></tr>
+                     <tr><th>CORCHET</th><td>CORCHET tk_corA E tk_corC</td><td>S1.push(builder.NewPredicate(Param))</td></tr>
+                     <tr><th></th><td>tk_corA E tk_corC</td><td>SS=builder.newPredicate(Param)</td></tr>
+                     <tr><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td></tr>
+                     <tr><th>CORCHETP</th><td>CORCHET</td><td>SS=S1</td></tr>
+                     <tr><th></th><td>Empty</td><td>SS=null</td></tr>
+                     <tr><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td></tr>
+                     <tr><th>E</th><td>E tk_menorigual E</td><td>SS=builder.newOperation(Param)</td></tr>
+                     <tr><th></th><td>E tk_menor E</td><td>SS=builder.newOperation(Param)</td></tr>
+                     <tr><th></th><td>E tk_mayorigual E</td><td>SS=builder.newOperation(Param)</td></tr>
+                     <tr><th></th><td>E tk_mayor E</td><td>SS=builder.newOperation(Param)</td></tr>
+                     <tr><th></th><td>E tk_mas E</td><td>SS=builder.newOperation(Param)</td></tr>
+                     <tr><th></th><td>E tk_menos E</td><td>SS=builder.newOperation(Param)</td></tr>
+                     <tr><th></th><td>E tk_asterisco E</td><td>SS=builder.newOperation(Param)</td></tr>
+                     <tr><th></th><td>E tk_div E </td><td>SS=builder.newOperation(Param)</td></tr>
+                     <tr><th></th><td>E tk_mod E</td><td>SS=builder.newOperation(Param)</td></tr>
+                     <tr><th></th><td>tk_menos E</td><td>SS=builder.newOperation(Param)</td></tr>
+                     <tr><th></th><td>tk_ParA E tk_ParC</td><td>SS=S2</td></tr>
+                     <tr><th></th><td>E tk_or E</td><td>SS=builder.newOperation(Param)</td></tr>
+                     <tr><th></th><td>E tk_and E</td><td>SS=builder.newOperation(Param)</td></tr>
+                     <tr><th></th><td>E tk_equal E</td><td>SS=builder.newOperation(Param)</td></tr>
+                     <tr><th></th><td>E tk_diferent E</td><td>SS=builder.newOperation(Param)</td></tr>
+                     <tr><th></th><td>QUERY</td><td>SS=S1</td></tr>
+                     <tr><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td></tr>
+                     <tr><th>EXP_PR</th><td>FUNC CORCHETP</td><td>SS=builder.newExpression(Param)</td></tr>
+                     <tr><th></th><td>PRIMITIVO CORCHETEP</td><td>SS=builder.newExpression(Param)</td></tr>
+                     <tr><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td></tr>
+                     <tr><th>PRIMITIVO</th><td>tk_id</td><td>SS=builder.newNodename(Param)</td></tr>
+                     <tr><th></th><td>tk_attribute_d</td><td>SS=builder.newValue(Param)</td></tr>
+                     <tr><th></th><td>tk_attribute_s</td><td>SS=builder.newValue(Param)</td></tr>
+                     <tr><th></th><td>num</td><td>SS=builder.newValue(Param)</td></tr>
+                     <tr><th></th><td>tk_asterisco</td><td>SS=builder.newValue(Param)</td></tr>
+                     <tr><th></th><td>tk_punto</td><td>SS=builder.newCurrent(Param)</td></tr>
+                     <tr><th></th><td>tk_2puntos</td><td>SS=builder.newParent(Param)</td></tr>
+                     <tr><th></th><td>tk_arroba tk_id</td><td>SS=builder.newAttribute(Param)</td></tr>
+                     <tr><th></th><td>tk_arroba tk_asterisco</td><td>SS=builder.newAttribute(Param)</td></tr>
+                     <tr><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td></tr>
+                     <tr><th>FUNC</th><td>tk_text tk_ParA tk_tk_ParC</td><td>SS=builder.newValue(Param)</td></tr>
+                     <tr><th></th><td>tk_last tk_ParA tk_ParC</td><td>SS=builder.newValue(Param)</td></tr>
+                     <tr><th></th><td>tk_position tk_ParA tk_ParC</td><td>SS=builder.newValue(Param)</td></tr>
+                     <tr><th></th><td>tk_node tk_ParA tk_ParC</td><td>SS=builder.newValue(Param)</td></tr>
+                     <tr><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td></tr>
+                     <tr><th>AXIS</th><td>AXISNAME tk_4puntos QUERY</td><td>SS=builder.newAxisObject(Param)</td></tr>
+                     <tr><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td></tr>
+                     <tr><th>AXISNAME</th><td>tk_ancestor</td><td>SS = Tipos.'AxisTipo'</td></tr>
+                     <tr><th></th><td>tk_ancestor2</td><td>SS = Tipos.'AxisTipo'</td></tr>
+                     <tr><th></th><td>tk_attribute</td><td>SS = Tipos.'AxisTipo'</td></tr>
+                     <tr><th></th><td>tk_child</td><td>SS = Tipos.'AxisTipo'</td></tr>
+                     <tr><th></th><td>tk_descendant</td><td>SS = Tipos.'AxisTipo'</td></tr>
+                     <tr><th></th><td>tk_descendant2</td><td>SS = Tipos.'AxisTipo'</td></tr>
+                     <tr><th></th><td>tk_following</td><td>SS = Tipos.'AxisTipo'</td></tr>
+                     <tr><th></th><td>tk_following2</td><td>SS = Tipos.'AxisTipo'</td></tr>
+                     <tr><th></th><td>tk_namespace</td><td>SS = Tipos.'AxisTipo'</td></tr>
+                     <tr><th></th><td>tk_parent</td><td>SS = Tipos.'AxisTipo'</td></tr>
+                     <tr><th></th><td>tk_preceding</td><td>SS = Tipos.'AxisTipo'</td></tr>
+                     <tr><th></th><td>tk_preceding2</td><td>SS = Tipos.'AxisTipo'</td></tr>
+                     <tr><th></th><td>tk_self</td><td>SS = Tipos.'AxisTipo'</td></tr>
+
+                         </table>
+                     </div>
+
+                     <script
+                     src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.js">
+                     </script>
+                     <script
+                     crossorigin="anonymous" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo"
+                             src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js">
+                             </script>
+                     <script
+                     crossorigin="anonymous" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6"
+                             src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js">
+                             </script>
+
+                             <script>
+                                 var toggler = document.getElementsByClassName("caret");
+                                 var i;
+
+                                 for (i = 0; i < toggler.length; i++) {
+                                     toggler[i].addEventListener("click", function() {
+                                         this.parentElement
+                                         .querySelector(".nested")
+                                         .classList.toggle("active");
+                                         this.classList.toggle("caret-down");
+                                     });
+                                 }
+
+
+                                        function fun1() {
+                                            if ($("#tree-root").length > 0) {
+
+                                                $("#tree-root").find("li").each
+                                                (
+                                                    function () {
+                                                        var $span = $("<span></span>");
+                                                        //$(this).toggleClass("expanded");
+                                                        if ($(this).find("ul:first").length > 0) {
+                                                            $span.removeAttr("class");
+                                                            $span.attr("class", "expanded");
+                                                            $(this).find("ul:first").css("display", "block");
+                                                            $(this).append($span);
+                                                        }
+
+                                                    }
+                                                )
+                                            }
+
+                                        }
+
+                             </script>
+
+                     </body>
+                     </html>`;
+                     return str;
+    }
+    function buildGrammarReport(obj){
+        if(obj == null){return "";}
+        let str = "";
+        if(Array.isArray(obj)){ //IS ARRAY
+            obj.forEach((value)=>{
+            if(typeof value === 'string' ){
+                str = str + `<li class= "string">
+                ${value}
+                </li>
+                `;
+            }else if(Array.isArray(value)){console.log("ERROR 5: Arreglo de arreglos");}else{
+                for(let key in value){
+                    str = str + buildGrammarReport(value);
+                }
+            }
+            });
+        }else if(typeof obj === 'string' ){ // IS STRING
+            return "";
+        }else{// IS OBJECT
+            for(let key in obj){
+
+                str = `<li class="grammar-tree"><span class="caret">
+                ${key}
+                </span>
+                <ul class="nested">
+                `;
+                str = str + buildGrammarReport(obj[key]);
+                str = str + `
+                </ul>
+                </li>`;
+            }
+        }
+        return str;
+    }
+
+    function getCST(obj){
+        let str = `
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta content="width=device-width, initial-scale=1, shrink-to-fit=no" name="viewport">
+            <!-- Bootstrap CSS -->
+            <link crossorigin="anonymous" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+                  integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" rel="stylesheet">
+            <title>Title</title>
+            <style>
+
+                #divheight{
+                    height: 400px;
+                    width: 1050px;
+                }
+
+                .nav-tabs > li .close {
+                    margin: -2px 0 0 10px;
+                    font-size: 18px;
+                }
+
+                .nav-tabs2 > li .close {
+                    margin: -2px 0 0 10px;
+                    font-size: 18px;
+                }
+
+            </style>
+
+            <style>
+                body {
+                    font-family: sans-serif;
+                    font-size: 15px;
+                }
+
+                .tree ul {
+                    position: relative;
+                    padding: 1em 0;
+                    white-space: nowrap;
+                    margin: 0 auto;
+                    text-align: center;
+                }
+                .tree ul::after {
+                    content: "";
+                    display: table;
+                    clear: both;
+                }
+
+                .tree li {
+                    display: inline-block;
+                    vertical-align: top;
+                    text-align: center;
+                    list-style-type: none;
+                    position: relative;
+                    padding: 1em 0.5em 0 0.5em;
+                }
+                .tree li::before, .tree li::after {
+                    content: "";
+                    position: absolute;
+                    top: 0;
+                    right: 50%;
+                    border-top: 1px solid #ccc;
+                    width: 50%;
+                    height: 1em;
+                }
+                .tree li::after {
+                    right: auto;
+                    left: 50%;
+                    border-left: 1px solid #ccc;
+                }
+                /*
+                ul:hover::after  {
+                    transform: scale(1.5); /* (150% zoom - Note: if the zoom is too large, it will go outside of the viewport)
+                }*/
+
+                .tree li:only-child::after, .tree li:only-child::before {
+                    display: none;
+                }
+                .tree li:only-child {
+                    padding-top: 0;
+                }
+                .tree li:first-child::before, .tree li:last-child::after {
+                    border: 0 none;
+                }
+                .tree li:last-child::before {
+                    border-right: 1px solid #ccc;
+                    border-radius: 0 5px 0 0;
+                }
+                .tree li:first-child::after {
+                    border-radius: 5px 0 0 0;
+                }
+
+                .tree ul ul::before {
+                    content: "";
+                    position: absolute;
+                    top: 0;
+                    left: 50%;
+                    border-left: 1px solid #ccc;
+                    width: 0;
+                    height: 1em;
+                }
+
+                .tree li a {
+                    border: 1px solid #ccc;
+                    padding: 0.5em 0.75em;
+                    text-decoration: none;
+                    display: inline-block;
+                    border-radius: 5px;
+                    color: #333;
+                    position: relative;
+                    top: 1px;
+                }
+
+                .tree li a:hover,
+                .tree li a:hover + ul li a {
+                    background: #e9453f;
+                    color: #fff;
+                    border: 1px solid #e9453f;
+                }
+
+                .tree li a:hover + ul li::after,
+                .tree li a:hover + ul li::before,
+                .tree li a:hover + ul::before,
+                .tree li a:hover + ul ul::before {
+                    border-color: #e9453f;
+                }
+
+            </style>
+        </head>
+        <body>
+
+        <div class="tree">
+            <ul id="tree-list">
+
+            <!--AQUI-->
+        `;
+        str = str + buildCSTTree(obj);
+        str = str + `
+        </ul>
+        </div>
+
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.js"></script>
+        <script crossorigin="anonymous" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo"
+                src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
+        <script crossorigin="anonymous" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6"
+                src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
+        </body>
+        </html>
+        `;
+        return str;
+    }
+
+    function buildCSTTree(obj){
+        if(obj == null){return "";}
+        let str = "";
+        if(Array.isArray(obj)){ //IS ARRAY
+            obj.forEach((value)=>{
+            if(typeof value === 'string' ){
+                let words = value.split('Lexema:');
+                if(words.length == 2){
+                    let lex = words[1];     //TODO check not go out of bounds
+                    let token = words[0];
+                    str = str + `<li><a href="">${token}</a><ul>
+                    <li><a href="">${lex}
+                    </a></li>
+                    </ul></li>
+                    `;
+                }else{
+                    str = str + `<li><a href="">${value}</a></li>
+                    `;
+                }
+
+            }else if(Array.isArray(value)){console.log("ERROR 5: Arreglo de arreglos");}else{
+                for(let key in value){
+                    str = str + buildCSTTree(value);
+                }
+            }
+            });
+        }else if(typeof obj === 'string' ){ // IS STRING
+            return "";
+        }else{// IS OBJECT
+            for(let key in obj){
+                const words = key.split('->');
+                //console.log(words[3]);
+                str = `<li><a href="">${words[0]}</a>
+                <ul>
+                `;
+                str = str + buildCSTTree(obj[key]) + `
+                </ul>
+                </li>`;
+            }
+        }
+        return str;
+    }
+
 	const { Objeto } = __webpack_require__(/*! ../model/xpath/Objeto */ "YKiq");
 	const { Tipos } = __webpack_require__(/*! ../model/xpath/Enum */ "MEUw");
     const { XQObjeto } = __webpack_require__(/*! ../model/xquery/XQObjeto */ "WHhi");
     var builder = new Objeto();
     var queryBuilder = new XQObjeto();
-    // const getASTTree = require('./ast_xpath');
+    const getASTTree = __webpack_require__(/*! ./ast_xpath */ "JxJB");
 
 	function insert_current(_variable, _predicate, _linea, _columna) {
 		return builder.newAxis(builder.newExpression(builder.newCurrent(_variable, _linea, _columna), _predicate, _linea, _columna), _linea, _columna);

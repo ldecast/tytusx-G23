@@ -60,7 +60,8 @@ function compile(req) {
         let bloque;
         let consola = "";
         if (xQuery_ast.xquery) {
-            bloque = Bloque_XQuery_1.default.getOutput(xQuery_ast.xquery, cadena.ambito, root); // Procesa las instrucciones de XQuery (fase 2)
+            let _str = [];
+            bloque = Bloque_XQuery_1.default.getOutput(xQuery_ast.xquery, cadena.ambito, root, _str); // Procesa las instrucciones de XQuery (fase 2)
         }
         else if (xQuery_ast.xpath) {
             bloque = Bloque_XPath_1.default(xQuery_ast.xpath, cadena.ambito, root); // Procesa las instrucciones si sólo viene XPath (fase 1)

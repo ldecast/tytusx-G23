@@ -151,7 +151,16 @@ return $x/title`;
   }
 
   optimizarC3D() {
-
+    if (this.traduccion != "") {
+      const x = {
+        traduccion: this.traduccion, // documento XML
+      }
+      let data = require('../js/routes/optimizar').optimizar(x);
+      this.traduccion = data.output;
+      this.errores = data.arreglo_errores;
+      console.log('Data received!');
+    } else
+      alert("Alguna entrada se encuentra vacía. Intente de nuevo.");
   }
 
   getAST() {
@@ -212,14 +221,13 @@ return $x/title`;
     if (this.traduccion != "") {
       let grammar_value = (<HTMLSelectElement>document.getElementById('grammar_selector')).value;
       const x = {
-        c3d: this.traduccion, // código 3d
+        traduccion: this.traduccion, // código 3d
         grammar: Number(grammar_value), // gramática 1=ascendente, 2=descendente
         report: "C3D-AST",
       }
       let data = require('../js/routes/reports').generateReport(x);
       this.salida = data.output;
-      this.errores = data.arreglo_errores;
-      this.exportFile(data.grammar_report, "3CD Report.dot");
+      this.exportFile(data.ast, "3CD Report.dot");
       console.log('AST C3D received!');
     } else
       alert("Traducción vacía. No se puede generar el reporte de C3D.");

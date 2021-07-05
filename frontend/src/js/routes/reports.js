@@ -7,6 +7,7 @@ function generateReport(req) {
         let xPath = req.query;
         let grammar_selected = req.grammar;
         let report = req.report;
+        let traduccion = (req.traduccion) ? (req.traduccion) : null;
         // Gramáticas a usarse según la selección: 1=ascendente, 2=descendente
         let parser_xml, parser_xPath;
         switch (grammar_selected) {
@@ -26,6 +27,8 @@ function generateReport(req) {
                 return GrammarReport_xml(parser_xml, xml);
             case "XPATH-AST":
                 return AST_xml(parser_xml, xml); // Se dejó el del xml
+            case "C3D-AST":
+                return AST_C3D(traduccion);
             default:
                 return { output: "Algo salió mal." };
         }
@@ -41,6 +44,17 @@ function generateReport(req) {
         errors = [];
         return output;
     }
+}
+function AST_C3D(entrada) {
+    // Análisis de C3D
+    let parser_c3d = require('../Optimizacion/Analizador/c3d_up');
+    let ast = parser_c3d.parse(entrada);
+    let graph = ast[0];
+    let output = {
+        output: "AST C3D generado.",
+        ast: graph
+    };
+    return output;
 }
 function CST_xml(parser_xml, xml) {
     let errors = [];
