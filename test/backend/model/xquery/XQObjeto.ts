@@ -34,7 +34,7 @@ export class XQObjeto {
     nuevoLet(_varName: any, _valor: any, _linea: number, _columna: number) {
         return {
             id: _varName, // $x, $y, $z
-            expresion: _valor, /* (1 to 5) || (substring($booktitle,1,4)) || ($p * $d) div 100 */
+            valor: _valor, /* (1 to 5) || (substring($booktitle,1,4)) || ($p * $d) div 100 */
             tipo: Tipos.LET_CLAUSE,
             linea: _linea,
             columna: _columna
@@ -133,6 +133,46 @@ export class XQObjeto {
             atributos: _atributos,
             value: _contenido,
             tipo: Tipos.HTML,
+            linea: _linea,
+            columna: _columna
+        }
+    }
+
+    nuevoIf_Then_Else(_condicionIf: any, _instruccionesThen: any, _instruccionesElse: any, _linea: number, _columna: number) {
+        return {
+            condicionIf: _condicionIf,
+            instruccionesThen: _instruccionesThen,
+            instruccionesElse: _instruccionesElse,
+            tipo: Tipos.IF_THEN_ELSE,
+            linea: _linea,
+            columna: _columna
+        }
+    }
+
+    nuevoParametro(_id: any, _tipado: Tipos, _linea: number, _columna: number) {
+        return {
+            id: _id,
+            tipado: _tipado,
+            linea: _linea,
+            columna: _columna
+        }
+    }
+
+    nuevaFuncion(_name: string, _parametros: Array<any>, _tipado: Tipos, _instrucciones: any, _linea: number, _columna: number) {
+        return {
+            name: _name,
+            parametros: _parametros,
+            tipado: _tipado,
+            instrucciones: _instrucciones,
+            linea: _linea,
+            columna: _columna
+        }
+    }
+
+    nuevaLlamada(_name: string, _parametros: Array<any>, _linea: number, _columna: number) {
+        return {
+            name: _name,
+            parametros: _parametros,
             linea: _linea,
             columna: _columna
         }

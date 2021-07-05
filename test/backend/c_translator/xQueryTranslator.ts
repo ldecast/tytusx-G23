@@ -44,7 +44,7 @@ export class XQueryTranslator {
 
 
     }
-
+    //TEST
 
     private xQueryTranslate(){
         for(let i = 0; i < this.ast.length; i++){
@@ -75,11 +75,12 @@ export class XQueryTranslator {
 
     private  FOR_LOOP(obj: object, env: Environment): void{
         console.log(obj)
+        let dec_Arr: object[] = [];
         if(this.debug){console.log("FOR_LOOP" + (this.show_obj? "\n"+obj:""));}
         for (let i:number = 0; i < obj['cuerpo'].length; i++){
             switch (obj['cuerpo'][i]['tipo']) {
                 case 'DECLARACION':
-                    this.DECLARACION(obj['cuerpo'][i], env);
+                    dec_Arr.push(this.DECLARACION(obj['cuerpo'][i]));
                     break;
 
                 default:
@@ -88,9 +89,14 @@ export class XQueryTranslator {
         }
 
         for (let i:number = 0; i < obj['instrucciones'].length; i++){
-            //TODO
+            switch (obj['instrucciones'][i]['tipo']) {
+                case 'WHERE_CONDITION':
+                    break;
+                case 'RETURN_STATEMENT':
+                    break;
+            }
         }
-
+        console.log(dec_Arr);
         /*
         switch () {
         }*/
@@ -106,14 +112,10 @@ export class XQueryTranslator {
 
     }
 
-    private DECLARACION(obj, env: Environment){
+    private DECLARACION(obj: object):object{
         //console.log(obj);
         if(this.debug){console.log('DECLARATION' + (this.show_obj? "\n"+obj:""));}
-        if(obj['variable'] !=null){
-            env.addVariable(obj['variable']['variable']);
-        }else {
-            console.log("ERROR 4");
-        }
+
         //let length = obj['iterators'].length;
         let function_name = null;
         for (let i: number = obj['iterators'].length - 1; i >= 0; i--){
@@ -145,6 +147,7 @@ export class XQueryTranslator {
                     break;
             }
         }
+        return  {'function': function_name, name: obj['variable']['variable']};
 
         //TODO: al final el ultimo function name es el correcto
     }

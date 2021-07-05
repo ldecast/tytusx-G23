@@ -73,6 +73,7 @@ var Tipos;
     Tipos["ORDER_BY_CLAUSE"] = "ORDER_BY_CLAUSE";
     Tipos["RETURN_STATEMENT"] = "RETURN_STATEMENT";
     Tipos["ASIGNACION"] = "ASIGNACION";
+    Tipos["IF_THEN_ELSE"] = "IF_THEN_ELSE";
     Tipos["VARIABLE"] = "VARIABLE";
     Tipos["DECLARACION"] = "DECLARACION";
     Tipos["INTERVALO"] = "INTERVALO";
@@ -80,5 +81,9 @@ var Tipos;
     Tipos["CONTENIDO"] = "CONTENIDO";
     Tipos["INYECCION"] = "INYECCION";
     Tipos["HTML"] = "HTML";
+    Tipos["TIPADO_STRING"] = "TIPADO_STRING";
+    Tipos["TIPADO_INTEGER"] = "TIPADO_INTEGER";
+    Tipos["TIPADO_DECIMAL"] = "TIPADO_DECIMAL";
+    Tipos["TIPADO_BOOLEANO"] = "TIPADO_BOOLEANO";
 })(Tipos = exports.Tipos || (exports.Tipos = {}));
 //# sourceMappingURL=Enum.js.map

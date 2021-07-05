@@ -34,7 +34,7 @@ var XQObjeto = /** @class */ (function () {
     XQObjeto.prototype.nuevoLet = function (_varName, _valor, _linea, _columna) {
         return {
             id: _varName,
-            expresion: _valor,
+            valor: _valor,
             tipo: Enum_1.Tipos.LET_CLAUSE,
             linea: _linea,
             columna: _columna
@@ -123,6 +123,42 @@ var XQObjeto = /** @class */ (function () {
             atributos: _atributos,
             value: _contenido,
             tipo: Enum_1.Tipos.HTML,
+            linea: _linea,
+            columna: _columna
+        };
+    };
+    XQObjeto.prototype.nuevoIf_Then_Else = function (_condicionIf, _instruccionesThen, _instruccionesElse, _linea, _columna) {
+        return {
+            condicionIf: _condicionIf,
+            instruccionesThen: _instruccionesThen,
+            instruccionesElse: _instruccionesElse,
+            tipo: Enum_1.Tipos.IF_THEN_ELSE,
+            linea: _linea,
+            columna: _columna
+        };
+    };
+    XQObjeto.prototype.nuevoParametro = function (_id, _tipado, _linea, _columna) {
+        return {
+            id: _id,
+            tipado: _tipado,
+            linea: _linea,
+            columna: _columna
+        };
+    };
+    XQObjeto.prototype.nuevaFuncion = function (_name, _parametros, _tipado, _instrucciones, _linea, _columna) {
+        return {
+            name: _name,
+            parametros: _parametros,
+            tipado: _tipado,
+            instrucciones: _instrucciones,
+            linea: _linea,
+            columna: _columna
+        };
+    };
+    XQObjeto.prototype.nuevaLlamada = function (_name, _parametros, _linea, _columna) {
+        return {
+            name: _name,
+            parametros: _parametros,
             linea: _linea,
             columna: _columna
         };

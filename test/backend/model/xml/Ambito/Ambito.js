@@ -1,28 +1,47 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Ambito = void 0;
+var Contexto_1 = require("../../../controller/Contexto");
 var Enum_1 = require("../../xpath/Enum");
 var Ambito = /** @class */ (function () {
+    // tablaFunciones: Array<Funcion>;
     function Ambito(_anterior, _tipo) {
         this.anterior = _anterior;
         this.tipo = _tipo;
         this.tablaSimbolos = [];
+        this.tablaVariables = [];
     }
-    Ambito.prototype.isGlobal = function () {
-        return this.tipo === "global";
-    };
     Ambito.prototype.addSimbolo = function (_simbolo) {
         this.tablaSimbolos.push(_simbolo);
     };
+    Ambito.prototype.addVariabe = function (_variable) {
+        this.tablaVariables.unshift(_variable);
+    };
+    Ambito.prototype.existeVariable = function (_id) {
+        for (var i = 0; i < this.tablaVariables.length; i++) {
+            var variable = this.tablaVariables[i];
+            if (_id == variable.id && variable.contexto)
+                return true;
+        }
+        return false;
+    };
+    Ambito.prototype.getContextFromVar = function (_id) {
+        for (var i = 0; i < this.tablaVariables.length; i++) {
+            var variable = this.tablaVariables[i];
+            if (_id == variable.id && variable.contexto)
+                return variable.contexto;
+        }
+        return new Contexto_1.Contexto();
+    };
     Ambito.prototype.nodesFunction = function (_element, _nodes) {
         var _this = this;
-        _nodes.push({ elementos: _element });
         if (_element.childs) {
             _element.childs.forEach(function (child) {
                 _nodes = _this.nodesFunction(child, _nodes);
             });
         }
         if (_element.value) {
+            _nodes.push({ elementos: _element });
             _nodes.push({ textos: _element.value });
         }
         return _nodes;
@@ -50,8 +69,49 @@ var Ambito = /** @class */ (function () {
             _element.attributes.forEach(function (attr) {
                 if (attr.id === _attribute.id && attr.line == _attribute.line && attr.column == _attribute.column) {
                     _elements.push(_element);
+                    return _elements;
                 }
             });
+        }
+        return _elements;
+    };
+    Ambito.prototype.searchDadFromText = function (_element, _text, _elements) {
+        var _this = this;
+        if (_element.childs) {
+            _element.childs.forEach(function (child) {
+                _elements = _this.searchDadFromText(child, _text, _elements);
+            });
+        }
+        if (_element.value) {
+            if (_element.value === _text) {
+                _elements.push(_element);
+                return _elements;
+            }
+        }
+        if (_element.attributes) {
+            _element.attributes.forEach(function (attr) {
+                if (attr.value === _text) {
+                    _elements.push(_element);
+                    return _elements;
+                }
+            });
+        }
+        return _elements;
+    };
+    Ambito.prototype.searchDadFromNode = function (_element, _node, _elements) {
+        var _this = this;
+        if (_element.childs) {
+            _element.childs.forEach(function (child) {
+                _elements = _this.searchDadFromNode(child, _node, _elements);
+            });
+        }
+        if (_element.value && _node.textos) {
+            if (_element.value == _node.textos)
+                _elements.push(_element);
+        }
+        if (_element.value && _node.elementos) {
+            if (_element == _node.elementos)
+                _elements.push(_element);
         }
         return _elements;
     };

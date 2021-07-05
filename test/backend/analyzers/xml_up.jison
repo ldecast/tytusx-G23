@@ -793,7 +793,7 @@ cadena_err                              [0-9]+("."[0-9]+)?([a-zA-Z0-9_.-]|{unico
 "/"						    {return 'tk_bar';}
 "="						    {return 'tk_equal';}
 {string}                    {return 'tk_string';}
-{cadena_err}                {console.log(yytext); return cadena_err;}    /*USED FOR ERROR*/
+{cadena_err}                {return cadena_err;}    /*USED FOR ERROR*/
 {id_err}                    {return id_err;}     /*USED FOR ERROR*/
 
 
@@ -884,12 +884,9 @@ INI: XML_DECLARATION ROOT EOF               {/*$1[0].printTest(0);console.log($1
                                             }
 	;
 
-ROOT: ROOT XML
-    | XML
 
 
-ROOT: ROOT XML                                  {$1.push($2);
-                                                 $$ = $1;
+ROOT: ROOT XML                                  {$1.push($2); $$ = $1;
                                                 prod_1 = grammar_stack.pop();
                                                 prod_2 = grammar_stack.pop();
                                                 grammar_stack.push({'ROOT -> ROOT XML {﹩﹩ = ﹩1.push(₤2);}': [prod_2, prod_1 ]});
